@@ -189,27 +189,6 @@ class HomeScreen extends StatelessWidget {
                               latestMood!.weather,
                               style: const TextStyle(fontSize: 34),
                             ),
-                            const SizedBox(height: 8),
-                            ...latestMood!.emotionPercents.entries.map(
-                              (entry) => Text(
-                                '${entry.key}：${entry.value.round()}%',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF6F5F8F),
-                                ),
-                              ),
-                            ),
-                            if (latestMood!.memo.isNotEmpty) ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                latestMood!.memo,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF6D6478),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -347,9 +326,7 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: selected
-                            ? const Color(0xFFE7DCF8)
-                            : Colors.white,
+                        color: selected ? const Color(0xFFE7DCF8) : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -511,16 +488,24 @@ class _ChatScreenState extends State<ChatScreen> {
   String makeCocoonReply(String userText) {
     final text = userText.toLowerCase();
 
+    if (text.contains('消えたい') || text.contains('限界') || text.contains('もう無理')) {
+      return '今かなり苦しいところにいるんだね。ここに書いてくれてありがとう。今はひとりで抱え込まずに、近くの人や専門家の助けにもつながってね。';
+    }
+
     if (text.contains('不安') || text.contains('怖い') || text.contains('心配')) {
-      return '不安が大きいんだね。まずは今起きていることを一緒に整理してみよう。';
+      return '不安が大きいんだね。まずは「今起きていること」と「想像していること」を分けてみよう。';
     }
 
-    if (text.contains('彼氏') || text.contains('恋愛') || text.contains('返信')) {
-      return '恋愛の不安って、相手の反応ひとつで大きくなるよね。';
+    if (text.contains('恋愛') || text.contains('彼氏') || text.contains('返信')) {
+      return '恋愛の不安って、相手の反応ひとつで大きくなるよね。今わかっている事実だけ一緒に整理してみよう。';
     }
 
-    if (text.contains('友達')) {
-      return '友達とのことで何が一番引っかかってる？';
+    if (text.contains('友達') || text.contains('親友')) {
+      return '友達との関係って近いからこそ不安になるよね。何が一番引っかかってる？';
+    }
+
+    if (text.contains('孤独') || text.contains('ひとり') || text.contains('一人')) {
+      return 'ひとりぼっちに感じる時間って心細いよね。ここに書いてくれたことも、自分を助ける行動だよ。';
     }
 
     return '話してくれてありがとう。もう少し詳しく聞かせてくれる？';
@@ -561,7 +546,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
             ),
-
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(18),
@@ -571,7 +555,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
             ),
-
             Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
               color: Colors.white.withOpacity(0.92),
@@ -659,38 +642,67 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
     });
   }
 
-  Widget emotionCharacter({
+  Widget gardenEmotion({
     required String imagePath,
     required String emotionId,
     required String name,
-    required String status,
-    required Color color,
     required String text,
+    required double left,
+    required double top,
+    double size = 90,
   }) {
     final selected = selectedEmotion == emotionId;
 
-    return GestureDetector(
-      onTap: () => updateMessage(emotionId, text),
-      child: Container(
-        width: 135,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected
-              ? color.withOpacity(0.28)
-              : Colors.white.withOpacity(0.88),
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Column(
-          children: [
-            Image.asset(
-              imagePath,
-              height: 90,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 8),
-            Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(status, style: const TextStyle(fontSize: 12)),
-          ],
+    return Positioned(
+      left: left,
+      top: top,
+      child: GestureDetector(
+        onTap: () => updateMessage(emotionId, text),
+        child: AnimatedScale(
+          scale: selected ? 1.12 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? Colors.white.withOpacity(0.95)
+                      : Colors.white.withOpacity(0.65),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  imagePath,
+                  height: size,
+                  width: size,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.88),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF5F566B),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -722,6 +734,9 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final gardenWidth = width - 40;
+
     return Stack(
       children: [
         Positioned.fill(
@@ -731,9 +746,7 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
           ),
         ),
         Positioned.fill(
-          child: Container(
-            color: Colors.white.withOpacity(0.10),
-          ),
+          child: Container(color: Colors.white.withOpacity(0.08)),
         ),
         SafeArea(
           child: SingleChildScrollView(
@@ -758,65 +771,71 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
                     color: Color(0xFF5D8A6D),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
 
-                Wrap(
-                  spacing: 14,
-                  runSpacing: 14,
-                  children: [
-                    emotionCharacter(
-                      imagePath: 'assets/images/emotion_anxiety.png',
-                      emotionId: 'anxiety',
-                      name: '不安さん',
-                      status: 'そわそわ…',
-                      color: Colors.blue,
-                      text: '不安さんが今日は少し落ち着かないみたい。',
-                    ),
-                    emotionCharacter(
-                      imagePath: 'assets/images/emotion_peace.png',
-                      emotionId: 'peace',
-                      name: '安心さん',
-                      status: 'ふわふわ',
-                      color: Colors.amber,
-                      text: '安心さんが近くにいるよ。',
-                    ),
-                    emotionCharacter(
-                      imagePath: 'assets/images/emotion_lonely.png',
-                      emotionId: 'lonely',
-                      name: 'さみしいさん',
-                      status: 'ひとやすみ中',
-                      color: Colors.pink,
-                      text: 'さみしいさんが少し寂しそう。',
-                    ),
-                    emotionCharacter(
-                      imagePath: 'assets/images/emotion_tired.png',
-                      emotionId: 'tired',
-                      name: 'おつかれさん',
-                      status: 'すやすや',
-                      color: Colors.purple,
-                      text: '今日はゆっくり休もう。',
-                    ),
-                    emotionCharacter(
-                      imagePath: 'assets/images/emotion_angry.png',
-                      emotionId: 'angry',
-                      name: 'イライラさん',
-                      status: 'もやもや',
-                      color: Colors.orange,
-                      text: 'イライラさんも大切な感情だよ。',
-                    ),
-                  ],
+                SizedBox(
+                  height: 430,
+                  width: double.infinity,
+                  child: Stack(
+                    children: [
+                      gardenEmotion(
+                        imagePath: 'assets/images/emotion_anxiety.png',
+                        emotionId: 'anxiety',
+                        name: '不安さん',
+                        text: '不安さんが小川の近くでそわそわしてるみたい。',
+                        left: gardenWidth * 0.02,
+                        top: 45,
+                        size: 82,
+                      ),
+                      gardenEmotion(
+                        imagePath: 'assets/images/emotion_peace.png',
+                        emotionId: 'peace',
+                        name: '安心さん',
+                        text: '安心さんが広場の真ん中でふわっと待ってるよ。',
+                        left: gardenWidth * 0.40,
+                        top: 85,
+                        size: 88,
+                      ),
+                      gardenEmotion(
+                        imagePath: 'assets/images/emotion_lonely.png',
+                        emotionId: 'lonely',
+                        name: 'さみしいさん',
+                        text: 'さみしいさんがベンチで少し休んでるみたい。',
+                        left: gardenWidth * 0.05,
+                        top: 235,
+                        size: 98,
+                      ),
+                      gardenEmotion(
+                        imagePath: 'assets/images/emotion_tired.png',
+                        emotionId: 'tired',
+                        name: 'おつかれさん',
+                        text: 'おつかれさんは木陰で眠たそう。今日はゆっくりで大丈夫。',
+                        left: gardenWidth * 0.54,
+                        top: 245,
+                        size: 95,
+                      ),
+                      gardenEmotion(
+                        imagePath: 'assets/images/emotion_angry.png',
+                        emotionId: 'angry',
+                        name: 'イライラさん',
+                        text: 'イライラさんが岩場でむすっとしてる。怒りも大切なサインだよ。',
+                        left: gardenWidth * 0.68,
+                        top: 120,
+                        size: 92,
+                      ),
+                    ],
+                  ),
                 ),
-
-                const SizedBox(height: 28),
 
                 Center(
                   child: Image.asset(
                     'assets/images/luna.png',
-                    height: 190,
+                    height: 170,
+                    fit: BoxFit.contain,
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 Container(
                   width: double.infinity,
@@ -829,13 +848,16 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
                     children: [
                       const Text(
                         '今日のこころ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6F5F8F),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         message,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 18),
+                        style: const TextStyle(fontSize: 18, height: 1.5),
                       ),
                     ],
                   ),
@@ -879,3 +901,4 @@ class SimplePage extends StatelessWidget {
     );
   }
 }
+
