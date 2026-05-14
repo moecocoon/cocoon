@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -625,6 +626,11 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController chatController = TextEditingController();
+  final Random random = Random();
+
+  String pick(List<String> replies) {
+    return replies[random.nextInt(replies.length)];
+  }
 
   void sendMessage() {
     final text = chatController.text.trim();
@@ -651,15 +657,23 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('未読') ||
         text.contains('line') ||
         text.contains('ライン')) {
-      return '返信がない時間って、不安さんがどんどん大きくなりやすいよね。\n今わかっている事実は「まだ返事がない」ことだけかも。一番怖い想像は何？';
+      return pick([
+        '返信がない時間って、不安さんが大きくなりやすいよね。\n今わかっている事実と、想像していることを分けてみよう。',
+        '待っている時間って長く感じるよね。\n一番怖いのは「嫌われたかも」ってこと？',
+        'まだ返事がないだけなのに、心は先に悪い未来を見に行っちゃうことあるよね。',
+      ]);
     }
 
-    // 恋愛：冷たい・そっけない
+    // 恋愛：冷たい
     if (text.contains('冷たい') ||
         text.contains('そっけない') ||
         text.contains('素っ気ない') ||
-        text.contains('態度が変')) {
-      return '相手が冷たく感じると、心が一気に不安になるよね。\n「実際に変わった行動」と「自分の想像」を分けて見てみよう。';
+        text.contains('態度')) {
+      return pick([
+        '相手が冷たく感じると、心が一気に不安になるよね。\nいつからそう感じた？',
+        '「冷たいかも」って感じた場面を一緒に整理してみよう。',
+        '不安さんが相手の小さな変化に気づいているのかも。',
+      ]);
     }
 
     // 恋愛：別れ
@@ -667,103 +681,96 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('振られ') ||
         text.contains('終わり') ||
         text.contains('距離置')) {
-      return '別れの不安が出てくると、胸がぎゅっとなるよね。\n今は結論を急がずに、相手の言葉・行動・自分の気持ちを分けて整理しよう。';
+      return pick([
+        '別れの不安が出ると、胸がぎゅっとなるよね。\n今は結論を急がなくて大丈夫。',
+        '「終わるかも」って思ったきっかけは何だった？',
+        '怖い想像が大きくなってる時は、事実だけを一緒に拾ってみよう。',
+      ]);
     }
 
-    // 恋愛：好きかわからない
-    if (text.contains('好きかわからない') ||
-        text.contains('好きか分からない') ||
-        text.contains('気持ちがわからない')) {
-      return '好きかどうかわからなくなる時って、疲れや不安で心が曇ってることもあるよ。\n安心したいのか、距離を置きたいのか、どっちに近い？';
-    }
-
-    // 恋愛：会えない
+    // 恋愛：会えない・寂しい
     if (text.contains('会えない') ||
         text.contains('会いたい') ||
-        text.contains('寂しい')) {
-      return '会えない時間って、さみしいさんが大きくなりやすいよね。\n今ほしいのは「安心する言葉」？それとも「会う約束」？';
+        text.contains('寂しい') ||
+        text.contains('さみしい')) {
+      return pick([
+        '会えない時間って、さみしいさんが大きくなりやすいよね。',
+        '今ほしいのは、安心する言葉？それとも会う約束？',
+        '寂しいって感じるのは、それだけ大切に思ってるサインかも。',
+      ]);
     }
 
     // 恋愛：喧嘩
     if (text.contains('喧嘩') ||
         text.contains('ケンカ') ||
         text.contains('言い合い')) {
-      return '喧嘩のあとは、言いすぎたことや相手の反応が気になりやすいよね。\nまずは「本当は何をわかってほしかったのか」を一緒に見よう。';
+      return pick([
+        '喧嘩のあとって、言いすぎたことも相手の反応も気になるよね。',
+        '本当は何をわかってほしかったのか、一緒に見てみよう。',
+        '怒りの奥に、寂しさや不安が隠れてることもあるよ。',
+      ]);
     }
 
-    // 恋愛：彼氏・彼女・恋愛全般
+    // 恋愛全般
     if (text.contains('彼氏') ||
         text.contains('彼女') ||
         text.contains('恋愛') ||
         text.contains('好きな人')) {
-      return '恋愛の不安って、相手の反応ひとつで大きくなりやすいよね。\n今一番近いのは「不安」？「寂しい」？それとも「怒り」？';
+      return pick([
+        '恋愛の不安って、相手の反応ひとつで大きくなりやすいよね。',
+        '今一番近いのは「不安」「寂しい」「怒り」のどれ？',
+        'その気持ち、ちゃんと大切なサインだよ。もう少し聞かせて。',
+      ]);
     }
 
-    // 友達：モヤモヤ
-    if (text.contains('友達') && text.contains('モヤモヤ')) {
-      return '友達へのモヤモヤって、言葉にしづらいけどちゃんと理由があることが多いよ。\n悲しかった？それとも大事にされてない感じがした？';
+    // 友達
+    if (text.contains('友達') ||
+        text.contains('親友') ||
+        text.contains('人間関係')) {
+      return pick([
+        '友達とのことって、小さい違和感でも心に残るよね。',
+        '悲しかった？それともモヤモヤした？',
+        'その関係を続けたい気持ちと、苦しい気持ち、どっちが強い？',
+      ]);
     }
 
-    // 友達：無視・距離
-    if (text.contains('友達') &&
-        (text.contains('無視') || text.contains('距離') || text.contains('避け'))) {
-      return '友達に距離を感じると、すごく不安になるよね。\n最近あった出来事で「ここから変わったかも」と思うことはある？';
-    }
-
-    // 友達：裏切り・悪口
+    // 悪口・裏切り
     if (text.contains('悪口') ||
         text.contains('陰口') ||
         text.contains('裏切')) {
-      return '悪口や裏切られた感じって、かなり傷つくよね。\n今は相手を許すより先に、自分がどこで傷ついたのかを見ていいよ。';
+      return pick([
+        'それはかなり傷つくよね。\nまずは自分がどこで傷ついたのかを見ていいよ。',
+        '信じていた相手だと、余計につらいよね。',
+        '今は無理に許さなくても大丈夫。気持ちを整理しよう。',
+      ]);
     }
 
-    // 友達：親友
-    if (text.contains('親友')) {
-      return '親友だからこそ、小さな違和感も大きく感じるよね。\nこの関係を続けたい気持ちと、苦しい気持ち、どっちが今強い？';
-    }
-
-    // 人間関係全般
-    if (text.contains('友達') ||
-        text.contains('人間関係') ||
-        text.contains('仲間')) {
-      return '人間関係って、近いほど複雑になりやすいよね。\n今の気持ちは「悲しい」「イライラ」「不安」のどれが近い？';
-    }
-
-    // 家族：母
-    if (text.contains('母') ||
-        text.contains('お母さん') ||
-        text.contains('ママ')) {
-      return 'お母さんとのことって、近いぶん心が揺れやすいよね。\n責められた感じ？わかってもらえない感じ？';
-    }
-
-    // 家族：父
-    if (text.contains('父') ||
-        text.contains('お父さん') ||
-        text.contains('パパ')) {
-      return 'お父さんとのこと、言葉にしづらい気持ちもあるよね。\n怖さ、寂しさ、怒り、どれが一番近い？';
-    }
-
-    // 家族：きょうだい
-    if (text.contains('兄') ||
+    // 家族
+    if (text.contains('家族') ||
+        text.contains('母') ||
+        text.contains('父') ||
+        text.contains('親') ||
+        text.contains('兄') ||
         text.contains('姉') ||
         text.contains('弟') ||
         text.contains('妹')) {
-      return 'きょうだいとの関係って、比べられたり役割ができたりして苦しくなることあるよね。\n一番しんどいのはどの部分？';
+      return pick([
+        '家族のことって、距離が近いぶん心が揺れやすいよね。',
+        'わかってほしい気持ちと、離れたい気持ちが両方ある感じかな。',
+        '一番しんどいのは、責められること？わかってもらえないこと？',
+      ]);
     }
-
-    // 家族全般
-    if (text.contains('家族') ||
-        text.contains('親') ||
-        text.contains('実家')) {
-      return '家族のことって、簡単に割り切れないよね。\n離れたい気持ちと、わかってほしい気持ちが両方ある感じかな。';
-    }
-
-    // 将来・お金
+        // 将来・お金
     if (text.contains('将来') ||
         text.contains('未来') ||
         text.contains('お金') ||
-        text.contains('不安定')) {
-      return '先が見えない感じって、心が落ち着かなくなるよね。\n一番心配なのは生活？仕事？人間関係？';
+        text.contains('不安定') ||
+        text.contains('生活')) {
+      return pick([
+        '先が見えない感じって、心が落ち着かなくなるよね。',
+        '一番心配なのは生活？仕事？人間関係？',
+        '将来の不安って、正体がぼんやりしてると大きくなりやすいよ。',
+      ]);
     }
 
     // 仕事
@@ -771,7 +778,11 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('会社') ||
         text.contains('上司') ||
         text.contains('職場')) {
-      return '仕事のしんどさって、毎日じわじわ削られる感じあるよね。\n疲れ？プレッシャー？人間関係？';
+      return pick([
+        '仕事のしんどさって、毎日じわじわ削られる感じあるよね。',
+        '疲れ？プレッシャー？人間関係？どれが近い？',
+        '頑張ってるからこそ苦しくなる時あるよね。',
+      ]);
     }
 
     // 学校
@@ -779,7 +790,11 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('勉強') ||
         text.contains('テスト') ||
         text.contains('大学')) {
-      return '学校の悩みって、逃げ場がない感じになることあるよね。\n何が一番しんどい？';
+      return pick([
+        '学校の悩みって逃げ場がない感じになることあるよね。',
+        '何が一番しんどい？人間関係？成績？プレッシャー？',
+        'ちゃんと頑張ってるからこそ苦しいのかも。',
+      ]);
     }
 
     // 不安
@@ -787,7 +802,11 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('怖い') ||
         text.contains('心配') ||
         text.contains('どうしよう')) {
-      return '不安さんがかなり大きくなってる感じかな。\n頭の中で何度も考えちゃう？それとも胸がザワザワする？';
+      return pick([
+        '不安さんがかなり大きくなってる感じかな。',
+        '頭の中で何度も考えちゃう？それとも胸がザワザワする？',
+        '不安って、正体がわからないともっと大きく見えるよね。',
+      ]);
     }
 
     // パニックっぽさ
@@ -795,7 +814,11 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('息苦しい') ||
         text.contains('ドキドキ') ||
         text.contains('落ち着かない')) {
-      return '体もかなり緊張してる感じがあるね。\n今は考えるより、まず少し体を落ち着けるのもありだよ。';
+      return pick([
+        '体もかなり緊張してる感じがあるね。',
+        '今は考えるより、まず体を少し落ち着けるのもありだよ。',
+        '呼吸が浅くなってる感じあるかな？',
+      ]);
     }
 
     // 孤独
@@ -803,7 +826,11 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('ひとり') ||
         text.contains('一人') ||
         text.contains('ひとりぼっち')) {
-      return 'ひとりで抱えてる感じが強いんだね。\n今は誰かにいてほしい？それともただ気持ちを吐き出したい？';
+      return pick([
+        'ひとりで抱えてる感じが強いんだね。',
+        '今は誰かにいてほしい？それとも吐き出したい？',
+        '孤独って、静かだけどすごく重いよね。',
+      ]);
     }
 
     // 眠れない
@@ -811,7 +838,11 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('寝れない') ||
         text.contains('夜') ||
         text.contains('寝つけない')) {
-      return '夜って気持ちが何倍にも大きく見えやすいよね。\n頭が止まらない感じ？それとも体が落ち着かない感じ？';
+      return pick([
+        '夜って気持ちが何倍にも大きく見えやすいよね。',
+        '頭が止まらない感じ？体が落ち着かない感じ？',
+        '眠れない夜って、不安さんが元気になりやすい時間だよね。',
+      ]);
     }
 
     // イライラ
@@ -819,15 +850,35 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('ムカつく') ||
         text.contains('腹立つ') ||
         text.contains('怒り')) {
-      return 'イライラの奥に、本当は悲しさや傷つきが隠れてることもあるよ。\n何が一番引っかかった？';
+      return pick([
+        'イライラの奥に、本当は悲しさや傷つきがあることもあるよ。',
+        '何が一番引っかかった？',
+        '怒りって「大事なものが傷ついたサイン」なこともあるよ。',
+      ]);
     }
 
     // 疲れ
     if (text.contains('疲れた') ||
         text.contains('しんどい') ||
-        text.contains('もう無理') ||
-        text.contains('限界')) {
-      return 'かなり頑張ってきた感じが伝わるよ。\n今必要なのは休むこと？話すこと？';
+        text.contains('限界') ||
+        text.contains('もう無理')) {
+      return pick([
+        'かなり頑張ってきた感じが伝わるよ。',
+        '今必要なのは休むこと？話すこと？',
+        '限界まで頑張ってきたのかもしれないね。',
+      ]);
+    }
+
+    // SNS比較
+    if (text.contains('sns') ||
+        text.contains('インスタ') ||
+        text.contains('x') ||
+        text.contains('比較')) {
+      return pick([
+        'SNSって、人のキラキラだけ見えやすい場所だよね。',
+        '比べると苦しくなるの自然だよ。',
+        '本当は自分が何を求めてるのか見てみようか。',
+      ]);
     }
 
     // 自己否定
@@ -835,17 +886,50 @@ class _ChatScreenState extends State<ChatScreen> {
         text.contains('自分嫌い') ||
         text.contains('ダメ') ||
         text.contains('価値がない')) {
-      return '今、自分にすごく厳しい言葉を向けてるかもしれないね。\n何がそう思わせてる？';
+      return pick([
+        '今、自分にすごく厳しくなってるかもしれないね。',
+        '何がそう思わせてる？',
+        'その言葉、自分にかなり強く向けてる感じがあるよ。',
+      ]);
     }
-
-    // 泣きたい
+        // 泣きたい
     if (text.contains('泣きたい') ||
         text.contains('涙') ||
         text.contains('泣いた')) {
-      return '泣きたい時って、それだけ抱えてきたものがあるってことだよ。\n何が一番つらかった？';
+      return pick([
+        '泣きたい時って、それだけ抱えてきたものがあるってことだよ。',
+        '何が一番つらかった？',
+        '涙って、心が限界を教えてくれてるサインかもしれないね。',
+      ]);
     }
 
-    return '話してくれてありがとう。\nもう少し詳しく聞かせてくれる？';
+    // 自信
+    if (text.contains('自信') ||
+        text.contains('できない') ||
+        text.contains('無理')) {
+      return pick([
+        '自信がなくなる時って、自分のダメなところばかり見えやすいよね。',
+        '本当にできないのか、不安さんがそう言ってるのか、一緒に見てみよう。',
+        '今は自分に厳しいフィルターがかかってるかもしれないね。',
+      ]);
+    }
+
+    // 健康
+    if (text.contains('体調') ||
+        text.contains('病気') ||
+        text.contains('健康')) {
+      return pick([
+        '体の不調があると、心まで不安になりやすいよね。',
+        '体のつらさと心のつらさ、どっちが今大きい？',
+        'しんどい時は不安さんが大きく見えやすいよ。',
+      ]);
+    }
+
+    return pick([
+      '話してくれてありがとう。\nもう少し詳しく聞かせてくれる？',
+      'ちゃんと受け取ったよ。\nどんな気持ちが一番近い？',
+      'ここでゆっくり整理していこう。\nもう少し聞かせて。',
+    ]);
   }
 
   @override
@@ -928,6 +1012,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
+
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
