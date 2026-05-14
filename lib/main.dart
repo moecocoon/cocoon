@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const CocoonApp());
@@ -103,7 +106,31 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int selectedIndex = 0;
-  MoodRecord? latestMood;
+MoodRecord? latestMood;
+String? petImagePath;
+@override
+void initState() {
+  super.initState();
+  loadPetImage();
+}
+
+Future<void> loadPetImage() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    petImagePath = prefs.getString('petImagePath');
+  });
+}
+
+Future<void> updatePetImage(String path) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('petImagePath', path);
+
+  setState(() {
+    petImagePath = path;
+  });
+}
+
 
   final List<ChatMessage> chatMessages = [
     ChatMessage(
@@ -147,7 +174,11 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(latestMood: latestMood),
+      HomeScreen(
+  latestMood: latestMood,
+  petImagePath: petImagePath,
+),
+
       MoodRecordScreen(onSave: saveMood),
       ChatScreen(messages: chatMessages),
       KokoroHirobaScreen(
@@ -155,7 +186,11 @@ class _MainScreenState extends State<MainScreen> {
         onListen: goToChatWithEmotion,
         onBreathing: goToBreathingGuide,
       ),
-      const SimplePage(title: 'マイページ', icon: '🐾'),
+      MyPageScreen(
+  petImagePath: petImagePath,
+  onPetImageChanged: updatePetImage,
+),
+
       const BreathingGuideScreen(),
     ];
 
@@ -200,10 +235,12 @@ class _MainScreenState extends State<MainScreen> {
 }
 class HomeScreen extends StatelessWidget {
   final MoodRecord? latestMood;
+  final String? petImagePath;
 
   const HomeScreen({
     super.key,
     this.latestMood,
+    this.petImagePath,
   });
 
   @override
@@ -254,13 +291,18 @@ class HomeScreen extends StatelessWidget {
                     ),
                     SizedBox(height: size.height * 0.025),
                     SizedBox(
-                      height: lunaHeight,
-                      width: double.infinity,
-                      child: Image.asset(
-                        'assets/images/luna.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+  height: lunaHeight,
+  width: double.infinity,
+  child: petImagePath != null
+      ? Image.file(
+          File(petImagePath!),
+          fit: BoxFit.contain,
+        )
+      : Image.asset(
+          'assets/images/luna.png',
+          fit: BoxFit.contain,
+        ),
+),
                     const SizedBox(height: 16),
                     if (latestMood != null)
                       Container(
@@ -1378,7 +1420,68 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
     );
   }
 }
+class MyPageScreen extends StatelessWidget {
+  final String? petImagePath;
+  final Function(String) onPetImageChanged;
 
+  const MyPageScreen({
+    super.key,
+    required this.petImagePath,
+    required this.onPetImageChanged,
+  });
+
+  Future<void> pickPetImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+
+    if (picked != null) {
+      onPetImageChanged(picked.path);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FA),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 30),
+              const Text(
+                'マイページ',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF8E7BBE),
+                ),
+              ),
+              const SizedBox(height: 40),
+              CircleAvatar(
+                radius: 90,
+                backgroundColor: Colors.white,
+                backgroundImage: petImagePath != null
+                    ? FileImage(File(petImagePath!))
+                    : const AssetImage('assets/images/luna.png')
+                        as ImageProvider,
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () => pickPetImage(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8E7BBE),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('ペット写真を変更'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 class SimplePage extends StatelessWidget {
   final String title;
   final String icon;
