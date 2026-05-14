@@ -1045,8 +1045,67 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
   }
 }
 
-class BreathingGuideScreen extends StatelessWidget {
+class BreathingGuideScreen extends StatefulWidget {
   const BreathingGuideScreen({super.key});
+
+  @override
+  State<BreathingGuideScreen> createState() => _BreathingGuideScreenState();
+}
+
+class _BreathingGuideScreenState extends State<BreathingGuideScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController controller;
+  bool isBreathingIn = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+      lowerBound: 0.7,
+      upperBound: 1.2,
+    );
+
+   controller.addStatusListener((status) {
+  if (status == AnimationStatus.completed) {
+    setState(() {
+      isBreathingIn = false;
+    });
+
+    controller.animateBack(
+      0.7,
+      duration: const Duration(seconds: 6),
+    );
+  }
+
+  if (status == AnimationStatus.dismissed) {
+    setState(() {
+      isBreathingIn = true;
+    });
+
+    controller.animateTo(
+      1.2,
+      duration: const Duration(seconds: 4),
+    );
+  }
+});
+
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void goBackToCocoon() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const CocoonApp(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1066,58 +1125,87 @@ class BreathingGuideScreen extends StatelessWidget {
                   color: Color(0xFF3C946F),
                 ),
               ),
-              const SizedBox(height: 24),
-              Container(
-                width: 180,
-                height: 180,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.75),
-                  shape: BoxShape.circle,
+
+              const SizedBox(height: 20),
+
+              const Text(
+                'ルナと一緒にゆっくり呼吸しよう',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF5F566B),
                 ),
-                child: const Center(
-                  child: Text(
-                    '吸って\n吐いて',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      height: 1.6,
-                      color: Color(0xFF3C946F),
-                      fontWeight: FontWeight.bold,
+              ),
+
+              const SizedBox(height: 50),
+
+              ScaleTransition(
+                scale: controller,
+                child: Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.15),
+                        blurRadius: 30,
+                        spreadRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      isBreathingIn ? '吸って…' : '吐いて…',
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3C946F),
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
-              const Text(
-                'ゆっくり吸って、ゆっくり吐こう。\n今はそれだけで大丈夫。',
+
+              const SizedBox(height: 50),
+
+              Image.asset(
+                'assets/images/luna.png',
+                height: 140,
+              ),
+
+              const SizedBox(height: 24),
+
+              Text(
+                isBreathingIn
+                    ? '鼻からゆっくり4秒吸ってみよう'
+                    : '口からゆっくり6秒吐いてみよう',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 17,
-                  height: 1.6,
+                style: const TextStyle(
+                  fontSize: 18,
                   color: Color(0xFF5F566B),
                 ),
               ),
-              const SizedBox(height: 32),
+
+              const SizedBox(height: 40),
+
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const CocoonApp(),
-                    ),
-                  );
-                },
+                onPressed: goBackToCocoon,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3C946F),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 14,
+                    horizontal: 36,
+                    vertical: 16,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
-                child: const Text('心の広場に戻る'),
+                child: const Text(
+                  '心の広場に戻る',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ],
           ),
@@ -1126,6 +1214,7 @@ class BreathingGuideScreen extends StatelessWidget {
     );
   }
 }
+
 
 class SimplePage extends StatelessWidget {
   final String title;
