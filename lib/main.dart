@@ -1091,6 +1091,8 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
     );
   }
 });
+controller.forward();
+}
 
 
   @override
@@ -1216,7 +1218,7 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
 }
 
 
-class SimplePage extends StatelessWidget {
+ class SimplePage extends StatelessWidget {
   final String title;
   final String icon;
 
@@ -1233,3 +1235,4 @@ class SimplePage extends StatelessWidget {
     );
   }
 }
+
