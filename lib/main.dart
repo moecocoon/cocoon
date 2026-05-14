@@ -603,70 +603,204 @@ class _ChatScreenState extends State<ChatScreen> {
   String makeCocoonReply(String userText) {
     final text = userText.toLowerCase();
 
+    // 恋愛：返信・既読・未読
+    if (text.contains('返信') ||
+        text.contains('既読') ||
+        text.contains('未読') ||
+        text.contains('line') ||
+        text.contains('ライン')) {
+      return '返信がない時間って、不安さんがどんどん大きくなりやすいよね。\n今わかっている事実は「まだ返事がない」ことだけかも。一番怖い想像は何？';
+    }
+
+    // 恋愛：冷たい・そっけない
+    if (text.contains('冷たい') ||
+        text.contains('そっけない') ||
+        text.contains('素っ気ない') ||
+        text.contains('態度が変')) {
+      return '相手が冷たく感じると、心が一気に不安になるよね。\n「実際に変わった行動」と「自分の想像」を分けて見てみよう。';
+    }
+
+    // 恋愛：別れ
+    if (text.contains('別れ') ||
+        text.contains('振られ') ||
+        text.contains('終わり') ||
+        text.contains('距離置')) {
+      return '別れの不安が出てくると、胸がぎゅっとなるよね。\n今は結論を急がずに、相手の言葉・行動・自分の気持ちを分けて整理しよう。';
+    }
+
+    // 恋愛：好きかわからない
+    if (text.contains('好きかわからない') ||
+        text.contains('好きか分からない') ||
+        text.contains('気持ちがわからない')) {
+      return '好きかどうかわからなくなる時って、疲れや不安で心が曇ってることもあるよ。\n安心したいのか、距離を置きたいのか、どっちに近い？';
+    }
+
+    // 恋愛：会えない
+    if (text.contains('会えない') ||
+        text.contains('会いたい') ||
+        text.contains('寂しい')) {
+      return '会えない時間って、さみしいさんが大きくなりやすいよね。\n今ほしいのは「安心する言葉」？それとも「会う約束」？';
+    }
+
+    // 恋愛：喧嘩
+    if (text.contains('喧嘩') ||
+        text.contains('ケンカ') ||
+        text.contains('言い合い')) {
+      return '喧嘩のあとは、言いすぎたことや相手の反応が気になりやすいよね。\nまずは「本当は何をわかってほしかったのか」を一緒に見よう。';
+    }
+
+    // 恋愛：彼氏・彼女・恋愛全般
     if (text.contains('彼氏') ||
         text.contains('彼女') ||
         text.contains('恋愛') ||
-        text.contains('返信') ||
-        text.contains('既読')) {
-      return '恋愛の不安って、相手の反応ひとつで大きくなりやすいよね。\n一番近いのは「寂しい」？それとも「不安」？';
+        text.contains('好きな人')) {
+      return '恋愛の不安って、相手の反応ひとつで大きくなりやすいよね。\n今一番近いのは「不安」？「寂しい」？それとも「怒り」？';
     }
 
+    // 友達：モヤモヤ
+    if (text.contains('友達') && text.contains('モヤモヤ')) {
+      return '友達へのモヤモヤって、言葉にしづらいけどちゃんと理由があることが多いよ。\n悲しかった？それとも大事にされてない感じがした？';
+    }
+
+    // 友達：無視・距離
+    if (text.contains('友達') &&
+        (text.contains('無視') || text.contains('距離') || text.contains('避け'))) {
+      return '友達に距離を感じると、すごく不安になるよね。\n最近あった出来事で「ここから変わったかも」と思うことはある？';
+    }
+
+    // 友達：裏切り・悪口
+    if (text.contains('悪口') ||
+        text.contains('陰口') ||
+        text.contains('裏切')) {
+      return '悪口や裏切られた感じって、かなり傷つくよね。\n今は相手を許すより先に、自分がどこで傷ついたのかを見ていいよ。';
+    }
+
+    // 友達：親友
+    if (text.contains('親友')) {
+      return '親友だからこそ、小さな違和感も大きく感じるよね。\nこの関係を続けたい気持ちと、苦しい気持ち、どっちが今強い？';
+    }
+
+    // 人間関係全般
     if (text.contains('友達') ||
-        text.contains('親友') ||
-        text.contains('人間関係')) {
-      return '友達とのことって、小さい違和感でも心に残るよね。\n悲しかった？それともモヤモヤ？';
+        text.contains('人間関係') ||
+        text.contains('仲間')) {
+      return '人間関係って、近いほど複雑になりやすいよね。\n今の気持ちは「悲しい」「イライラ」「不安」のどれが近い？';
     }
 
+    // 家族：母
+    if (text.contains('母') ||
+        text.contains('お母さん') ||
+        text.contains('ママ')) {
+      return 'お母さんとのことって、近いぶん心が揺れやすいよね。\n責められた感じ？わかってもらえない感じ？';
+    }
+
+    // 家族：父
+    if (text.contains('父') ||
+        text.contains('お父さん') ||
+        text.contains('パパ')) {
+      return 'お父さんとのこと、言葉にしづらい気持ちもあるよね。\n怖さ、寂しさ、怒り、どれが一番近い？';
+    }
+
+    // 家族：きょうだい
+    if (text.contains('兄') ||
+        text.contains('姉') ||
+        text.contains('弟') ||
+        text.contains('妹')) {
+      return 'きょうだいとの関係って、比べられたり役割ができたりして苦しくなることあるよね。\n一番しんどいのはどの部分？';
+    }
+
+    // 家族全般
     if (text.contains('家族') ||
-        text.contains('母') ||
-        text.contains('父') ||
-        text.contains('親')) {
-      return '家族のことって距離が近いぶん、気持ちが揺れやすいよね。\n何が一番しんどい？';
+        text.contains('親') ||
+        text.contains('実家')) {
+      return '家族のことって、簡単に割り切れないよね。\n離れたい気持ちと、わかってほしい気持ちが両方ある感じかな。';
     }
 
+    // 将来・お金
     if (text.contains('将来') ||
         text.contains('未来') ||
-        text.contains('お金')) {
-      return '先が見えない時って、不安さんが大きくなりやすいよ。\n何が一番心配？';
+        text.contains('お金') ||
+        text.contains('不安定')) {
+      return '先が見えない感じって、心が落ち着かなくなるよね。\n一番心配なのは生活？仕事？人間関係？';
     }
 
+    // 仕事
     if (text.contains('仕事') ||
-        text.contains('学校') ||
         text.contains('会社') ||
-        text.contains('勉強')) {
-      return '頑張ってるからこそ、しんどくなる時あるよね。\n疲れ？プレッシャー？';
+        text.contains('上司') ||
+        text.contains('職場')) {
+      return '仕事のしんどさって、毎日じわじわ削られる感じあるよね。\n疲れ？プレッシャー？人間関係？';
     }
 
+    // 学校
+    if (text.contains('学校') ||
+        text.contains('勉強') ||
+        text.contains('テスト') ||
+        text.contains('大学')) {
+      return '学校の悩みって、逃げ場がない感じになることあるよね。\n何が一番しんどい？';
+    }
+
+    // 不安
     if (text.contains('不安') ||
         text.contains('怖い') ||
-        text.contains('心配')) {
-      return '不安が大きいんだね。\n頭の中で何度も考えちゃう感じ？それとも胸がザワザワする感じ？';
+        text.contains('心配') ||
+        text.contains('どうしよう')) {
+      return '不安さんがかなり大きくなってる感じかな。\n頭の中で何度も考えちゃう？それとも胸がザワザワする？';
     }
 
+    // パニックっぽさ
+    if (text.contains('苦しい') ||
+        text.contains('息苦しい') ||
+        text.contains('ドキドキ') ||
+        text.contains('落ち着かない')) {
+      return '体もかなり緊張してる感じがあるね。\n今は考えるより、まず少し体を落ち着けるのもありだよ。';
+    }
+
+    // 孤独
     if (text.contains('孤独') ||
         text.contains('ひとり') ||
         text.contains('一人') ||
-        text.contains('寂しい')) {
-      return 'ひとりで抱えると気持ちって重くなるよね。\n今は「誰かにそばにいてほしい」感じ？';
+        text.contains('ひとりぼっち')) {
+      return 'ひとりで抱えてる感じが強いんだね。\n今は誰かにいてほしい？それともただ気持ちを吐き出したい？';
     }
 
+    // 眠れない
     if (text.contains('眠れない') ||
         text.contains('寝れない') ||
-        text.contains('夜')) {
-      return '夜は不安さんが大きく見えやすい時間だよね。\n頭が止まらない？それとも体が落ち着かない？';
+        text.contains('夜') ||
+        text.contains('寝つけない')) {
+      return '夜って気持ちが何倍にも大きく見えやすいよね。\n頭が止まらない感じ？それとも体が落ち着かない感じ？';
     }
 
+    // イライラ
     if (text.contains('イライラ') ||
         text.contains('ムカつく') ||
+        text.contains('腹立つ') ||
         text.contains('怒り')) {
-      return 'イライラの奥に、本当は悲しさや不安が隠れてることもあるよ。\n何が一番引っかかった？';
+      return 'イライラの奥に、本当は悲しさや傷つきが隠れてることもあるよ。\n何が一番引っかかった？';
     }
 
+    // 疲れ
+    if (text.contains('疲れた') ||
+        text.contains('しんどい') ||
+        text.contains('もう無理') ||
+        text.contains('限界')) {
+      return 'かなり頑張ってきた感じが伝わるよ。\n今必要なのは休むこと？話すこと？';
+    }
+
+    // 自己否定
     if (text.contains('自分が嫌') ||
         text.contains('自分嫌い') ||
         text.contains('ダメ') ||
-        text.contains('無理')) {
-      return '今、自分にすごく厳しくなってるかもしれないね。\n何がそう思わせてる？';
+        text.contains('価値がない')) {
+      return '今、自分にすごく厳しい言葉を向けてるかもしれないね。\n何がそう思わせてる？';
+    }
+
+    // 泣きたい
+    if (text.contains('泣きたい') ||
+        text.contains('涙') ||
+        text.contains('泣いた')) {
+      return '泣きたい時って、それだけ抱えてきたものがあるってことだよ。\n何が一番つらかった？';
     }
 
     return '話してくれてありがとう。\nもう少し詳しく聞かせてくれる？';
