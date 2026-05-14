@@ -592,14 +592,87 @@ class _ChatScreenState extends State<ChatScreen> {
       widget.messages.add(ChatMessage(text: text, isUser: true));
       widget.messages.add(
         ChatMessage(
-          text: '話してくれてありがとう。もう少し聞かせて。',
+          text: makeCocoonReply(text),
           isUser: false,
         ),
       );
       chatController.clear();
     });
-  } 
-    @override
+  }
+
+  String makeCocoonReply(String userText) {
+    final text = userText.toLowerCase();
+
+    if (text.contains('彼氏') ||
+        text.contains('彼女') ||
+        text.contains('恋愛') ||
+        text.contains('返信') ||
+        text.contains('既読')) {
+      return '恋愛の不安って、相手の反応ひとつで大きくなりやすいよね。\n一番近いのは「寂しい」？それとも「不安」？';
+    }
+
+    if (text.contains('友達') ||
+        text.contains('親友') ||
+        text.contains('人間関係')) {
+      return '友達とのことって、小さい違和感でも心に残るよね。\n悲しかった？それともモヤモヤ？';
+    }
+
+    if (text.contains('家族') ||
+        text.contains('母') ||
+        text.contains('父') ||
+        text.contains('親')) {
+      return '家族のことって距離が近いぶん、気持ちが揺れやすいよね。\n何が一番しんどい？';
+    }
+
+    if (text.contains('将来') ||
+        text.contains('未来') ||
+        text.contains('お金')) {
+      return '先が見えない時って、不安さんが大きくなりやすいよ。\n何が一番心配？';
+    }
+
+    if (text.contains('仕事') ||
+        text.contains('学校') ||
+        text.contains('会社') ||
+        text.contains('勉強')) {
+      return '頑張ってるからこそ、しんどくなる時あるよね。\n疲れ？プレッシャー？';
+    }
+
+    if (text.contains('不安') ||
+        text.contains('怖い') ||
+        text.contains('心配')) {
+      return '不安が大きいんだね。\n頭の中で何度も考えちゃう感じ？それとも胸がザワザワする感じ？';
+    }
+
+    if (text.contains('孤独') ||
+        text.contains('ひとり') ||
+        text.contains('一人') ||
+        text.contains('寂しい')) {
+      return 'ひとりで抱えると気持ちって重くなるよね。\n今は「誰かにそばにいてほしい」感じ？';
+    }
+
+    if (text.contains('眠れない') ||
+        text.contains('寝れない') ||
+        text.contains('夜')) {
+      return '夜は不安さんが大きく見えやすい時間だよね。\n頭が止まらない？それとも体が落ち着かない？';
+    }
+
+    if (text.contains('イライラ') ||
+        text.contains('ムカつく') ||
+        text.contains('怒り')) {
+      return 'イライラの奥に、本当は悲しさや不安が隠れてることもあるよ。\n何が一番引っかかった？';
+    }
+
+    if (text.contains('自分が嫌') ||
+        text.contains('自分嫌い') ||
+        text.contains('ダメ') ||
+        text.contains('無理')) {
+      return '今、自分にすごく厳しくなってるかもしれないね。\n何がそう思わせてる？';
+    }
+
+    return '話してくれてありがとう。\nもう少し詳しく聞かせてくれる？';
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFFF8F3FA),
