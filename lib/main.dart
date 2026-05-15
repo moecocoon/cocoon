@@ -221,6 +221,27 @@ Future<void> saveChatMessages() async {
     });
   }
 
+
+void goToCafe() {
+  setState(() {
+    selectedIndex = 6;
+  });
+}
+
+void goToNightShelter() {
+  setState(() {
+    selectedIndex = 7;
+  });
+}
+
+void goToLunaHouse() {
+  setState(() {
+    selectedIndex = 8;
+  });
+}
+
+
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -235,22 +256,37 @@ Future<void> saveChatMessages() async {
   onMessagesChanged: saveChatMessages,
 ),
 
-      KokoroHirobaScreen(
-        latestMood: latestMood,
-        onListen: goToChatWithEmotion,
-        onBreathing: goToBreathingGuide,
-      ),
+KokoroHirobaScreen(
+  latestMood: latestMood,
+  onListen: goToChatWithEmotion,
+  onBreathing: goToBreathingGuide,
+  onCafe: goToCafe,
+  onNightShelter: goToNightShelter,
+  onLunaHouse: goToLunaHouse,
+
+),
+
+
       MyPageScreen(
   petImagePath: petImagePath,
   onPetImageChanged: updatePetImage,
 ),
 
-      const BreathingGuideScreen(),
-    ];
+const BreathingGuideScreen(),
+const HitoyasumiCafeScreen(),
+const NightShelterScreen(),
+const LunaHouseScreen(),
+];
+
+
+
+
+
 
     return Scaffold(
       body: pages[selectedIndex],
-      bottomNavigationBar: selectedIndex == 5
+     bottomNavigationBar: selectedIndex >= 5
+
           ? null
           : BottomNavigationBar(
               currentIndex: selectedIndex,
@@ -1253,13 +1289,22 @@ class KokoroHirobaScreen extends StatefulWidget {
   final MoodRecord? latestMood;
   final Function(EmotionInfo) onListen;
   final VoidCallback onBreathing;
+  final VoidCallback onCafe;
+  final VoidCallback onNightShelter;
+  final VoidCallback onLunaHouse;
 
   const KokoroHirobaScreen({
     super.key,
     this.latestMood,
     required this.onListen,
     required this.onBreathing,
+    required this.onCafe,
+    required this.onNightShelter,
+    required this.onLunaHouse,
   });
+
+
+
 
   @override
   State<KokoroHirobaScreen> createState() => _KokoroHirobaScreenState();
@@ -1570,14 +1615,40 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
                   runSpacing: 14,
                   children: [
                     areaCard(
-                      '🌲',
-                      '深呼吸の森',
-                      '3分でリセット',
-                      onTap: widget.onBreathing,
-                    ),
-                    areaCard('☕', 'ひとやすみカフェ', 'やさしい言葉で一息'),
-                    areaCard('🌙', '夜の避難所', '眠れない夜の安心'),
-                    areaCard('🏠', 'ルナのおうち', 'ルナと過ごす時間'),
+  '🌲',
+  '深呼吸の森',
+  '3分でリセット',
+  onTap: widget.onBreathing,
+),
+
+                    areaCard(
+  '☕',
+  'ひとやすみカフェ',
+  'やさしい言葉で一息',
+  onTap: widget.onCafe,
+),
+
+areaCard(
+  '🌙',
+  '夜の避難所',
+  '眠れない夜の安心',
+  onTap: () {
+    setState(() {
+      guideMessage = '夜の避難所が押されたよ';
+    });
+    widget.onNightShelter();
+  },
+),
+
+areaCard(
+  '🏠',
+  'ルナのおうち',
+  'ルナと過ごす時間',
+  onTap: widget.onLunaHouse,
+),
+
+
+
                   ],
                 ),
               ],
@@ -1784,3 +1855,197 @@ class SimplePage extends StatelessWidget {
     );
   }
 }
+
+
+class HitoyasumiCafeScreen extends StatelessWidget {
+  const HitoyasumiCafeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF8F0),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            children: [
+              const Text(
+                'ひとやすみカフェ',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF9A6B4F),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'あたたかい飲みものみたいに、少しだけ心をゆるめよう。',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Color(0xFF6D5A4E),
+                ),
+              ),
+              const SizedBox(height: 36),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: const Text(
+                  '今日は、ちゃんと頑張った日。\n何もできなかったように見えても、ここまで来たことがもう十分だよ。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    height: 1.7,
+                    color: Color(0xFF5F4D43),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const CocoonApp(),
+                    ),
+                  );
+                },
+                child: const Text('心の広場に戻る'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+class NightShelterScreen extends StatelessWidget {
+  const NightShelterScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFEEF0FA),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            children: [
+              const Text(
+                '夜の避難所',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5D5F92),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                '眠れない夜も、ここでは急がなくて大丈夫。',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Color(0xFF55566F),
+                ),
+              ),
+              const SizedBox(height: 36),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: const Text(
+                  '夜は、考えごとが少し大きく見える時間。\n今は答えを出さなくていいよ。\nただ、体を横にして休ませてあげよう。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    height: 1.7,
+                    color: Color(0xFF4F5068),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const CocoonApp(),
+                    ),
+                  );
+                },
+                child: const Text('心の広場に戻る'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+class LunaHouseScreen extends StatelessWidget {
+  const LunaHouseScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F0FA),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            children: [
+              const Text(
+                'ルナのおうち',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF8E7BBE),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Image.asset(
+                'assets/images/luna.png',
+                height: 180,
+              ),
+              const SizedBox(height: 28),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: const Text(
+                  'ルナはここで待っているよ。\n何かを話しても、何も話さなくても大丈夫。\n今日は少しだけ、そばで休もう。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    height: 1.7,
+                    color: Color(0xFF5F566B),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const CocoonApp(),
+                    ),
+                  );
+                },
+                child: const Text('心の広場に戻る'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
