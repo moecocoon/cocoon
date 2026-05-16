@@ -338,6 +338,16 @@ class HomeScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final lunaHeight = (size.height * 0.42).clamp(250.0, 460.0);
 
+    final lunaMessages = [
+  'おかえり。\n今日も会えてうれしいよ。',
+  '無理しなくていいよ。\nここで少し休もう。',
+  '今日の気持ち、\nあとで聞かせてね。',
+  'ここに来てくれてありがとう。\nゆっくりで大丈夫。',
+  'がんばれない日も、\nここにいていいよ。',
+];
+
+final lunaMessage = lunaMessages[Random().nextInt(lunaMessages.length)];
+
     return Scaffold(
       body: Stack(
         children: [
@@ -361,6 +371,7 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     SizedBox(height: size.height * 0.04),
+
                     const Text(
                       'COCOON',
                       style: TextStyle(
@@ -370,30 +381,83 @@ class HomeScreen extends StatelessWidget {
                         color: Color(0xFF8E7BBE),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'おかえり。今日もここにいていいよ',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF6D6478),
+
+               
+
+                  const SizedBox(height: 18),
+
+
+                    SizedBox(
+                      height: lunaHeight,
+                      width: double.infinity,
+                      child: Column(
+                        children: [
+                          Stack(
+                            clipBehavior: Clip.none,
+                            alignment: Alignment.bottomCenter,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(26),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.12),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+  lunaMessage,
+  
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    height: 1.5,
+                                    color: Color(0xFF6D6478),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+
+                              Positioned(
+                                bottom: -10,
+                                child: Transform.rotate(
+                                  angle: 0.785398,
+                                  child: Container(
+                                    width: 20,
+                                    height: 20,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          Expanded(
+                            child: petImagePath != null
+                                ? Image.file(
+                                    File(petImagePath!),
+                                    fit: BoxFit.contain,
+                                  )
+                                : Image.asset(
+                                    'assets/images/luna.png',
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: size.height * 0.025),
-                    SizedBox(
-  height: lunaHeight,
-  width: double.infinity,
-  child: petImagePath != null
-      ? Image.file(
-          File(petImagePath!),
-          fit: BoxFit.contain,
-        )
-      : Image.asset(
-          'assets/images/luna.png',
-          fit: BoxFit.contain,
-        ),
-),
+
                     const SizedBox(height: 16),
+
                     if (latestMood != null)
                       Container(
                         width: double.infinity,
@@ -440,6 +504,7 @@ class HomeScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+
                     const Spacer(),
                   ],
                 ),
@@ -451,6 +516,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
 
 class MoodRecordScreen extends StatefulWidget {
   final Function(MoodRecord) onSave;
@@ -2046,6 +2112,28 @@ class LunaHouseScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class SpeechBubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.92)
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(size.width / 2, size.height)
+      ..lineTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }
 
