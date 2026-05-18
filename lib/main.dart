@@ -33,7 +33,31 @@ class MoodRecord {
     required this.emotionPercents,
     required this.memo,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'weather': weather,
+      'emotionPercents': emotionPercents,
+      'memo': memo,
+    };
+  }
+
+  factory MoodRecord.fromJson(Map<String, dynamic> json) {
+    return MoodRecord(
+      weather: json['weather'],
+      emotionPercents: Map<String, double>.from(
+        (json['emotionPercents'] as Map).map(
+          (key, value) => MapEntry(
+            key.toString(),
+            (value as num).toDouble(),
+          ),
+        ),
+      ),
+      memo: json['memo'] ?? '',
+    );
+  }
 }
+
 
 class ChatMessage {
   final String text;
@@ -130,7 +154,9 @@ void initState() {
   super.initState();
   loadPetImage();
   loadChatMessages();
+  loadMoodRecord();
 }
+
 
 
 Future<void> loadPetImage() async {
@@ -140,6 +166,27 @@ Future<void> loadPetImage() async {
     petImagePath = prefs.getString('petImagePath');
   });
 }
+
+Future<void> loadMoodRecord() async {
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getString('latestMood');
+
+  if (saved == null) return;
+
+  setState(() {
+    latestMood = MoodRecord.fromJson(jsonDecode(saved));
+  });
+}
+
+Future<void> saveMoodRecord(MoodRecord mood) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setString(
+    'latestMood',
+    jsonEncode(mood.toJson()),
+  );
+}
+
 
 
 Future<void> updatePetImage(String path) async {
@@ -190,10 +237,13 @@ Future<void> saveChatMessages() async {
   ];
 
   void saveMood(MoodRecord mood) {
-    setState(() {
-      latestMood = mood;
-    });
-  }
+  setState(() {
+    latestMood = mood;
+  });
+
+  saveMoodRecord(mood);
+}
+
 
   void goToChatWithEmotion(EmotionInfo emotion) {
     setState(() {
@@ -220,6 +270,12 @@ Future<void> saveChatMessages() async {
       selectedIndex = 5;
     });
   }
+
+void goToKokoroHiroba() {
+  setState(() {
+    selectedIndex = 3;
+  });
+}
 
 
 void goToCafe() {
@@ -272,10 +328,10 @@ KokoroHirobaScreen(
   onPetImageChanged: updatePetImage,
 ),
 
-const BreathingGuideScreen(),
-const HitoyasumiCafeScreen(),
-const NightShelterScreen(),
-const LunaHouseScreen(),
+BreathingGuideScreen(onBack: goToKokoroHiroba),
+HitoyasumiCafeScreen(onBack: goToKokoroHiroba),
+NightShelterScreen(onBack: goToKokoroHiroba),
+LunaHouseScreen(onBack: goToKokoroHiroba),
 ];
 
 
@@ -816,6 +872,18 @@ void sendMessage() {
     .where((message) => message.isUser)
     .map((message) => message.text)
     .toList();
+    if (text.contains('死にたい') ||
+    text.contains('消えたい') ||
+    text.contains('自殺') ||
+    text.contains('自傷') ||
+    text.contains('リスカ') ||
+    text.contains('傷つけたい') ||
+    text.contains('殺したい')) {
+  return '今、とても危ないくらい苦しい状態かもしれないね。\n'
+      'ここでひとりで抱えなくて大丈夫。\n'
+      '今すぐ近くの人、家族、先生、友達、または地域の緊急窓口に連絡してね。\n'
+      'もし今すぐ自分や誰かを傷つけそうなら、ためらわずに119や110に連絡してね。';
+}
 
 bool talkedAbout(List<String> keywords) {
   return recentUserTexts.any(
@@ -1727,7 +1795,12 @@ areaCard(
 }
 
 class BreathingGuideScreen extends StatefulWidget {
-  const BreathingGuideScreen({super.key});
+  final VoidCallback onBack;
+
+  const BreathingGuideScreen({
+    super.key,
+    required this.onBack,
+  });
 
   @override
   State<BreathingGuideScreen> createState() => _BreathingGuideScreenState();
@@ -1782,13 +1855,7 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
     super.dispose();
   }
 
-  void goBackToCocoon() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const CocoonApp(),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1832,9 +1899,11 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: goBackToCocoon,
-                child: const Text('心の広場に戻る'),
-              ),
+  onPressed: widget.onBack,
+  child: const Text('心の広場に戻る'),
+),
+
+
             ],
           ),
         ),
@@ -1924,7 +1993,12 @@ class SimplePage extends StatelessWidget {
 
 
 class HitoyasumiCafeScreen extends StatelessWidget {
-  const HitoyasumiCafeScreen({super.key});
+  final VoidCallback onBack;
+
+  const HitoyasumiCafeScreen({
+    super.key,
+    required this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1972,13 +2046,7 @@ class HitoyasumiCafeScreen extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const CocoonApp(),
-                    ),
-                  );
-                },
+                onPressed: onBack,
                 child: const Text('心の広場に戻る'),
               ),
             ],
@@ -1988,8 +2056,14 @@ class HitoyasumiCafeScreen extends StatelessWidget {
     );
   }
 }
+
 class NightShelterScreen extends StatelessWidget {
-  const NightShelterScreen({super.key});
+  final VoidCallback onBack;
+
+  const NightShelterScreen({
+    super.key,
+    required this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2037,15 +2111,10 @@ class NightShelterScreen extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const CocoonApp(),
-                    ),
-                  );
-                },
-                child: const Text('心の広場に戻る'),
-              ),
+  onPressed: onBack,
+  child: const Text('心の広場に戻る'),
+),
+
             ],
           ),
         ),
@@ -2054,7 +2123,13 @@ class NightShelterScreen extends StatelessWidget {
   }
 }
 class LunaHouseScreen extends StatelessWidget {
-  const LunaHouseScreen({super.key});
+  final VoidCallback onBack;
+
+  const LunaHouseScreen({
+    super.key,
+    required this.onBack,
+  });
+
 
   @override
   Widget build(BuildContext context) {
@@ -2098,15 +2173,10 @@ class LunaHouseScreen extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const CocoonApp(),
-                    ),
-                  );
-                },
-                child: const Text('心の広場に戻る'),
-              ),
+  onPressed: onBack,
+  child: const Text('心の広場に戻る'),
+),
+
             ],
           ),
         ),
