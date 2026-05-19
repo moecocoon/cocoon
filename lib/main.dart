@@ -1338,6 +1338,18 @@ if (text.contains('誰にも言えない') ||
                 ],
               ),
             ),
+            const Padding(
+  padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
+  child: Text(
+    'COCOONは医療・専門相談の代わりではありません。危険を感じる時は、すぐに身近な人や緊急窓口に連絡してください。',
+    style: TextStyle(
+      fontSize: 12,
+      color: Color(0xFF8A7D96),
+    ),
+    textAlign: TextAlign.center,
+  ),
+),
+
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(18),
