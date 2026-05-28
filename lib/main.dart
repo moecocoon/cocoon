@@ -146,8 +146,9 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int selectedIndex = 0;
+int selectedIndex = 0;
 MoodRecord? latestMood;
+MoodRecord? previousMood;
 String? petImagePath;
 @override
 void initState() {
@@ -402,7 +403,7 @@ LunaHouseScreen(onBack: goToKokoroHiroba),
     );
   }
 }
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final MoodRecord? latestMood;
   final String? petImagePath;
   final VoidCallback onTalkAboutMood;
@@ -414,7 +415,41 @@ class HomeScreen extends StatelessWidget {
   required this.onTalkAboutMood,
 });
 
+@override
+State<HomeScreen> createState() => _HomeScreenState();
+}
 
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
+
+late AnimationController _controller;
+late Animation<double> _floatingAnimation;
+
+@override
+void initState() {
+  super.initState();
+
+  _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  )..repeat(reverse: true);
+
+  _floatingAnimation = Tween<double>(
+    begin: -6,
+    end: 6,
+  ).animate(
+    CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    ),
+  );
+}
+
+@override
+void dispose() {
+  _controller.dispose();
+  super.dispose();
+}
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -455,8 +490,9 @@ if (hour >= 5 && hour < 11) {
 
 String lunaMessage = '';
 
-if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
-  final strongestEmotion = latestMood!.emotionPercents.entries
+if (widget.latestMood != null &&
+    widget.latestMood!.emotionPercents.isNotEmpty) {
+  final strongestEmotion = widget.latestMood!.emotionPercents.entries
       .reduce((a, b) => a.value >= b.value ? a : b);
 
   if (strongestEmotion.key.contains('不安')) {
@@ -573,7 +609,26 @@ if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
                           const SizedBox(height: 14),
 
                           Expanded(
-                            child: petImagePath != null
+  child: widget.petImagePath != null
+      ? Image.file(
+          File(widget.petImagePath!),
+          fit: BoxFit.contain,
+        )
+      : AnimatedBuilder(
+          animation: _floatingAnimation,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, _floatingAnimation.value),
+              child: child,
+            );
+          },
+          child: Image.asset(
+            'assets/images/luna.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+),
+
                                 ? Image.file(
                                     File(petImagePath!),
                                     fit: BoxFit.contain,
@@ -589,7 +644,7 @@ if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
 
                     const SizedBox(height: 16),
 
-                    if (latestMood != null)
+                    if (widget.latestMood != null)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
@@ -608,11 +663,11 @@ if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              latestMood!.weather,
+                             widget.latestMood!.weather,
                               style: const TextStyle(fontSize: 34),
                             ),
                             const SizedBox(height: 8),
-                            ...latestMood!.emotionPercents.entries.map(
+                            ...widget.latestMood!.emotionPercents.entries.map(
                               (entry) => Text(
                                 '${entry.key}：${entry.value.round()}%',
                                 style: const TextStyle(
@@ -621,10 +676,11 @@ if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
                                 ),
                               ),
                             ),
-                            if (latestMood!.memo.isNotEmpty) ...[
+                            if (widget.latestMood!.memo.isNotEmpty)
+                             ...[
                               const SizedBox(height: 10),
                               Text(
-                                latestMood!.memo,
+                                widget.latestMood!.memo,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 14,
@@ -634,7 +690,7 @@ if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
                               const SizedBox(height: 14),
 
 ElevatedButton(
-  onPressed: onTalkAboutMood,
+  onPressed: widget.onTalkAboutMood,
   style: ElevatedButton.styleFrom(
     backgroundColor: const Color(0xFF8E7BBE),
     foregroundColor: Colors.white,
@@ -2012,11 +2068,20 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
                 ),
 
                 Center(
-                  child: Image.asset(
-                    'assets/images/luna.png',
-                    height: 190,
-                  ),
-                ),
+  child: AnimatedBuilder(
+    animation: _floatingAnimation,
+    builder: (context, child) {
+      return Transform.translate(
+        offset: Offset(0, _floatingAnimation.value),
+        child: child,
+      );
+    },
+    child: Image.asset(
+      'assets/images/luna.png',
+      height: 190,
+    ),
+  ),
+),
 
                 const SizedBox(height: 10),
 
