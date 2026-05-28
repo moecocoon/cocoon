@@ -2067,21 +2067,13 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
                   ),
                 ),
 
-                Center(
-  child: AnimatedBuilder(
-    animation: _floatingAnimation,
-    builder: (context, child) {
-      return Transform.translate(
-        offset: Offset(0, _floatingAnimation.value),
-        child: child,
-      );
-    },
-    child: Image.asset(
-      'assets/images/luna.png',
-      height: 190,
-    ),
+           Center(
+  child: Image.asset(
+    'assets/images/luna.png',
+    height: 190,
   ),
 ),
+
 
                 const SizedBox(height: 10),
 
