@@ -236,13 +236,15 @@ Future<void> saveChatMessages() async {
     ),
   ];
 
-  void saveMood(MoodRecord mood) {
+ void saveMood(MoodRecord mood) {
   setState(() {
+    previousMood = latestMood;
     latestMood = mood;
   });
 
   saveMoodRecord(mood);
 }
+
 
 
   void goToChatWithEmotion(EmotionInfo emotion) {
@@ -301,16 +303,37 @@ void goToLunaHouse() {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(
+   HomeScreen(
   latestMood: latestMood,
   petImagePath: petImagePath,
+  onTalkAboutMood: () {
+    setState(() {
+      selectedIndex = 2;
+      chatMessages.add(
+        ChatMessage(
+          text: '今日の気分記録について話したい',
+          isUser: true,
+        ),
+      );
+      chatMessages.add(
+        ChatMessage(
+          text: '今日の記録をもとに、一緒に気持ちを整理していこう。',
+          isUser: false,
+        ),
+      );
+    });
+    saveChatMessages();
+  },
 ),
 
+
       MoodRecordScreen(onSave: saveMood),
-     ChatScreen(
+ ChatScreen(
   messages: chatMessages,
   onMessagesChanged: saveChatMessages,
+  latestMood: latestMood,
 ),
+
 
 KokoroHirobaScreen(
   latestMood: latestMood,
@@ -382,12 +405,15 @@ LunaHouseScreen(onBack: goToKokoroHiroba),
 class HomeScreen extends StatelessWidget {
   final MoodRecord? latestMood;
   final String? petImagePath;
+  final VoidCallback onTalkAboutMood;
 
-  const HomeScreen({
-    super.key,
-    this.latestMood,
-    this.petImagePath,
-  });
+ const HomeScreen({
+  super.key,
+  this.latestMood,
+  this.petImagePath,
+  required this.onTalkAboutMood,
+});
+
 
   @override
   Widget build(BuildContext context) {
@@ -401,8 +427,57 @@ class HomeScreen extends StatelessWidget {
   'ここに来てくれてありがとう。\nゆっくりで大丈夫。',
   'がんばれない日も、\nここにいていいよ。',
 ];
+final hour = DateTime.now().hour;
+String timeMessage;
 
-final lunaMessage = lunaMessages[Random().nextInt(lunaMessages.length)];
+Color overlayColor;
+
+if (hour >= 5 && hour < 11) {
+  overlayColor = Colors.orange.withOpacity(0.12);
+} else if (hour >= 11 && hour < 17) {
+  overlayColor = Colors.white.withOpacity(0.05);
+} else if (hour >= 17 && hour < 22) {
+  overlayColor = Colors.deepPurple.withOpacity(0.18);
+} else {
+  overlayColor = Colors.indigo.withOpacity(0.30);
+}
+
+if (hour >= 5 && hour < 11) {
+  timeMessage = 'おはよう。\n';
+} else if (hour >= 11 && hour < 17) {
+  timeMessage = '今日も来てくれてありがとう。\n';
+} else if (hour >= 17 && hour < 22) {
+  timeMessage = '今日も一日おつかれさま。\n';
+} else {
+  timeMessage = 'まだ起きてたんだね。\n';
+}
+
+
+String lunaMessage = '';
+
+if (latestMood != null && latestMood!.emotionPercents.isNotEmpty) {
+  final strongestEmotion = latestMood!.emotionPercents.entries
+      .reduce((a, b) => a.value >= b.value ? a : b);
+
+  if (strongestEmotion.key.contains('不安')) {
+    lunaMessage = '${timeMessage}今日は不安さんが少し大きいみたい。\nここで一緒にゆっくりしよう。';
+  } else if (strongestEmotion.key.contains('疲れ')) {
+    lunaMessage = '${timeMessage}今日はおつかれさんが近くにいるね。\n無理しない時間にしよう。';
+  } else if (strongestEmotion.key.contains('さみしい')) {
+    lunaMessage = '${timeMessage}今日はさみしいさんが顔を出してるね。\nルナがそばにいるよ。';
+  } else if (strongestEmotion.key.contains('イライラ')) {
+    lunaMessage = '${timeMessage}今日はイライラさんが強めかも。\nここで少しほどいていこう。';
+  } else if (strongestEmotion.key.contains('安心')) {
+    lunaMessage = '${timeMessage}今日は安心さんもいるね。\nそのやわらかい気持ち、大事にしよう。';
+  } else {
+    lunaMessage = '${timeMessage}今日の気持ち、ちゃんと届いてるよ。\n少し一緒に整理しよう。';
+  }
+} else {
+  lunaMessage =
+      '$timeMessage${lunaMessages[Random().nextInt(lunaMessages.length)]}';
+}
+
+
 
     return Scaffold(
       body: Stack(
@@ -415,7 +490,7 @@ final lunaMessage = lunaMessages[Random().nextInt(lunaMessages.length)];
           ),
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.15),
+              color:overlayColor,
             ),
           ),
           SafeArea(
@@ -556,6 +631,17 @@ final lunaMessage = lunaMessages[Random().nextInt(lunaMessages.length)];
                                   color: Color(0xFF6D6478),
                                 ),
                               ),
+                              const SizedBox(height: 14),
+
+ElevatedButton(
+  onPressed: onTalkAboutMood,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF8E7BBE),
+    foregroundColor: Colors.white,
+  ),
+  child: const Text('この気持ちをCOCOONに話す'),
+),
+
                             ],
                           ],
                         ),
@@ -826,12 +912,16 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
 class ChatScreen extends StatefulWidget {
   final List<ChatMessage> messages;
   final VoidCallback onMessagesChanged;
+  final MoodRecord? latestMood;
 
-  const ChatScreen({
-    super.key,
-    required this.messages,
-    required this.onMessagesChanged,
-  });
+
+const ChatScreen({
+  super.key,
+  required this.messages,
+  required this.onMessagesChanged,
+  this.latestMood,
+});
+
 
 
   @override
@@ -839,12 +929,35 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  String? currentTopic;
+  @override
+void initState() {
+  super.initState();
+  loadCurrentTopic();
+}
+
+Future<void> loadCurrentTopic() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    currentTopic = prefs.getString('currentTopic');
+  });
+}
+
+Future<void> saveCurrentTopic(String topic) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('currentTopic', topic);
+}
   final TextEditingController chatController = TextEditingController();
   final Random random = Random();
 
   String pick(List<String> replies) {
     return replies[random.nextInt(replies.length)];
   }
+
+  void sendQuickTopic(String topic) {
+  chatController.text = topic;
+  sendMessage();
+}
 
 void sendMessage() {
   final text = chatController.text.trim();
@@ -868,10 +981,52 @@ void sendMessage() {
 
  String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
   final text = userText.toLowerCase();
+  if (text.contains('彼氏') ||
+    text.contains('恋愛') ||
+    text.contains('返信') ||
+    text.contains('既読')) {
+ currentTopic = '恋愛';
+saveCurrentTopic('恋愛');
+
+}
+
+if (text.contains('家族') ||
+    text.contains('親')) {
+  currentTopic = '家族';
+saveCurrentTopic('家族');
+}
+
+if (text.contains('不安') ||
+    text.contains('怖い')) {
+  currentTopic = '不安';
+saveCurrentTopic('不安');
+}
+
+if (text.contains('眠れない') ||
+    text.contains('寝れない')) {
+  currentTopic = '睡眠';
+saveCurrentTopic('睡眠');
+}
   final recentUserTexts = pastMessages
     .where((message) => message.isUser)
     .map((message) => message.text)
     .toList();
+    final mood = widget.latestMood;
+
+if (mood != null &&
+    (text.contains('今日') ||
+        text.contains('今の気持ち') ||
+        text.contains('気分') ||
+        text.contains('話したい'))) {
+  final strongestEmotion = mood.emotionPercents.entries
+      .reduce((a, b) => a.value >= b.value ? a : b);
+
+  return '今日の記録を見ると、${mood.weather}で、'
+      '${strongestEmotion.key}が${strongestEmotion.value.round()}%くらいあるんだね。\n'
+      'その気持ちが少し強めに出ている日なのかもしれない。\n'
+      '今日は何が一番その気持ちにつながっていそう？';
+}
+
     if (text.contains('死にたい') ||
     text.contains('消えたい') ||
     text.contains('自殺') ||
@@ -885,6 +1040,141 @@ void sendMessage() {
       'もし今すぐ自分や誰かを傷つけそうなら、ためらわずに119や110に連絡してね。';
 }
 
+if (currentTopic != null &&
+    (text.contains('話したい') ||
+        text.contains('相談したい') ||
+        text.contains('聞いて'))) {
+  return '前回は$currentTopicのことで話してたね。\n'
+      '今日はその続き？それとも別のこと？';
+}
+
+if (currentTopic == '恋愛' &&
+    (text.contains('つらい') ||
+        text.contains('しんどい') ||
+        text.contains('不安'))) {
+  return pick([
+    '恋愛のことも重なって、気持ちがかなり揺れてるのかもしれないね。',
+    '返信や相手の反応のことが、まだ心に残ってそうだね。',
+  ]);
+}
+
+if (currentTopic == '家族' &&
+    (text.contains('疲れた') ||
+        text.contains('もう嫌'))) {
+  return pick([
+    '家族のことで気を張り続けて、かなり疲れてるのかもしれないね。',
+    '近い存在だからこそ、心の消耗も大きくなりやすいよね。',
+  ]);
+}
+// 相談タイプボタン：恋愛
+if (text.contains('恋愛のことで話したい')) {
+  return pick([
+    '恋愛のことだね。\n大切な相手だからこそ、不安や寂しさも大きくなりやすいよね。\n今いちばん近いのは「返信」「会えない」「冷たい」「喧嘩」のどれ？',
+    '恋愛の話、ここでゆっくり聞くよ。\n今は不安が強い？寂しさが強い？それともモヤモヤ？',
+  ]);
+}
+
+// 相談タイプボタン：不安
+if (text.contains('不安な気持ちを整理したい')) {
+  return pick([
+    '不安を整理したいんだね。\nまずは「今起きていること」と「想像していること」を分けてみよう。\n今いちばん怖いのは何？',
+    '不安って、頭の中で大きくなりやすいよね。\n一緒に小さく分けていこう。\n体もザワザワしてる？それとも考えが止まらない感じ？',
+  ]);
+}
+
+// 相談タイプボタン：眠れない
+if (text.contains('眠れない夜でつらい')) {
+  return pick([
+    '眠れない夜って、考えごとが何倍にも大きく見えるよね。\n今は頭がぐるぐるしてる？それとも体が落ち着かない？',
+    '寝ようとしてるのに眠れないの、しんどいよね。\n今は無理に寝ようとしなくて大丈夫。\nまず何が浮かんでくる？',
+  ]);
+}
+
+// 相談タイプボタン：家族
+if (text.contains('家族のことで悩んでいる')) {
+  return pick([
+    '家族のことだね。\n近い存在だからこそ、簡単に割り切れなくて苦しくなるよね。\n今つらいのは「理解されない」「責められる」「距離感」のどれに近い？',
+    '家族の悩みって、心の深いところに残りやすいよね。\n今日はどんなことが一番引っかかってる？',
+  ]);
+}
+
+// 相談タイプボタン：ただ話したい
+if (text.contains('ただ話を聞いてほしい')) {
+  return pick([
+    'うん、ここでは無理に整理しなくて大丈夫。\n話せるところからでいいよ。\n今、心の中に一番ある言葉は何？',
+    'ただ聞いてほしい時ってあるよね。\nアドバイスより、まず受け止めてほしい感じかな。\n何があった？',
+  ]);
+}
+
+String? previousUserText() {
+  final users = pastMessages.where((message) => message.isUser).toList();
+  if (users.length < 2) return null;
+  return users[users.length - 2].text;
+}
+
+final previousText = previousUserText();
+
+// 会話の続き：冷たいと言われた後
+if (previousText != null &&
+    (previousText.contains('冷たい') ||
+        previousText.contains('そっけない')) &&
+    (text.contains('昨日') ||
+        text.contains('今日') ||
+        text.contains('最近') ||
+        text.contains('急に'))) {
+  return pick([
+    '急に態度が変わったように見えると、不安になるよね。\n前と比べて一番変わったと感じるのは、返信の速さ？言葉の感じ？会う頻度？',
+    '最近そう感じるんだね。\nそれは「嫌われたかも」って考えが出てきやすい状況だと思う。',
+  ]);
+}
+
+// 会話の続き：眠れない理由
+if (previousText != null &&
+    (previousText.contains('眠れない') ||
+        previousText.contains('寝れない')) &&
+    (text.contains('考え') ||
+        text.contains('不安') ||
+        text.contains('スマホ') ||
+        text.contains('彼氏') ||
+        text.contains('家族'))) {
+  return pick([
+    'それが頭に残って眠れないんだね。\n今は解決しようとするより、まず心を少し落ち着かせる方がよさそう。',
+    '眠れない理由が少し見えてきたね。\nその中で一番大きいのは、不安？寂しさ？モヤモヤ？',
+  ]);
+}
+
+// 会話の続き：家族の悩み
+if (previousText != null &&
+    (previousText.contains('家族') ||
+        previousText.contains('親') ||
+        previousText.contains('母') ||
+        previousText.contains('父')) &&
+    (text.contains('責め') ||
+        text.contains('わかってくれない') ||
+        text.contains('しんどい') ||
+        text.contains('疲れた'))) {
+  return pick([
+    '家族にわかってもらえない感じって、かなり心にくるよね。\n近い相手だからこそ、言葉が深く刺さることもあると思う。',
+    '責められているように感じると、自分の居場所まで不安になるよね。\n今ほしいのは、理解？距離？安心できる言葉？',
+  ]);
+}
+
+// 会話の続き：返信待ちの時間
+if (previousText != null &&
+    (previousText.contains('既読') ||
+        previousText.contains('未読') ||
+        previousText.contains('返信') ||
+        previousText.contains('返事')) &&
+    (text.contains('1日') ||
+        text.contains('一日') ||
+        text.contains('半日') ||
+        text.contains('数時間') ||
+        text.contains('昨日から'))) {
+  return pick([
+    'それは長く感じるよね。\n待ってる間って、スマホを見るたびに心が揺れやすいと思う。\n今一番怖い想像は何？',
+    'そのくらい返ってこないと、不安さんが大きくなりやすいよね。\n相手に送りたい言葉はある？それとも今は待つ方が近い？',
+  ]);
+}
 bool talkedAbout(List<String> keywords) {
   return recentUserTexts.any(
     (pastText) => keywords.any((keyword) => pastText.contains(keyword)),
@@ -1303,6 +1593,9 @@ if (text.contains('誰にも言えない') ||
     ]);
   }
 
+  // 相談タイプボタン：恋愛
+
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1349,7 +1642,35 @@ if (text.contains('誰にも言えない') ||
     textAlign: TextAlign.center,
   ),
 ),
-
+Padding(
+  padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+  child: Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      ActionChip(
+        label: const Text('💔 恋愛'),
+        onPressed: () => sendQuickTopic('恋愛のことで話したい'),
+      ),
+      ActionChip(
+        label: const Text('😰 不安'),
+        onPressed: () => sendQuickTopic('不安な気持ちを整理したい'),
+      ),
+      ActionChip(
+        label: const Text('🌙 眠れない'),
+        onPressed: () => sendQuickTopic('眠れない夜でつらい'),
+      ),
+      ActionChip(
+        label: const Text('🏠 家族'),
+        onPressed: () => sendQuickTopic('家族のことで悩んでいる'),
+      ),
+      ActionChip(
+        label: const Text('🫂 ただ話したい'),
+        onPressed: () => sendQuickTopic('ただ話を聞いてほしい'),
+      ),
+    ],
+  ),
+),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(18),
@@ -1433,6 +1754,7 @@ class ChatBubble extends StatelessWidget {
 
 class KokoroHirobaScreen extends StatefulWidget {
   final MoodRecord? latestMood;
+  MoodRecord? previousMood;
   final Function(EmotionInfo) onListen;
   final VoidCallback onBreathing;
   final VoidCallback onCafe;
