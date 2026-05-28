@@ -628,19 +628,10 @@ if (widget.latestMood != null &&
           ),
         ),
 ),
-
-                                ? Image.file(
-                                    File(petImagePath!),
-                                    fit: BoxFit.contain,
-                                  )
-                                : Image.asset(
-                                    'assets/images/luna.png',
-                                    fit: BoxFit.contain,
-                                  ),
-                          ),
                         ],
                       ),
                     ),
+
 
                     const SizedBox(height: 16),
 
@@ -1810,7 +1801,6 @@ class ChatBubble extends StatelessWidget {
 
 class KokoroHirobaScreen extends StatefulWidget {
   final MoodRecord? latestMood;
-  MoodRecord? previousMood;
   final Function(EmotionInfo) onListen;
   final VoidCallback onBreathing;
   final VoidCallback onCafe;
