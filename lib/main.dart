@@ -150,14 +150,16 @@ int selectedIndex = 0;
 MoodRecord? latestMood;
 MoodRecord? previousMood;
 String? petImagePath;
+int lunaBond = 0;
+
 @override
 void initState() {
   super.initState();
   loadPetImage();
   loadChatMessages();
   loadMoodRecord();
+  loadLunaBond();
 }
-
 
 
 Future<void> loadPetImage() async {
@@ -186,6 +188,18 @@ Future<void> saveMoodRecord(MoodRecord mood) async {
     'latestMood',
     jsonEncode(mood.toJson()),
   );
+}
+Future<void> saveLunaBond() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setInt('lunaBond', lunaBond);
+}
+
+Future<void> loadLunaBond() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    lunaBond = prefs.getInt('lunaBond') ?? 0;
+  });
 }
 
 
@@ -237,13 +251,15 @@ Future<void> saveChatMessages() async {
     ),
   ];
 
- void saveMood(MoodRecord mood) {
+Future<void> saveMood(MoodRecord mood) async {
   setState(() {
     previousMood = latestMood;
     latestMood = mood;
+    lunaBond++;
   });
 
-  saveMoodRecord(mood);
+  await saveMoodRecord(mood);
+  await saveLunaBond();
 }
 
 
@@ -307,6 +323,7 @@ void goToLunaHouse() {
    HomeScreen(
   latestMood: latestMood,
   petImagePath: petImagePath,
+  lunaBond: lunaBond,
   onTalkAboutMood: () {
     setState(() {
       selectedIndex = 2;
@@ -407,11 +424,13 @@ class HomeScreen extends StatefulWidget {
   final MoodRecord? latestMood;
   final String? petImagePath;
   final VoidCallback onTalkAboutMood;
+  final int lunaBond;
 
  const HomeScreen({
   super.key,
   this.latestMood,
   this.petImagePath,
+  required this.lunaBond,
   required this.onTalkAboutMood,
 });
 
@@ -462,6 +481,14 @@ void dispose() {
   'ここに来てくれてありがとう。\nゆっくりで大丈夫。',
   'がんばれない日も、\nここにいていいよ。',
 ];
+
+final specialLunaMessages = [
+  'ルナ、少しずつあなたのことがわかってきたよ。',
+  'ここに来てくれるたびに、ルナとの絆が深まってるね。',
+  '今日も会えてうれしい。\nルナはちゃんと待ってたよ。',
+  '前より少し、ここが安心できる場所になっていたらうれしいな。',
+];
+
 final hour = DateTime.now().hour;
 String timeMessage;
 
@@ -509,11 +536,15 @@ if (widget.latestMood != null &&
     lunaMessage = '${timeMessage}今日の気持ち、ちゃんと届いてるよ。\n少し一緒に整理しよう。';
   }
 } else {
-  lunaMessage =
-      '$timeMessage${lunaMessages[Random().nextInt(lunaMessages.length)]}';
+ final allMessages = widget.lunaBond >= 10
+    ? [...lunaMessages, ...specialLunaMessages]
+    : lunaMessages;
+
+lunaMessage =
+    '$timeMessage${allMessages[Random().nextInt(allMessages.length)]}';
+
+
 }
-
-
 
     return Scaffold(
       body: Stack(
@@ -535,8 +566,9 @@ if (widget.latestMood != null &&
                 padding: EdgeInsets.symmetric(
                   horizontal: size.width < 500 ? 24 : size.width * 0.18,
                 ),
-                child: Column(
-                  children: [
+                child: SingleChildScrollView(
+  child: Column(
+    children: [
                     SizedBox(height: size.height * 0.04),
 
                     const Text(
@@ -549,7 +581,23 @@ if (widget.latestMood != null &&
                       ),
                     ),
 
-               
+               Container(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 16,
+    vertical: 8,
+  ),
+  decoration: BoxDecoration(
+    color: Colors.white.withOpacity(0.85),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Text(
+    '🐶 ルナとの絆 ${widget.lunaBond}',
+    style: const TextStyle(
+      fontWeight: FontWeight.bold,
+      color: Color(0xFF8E7BBE),
+    ),
+  ),
+),
 
                   const SizedBox(height: 18),
 
@@ -622,10 +670,30 @@ if (widget.latestMood != null &&
               child: child,
             );
           },
-          child: Image.asset(
-            'assets/images/luna.png',
-            fit: BoxFit.contain,
-          ),
+          child: GestureDetector(
+  onTap: () {
+    final messages = [
+      'おかえり🌙',
+      '今日も来てくれてありがとう',
+      'ちゃんとご飯食べた？',
+      '無理しすぎてない？',
+      '少し休憩しよう🐶',
+      'ルナはここにいるよ',
+    ];
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          messages[Random().nextInt(messages.length)],
+        ),
+      ),
+    );
+  },
+  child: Image.asset(
+    'assets/images/luna.png',
+    fit: BoxFit.contain,
+  ),
+),
         ),
 ),
                         ],
@@ -694,10 +762,11 @@ ElevatedButton(
                         ),
                       ),
 
-                    const Spacer(),
+                    
                   ],
                 ),
               ),
+             ),
             ),
           ),
         ],
@@ -955,6 +1024,7 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
     );
   }
 }
+
 
 class ChatScreen extends StatefulWidget {
   final List<ChatMessage> messages;
