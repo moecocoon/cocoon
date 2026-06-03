@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:table_calendar/table_calendar.dart';
+
 
 void main() {
   runApp(const CocoonApp());
@@ -27,11 +29,13 @@ class MoodRecord {
   final String weather;
   final Map<String, double> emotionPercents;
   final String memo;
+  final DateTime createdAt;
 
   MoodRecord({
     required this.weather,
     required this.emotionPercents,
     required this.memo,
+    required this.createdAt,
   });
 
   Map<String, dynamic> toJson() {
@@ -39,6 +43,7 @@ class MoodRecord {
       'weather': weather,
       'emotionPercents': emotionPercents,
       'memo': memo,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
@@ -54,6 +59,7 @@ class MoodRecord {
         ),
       ),
       memo: json['memo'] ?? '',
+     createdAt: DateTime.parse(json['createdAt']), 
     );
   }
 }
@@ -149,6 +155,7 @@ class _MainScreenState extends State<MainScreen> {
 int selectedIndex = 0;
 MoodRecord? latestMood;
 MoodRecord? previousMood;
+List<MoodRecord> moodHistory = [];
 String? petImagePath;
 int lunaBond = 0;
 
@@ -158,6 +165,7 @@ void initState() {
   loadPetImage();
   loadChatMessages();
   loadMoodRecord();
+  loadMoodHistory();
   loadLunaBond();
 }
 
@@ -188,6 +196,31 @@ Future<void> saveMoodRecord(MoodRecord mood) async {
     'latestMood',
     jsonEncode(mood.toJson()),
   );
+}
+
+Future<void> saveMoodHistory() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final encoded = jsonEncode(
+    moodHistory.map((mood) => mood.toJson()).toList(),
+  );
+
+  await prefs.setString('moodHistory', encoded);
+}
+
+Future<void> loadMoodHistory() async {
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getString('moodHistory');
+
+  if (saved == null) return;
+
+  final List decoded = jsonDecode(saved);
+
+  setState(() {
+    moodHistory = decoded
+        .map((item) => MoodRecord.fromJson(item))
+        .toList();
+  });
 }
 Future<void> saveLunaBond() async {
   final prefs = await SharedPreferences.getInstance();
@@ -255,10 +288,12 @@ Future<void> saveMood(MoodRecord mood) async {
   setState(() {
     previousMood = latestMood;
     latestMood = mood;
+    moodHistory.add(mood);
     lunaBond++;
   });
 
   await saveMoodRecord(mood);
+  await saveMoodHistory();
   await saveLunaBond();
 }
 
@@ -364,9 +399,10 @@ KokoroHirobaScreen(
 ),
 
 
-      MyPageScreen(
+MyPageScreen(
   petImagePath: petImagePath,
   onPetImageChanged: updatePetImage,
+  moodHistory: moodHistory,
 ),
 
 BreathingGuideScreen(onBack: goToKokoroHiroba),
@@ -489,6 +525,20 @@ final specialLunaMessages = [
   '前より少し、ここが安心できる場所になっていたらうれしいな。',
 ];
 
+final bestFriendMessages = [
+  '会えるの楽しみにしてたよ。',
+  '今日も一緒にいようね。',
+  'ルナはあなたのこと、ちゃんと覚えてるよ。',
+  'しんどい日も嬉しい日も、一緒に過ごしてきたね。',
+];
+
+final familyMessages = [
+  'おかえり、待ってたよ。',
+  'どんな日でもルナは味方だよ。',
+  'ここはあなたの居場所だからね。',
+  'ルナにとって大切な家族だよ。',
+];
+
 final hour = DateTime.now().hour;
 String timeMessage;
 
@@ -514,7 +564,29 @@ if (hour >= 5 && hour < 11) {
   timeMessage = 'まだ起きてたんだね。\n';
 }
 
+String bondLevel;
 
+Color speechBubbleColor;
+
+if (widget.lunaBond >= 100) {
+  speechBubbleColor = const Color(0xFFFFF4D6); // 金色っぽい
+} else if (widget.lunaBond >= 30) {
+  speechBubbleColor = const Color(0xFFFFE6F0); // ピンク
+} else if (widget.lunaBond >= 10) {
+  speechBubbleColor = const Color(0xFFF0E8FF); // 薄紫
+} else {
+  speechBubbleColor = Colors.white;
+}
+
+if (widget.lunaBond >= 100) {
+  bondLevel = 'かぞく';
+} else if (widget.lunaBond >= 30) {
+  bondLevel = 'しんゆう';
+} else if (widget.lunaBond >= 10) {
+  bondLevel = 'なかよし';
+} else {
+  bondLevel = 'おともだち';
+}
 String lunaMessage = '';
 
 if (widget.latestMood != null &&
@@ -536,9 +608,17 @@ if (widget.latestMood != null &&
     lunaMessage = '${timeMessage}今日の気持ち、ちゃんと届いてるよ。\n少し一緒に整理しよう。';
   }
 } else {
- final allMessages = widget.lunaBond >= 10
-    ? [...lunaMessages, ...specialLunaMessages]
-    : lunaMessages;
+List<String> allMessages;
+
+if (widget.lunaBond >= 100) {
+  allMessages = [...lunaMessages, ...familyMessages];
+} else if (widget.lunaBond >= 30) {
+  allMessages = [...lunaMessages, ...bestFriendMessages];
+} else if (widget.lunaBond >= 10) {
+  allMessages = [...lunaMessages, ...specialLunaMessages];
+} else {
+  allMessages = lunaMessages;
+}
 
 lunaMessage =
     '$timeMessage${allMessages[Random().nextInt(allMessages.length)]}';
@@ -591,7 +671,7 @@ lunaMessage =
     borderRadius: BorderRadius.circular(20),
   ),
   child: Text(
-    '🐶 ルナとの絆 ${widget.lunaBond}',
+   '🐶 ルナとの絆 ${widget.lunaBond}\n🌙 $bondLevel',
     style: const TextStyle(
       fontWeight: FontWeight.bold,
       color: Color(0xFF8E7BBE),
@@ -616,9 +696,9 @@ lunaMessage =
                                   horizontal: 20,
                                   vertical: 14,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(26),
+                               decoration: BoxDecoration(
+  color: speechBubbleColor,
+  borderRadius: BorderRadius.circular(26),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.12),
@@ -644,11 +724,11 @@ lunaMessage =
                                 bottom: -10,
                                 child: Transform.rotate(
                                   angle: 0.785398,
-                                  child: Container(
-                                    width: 20,
-                                    height: 20,
-                                    color: Colors.white,
-                                  ),
+                                child: Container(
+  width: 20,
+  height: 20,
+  color: speechBubbleColor,
+),
                                 ),
                               ),
                             ],
@@ -836,14 +916,14 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
       );
       return;
     }
-
-    widget.onSave(
-      MoodRecord(
-        weather: selectedWeather!,
-        emotionPercents: Map.from(emotionPercents),
-        memo: memoController.text,
-      ),
-    );
+widget.onSave(
+  MoodRecord(
+    weather: selectedWeather!,
+    emotionPercents: Map.from(emotionPercents),
+    memo: memoController.text,
+    createdAt: DateTime.now(),
+  ),
+);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('記録できたよ🌿')),
@@ -2365,11 +2445,13 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
 class MyPageScreen extends StatelessWidget {
   final String? petImagePath;
   final Function(String) onPetImageChanged;
+  final List<MoodRecord> moodHistory;
 
   const MyPageScreen({
     super.key,
     required this.petImagePath,
     required this.onPetImageChanged,
+    required this.moodHistory,
   });
 
   Future<void> pickPetImage() async {
@@ -2417,6 +2499,25 @@ class MyPageScreen extends StatelessWidget {
                 ),
                 child: const Text('ペット写真を変更'),
               ),
+              const SizedBox(height: 16),
+
+ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+       builder: (_) => MoodCalendarScreen(
+  moodHistory: moodHistory,
+), 
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF6F5F8F),
+    foregroundColor: Colors.white,
+  ),
+  child: const Text('📅 気分カレンダーを見る'),
+),
             ],
           ),
         ),
@@ -2657,4 +2758,165 @@ class SpeechBubbleTailPainter extends CustomPainter {
     return false;
   }
 }
+class MoodCalendarScreen extends StatefulWidget {
+  final List<MoodRecord> moodHistory;
 
+  const MoodCalendarScreen({
+    super.key,
+    required this.moodHistory,
+  });
+
+  @override
+  State<MoodCalendarScreen> createState() => _MoodCalendarScreenState();
+}
+
+class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
+  DateTime focusedDay = DateTime.now();
+  DateTime? selectedDay;
+
+  Color moodColor(MoodRecord mood) {
+    if (mood.emotionPercents.containsKey('😰 不安')) {
+      return const Color(0xFFE8E1FF);
+    } else if (mood.emotionPercents.containsKey('🌿 安心')) {
+      return const Color(0xFFE4F6EA);
+    } else if (mood.emotionPercents.containsKey('😴 疲れ')) {
+      return const Color(0xFFEAF0FF);
+    } else if (mood.emotionPercents.containsKey('😡 イライラ')) {
+      return const Color(0xFFFFE0E0);
+    } else if (mood.emotionPercents.containsKey('🫂 さみしい')) {
+      return const Color(0xFFFFEEF5);
+    } else {
+      return Colors.white;
+    }
+  }
+
+  List<MoodRecord> moodsForDay(DateTime day) {
+    return widget.moodHistory.where((mood) {
+      return mood.createdAt.year == day.year &&
+          mood.createdAt.month == day.month &&
+          mood.createdAt.day == day.day;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedMoods = moodsForDay(selectedDay ?? focusedDay);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FA),
+      appBar: AppBar(
+        title: const Text('気分カレンダー'),
+        backgroundColor: const Color(0xFF8E7BBE),
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          TableCalendar<MoodRecord>(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2035, 12, 31),
+            focusedDay: focusedDay,
+            selectedDayPredicate: (day) {
+              return isSameDay(selectedDay, day);
+            },
+            eventLoader: moodsForDay,
+            calendarBuilders: CalendarBuilders(
+  markerBuilder: (context, day, events) {
+    if (events.isEmpty) return null;
+
+    final mood = events.first;
+    final color = moodColor(mood);
+
+    return Positioned(
+      bottom: 6,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  },
+),
+            onDaySelected: (selected, focused) {
+              setState(() {
+                selectedDay = selected;
+                focusedDay = focused;
+              });
+            },
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: Color(0xFFB9A7E8),
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Color(0xFF8E7BBE),
+                shape: BoxShape.circle,
+              ),
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Expanded(
+            child: selectedMoods.isEmpty
+                ? const Center(
+                    child: Text('この日の記録はまだないよ🌙'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: selectedMoods.length,
+                    itemBuilder: (context, index) {
+                      final mood = selectedMoods[index];
+
+                      return Card(
+                        color: moodColor(mood),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          title: Text(
+                            '${mood.createdAt.month}/${mood.createdAt.day}  ${mood.weather}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 6),
+                              ...mood.emotionPercents.entries.map(
+                                (entry) => Text(
+                                  '${entry.key}：${entry.value.round()}%',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF6F5F8F),
+                                  ),
+                                ),
+                              ),
+                              if (mood.memo.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  mood.memo,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF6D6478),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
