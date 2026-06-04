@@ -2801,6 +2801,23 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedMoods = moodsForDay(selectedDay ?? focusedDay);
+    final monthMoods = widget.moodHistory.where((mood) {
+  return mood.createdAt.year == focusedDay.year &&
+      mood.createdAt.month == focusedDay.month;
+}).toList();
+
+final weatherCounts = <String, int>{};
+
+for (final mood in monthMoods) {
+  weatherCounts[mood.weather] =
+      (weatherCounts[mood.weather] ?? 0) + 1;
+}
+
+final weatherSummary = weatherCounts.entries
+    .map((entry) => '${entry.key} ${entry.value}日')
+    .join('　');
+
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F3FA),
@@ -2811,6 +2828,32 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
       ),
       body: Column(
         children: [
+          Container(
+  width: double.infinity,
+  margin: const EdgeInsets.all(16),
+  padding: const EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: Colors.white.withOpacity(0.9),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Column(
+    children: [
+      const Text(
+        '今月の心の天気',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF6F5F8F),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        weatherSummary.isEmpty ? 'まだ記録がないよ🌙' : weatherSummary,
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 16),
+      ),
+    ],
+  ),
+),
           TableCalendar<MoodRecord>(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2035, 12, 31),
@@ -2823,20 +2866,15 @@ class _MoodCalendarScreenState extends State<MoodCalendarScreen> {
   markerBuilder: (context, day, events) {
     if (events.isEmpty) return null;
 
-    final mood = events.first;
-    final color = moodColor(mood);
+ final mood = events.first;
 
-    return Positioned(
-      bottom: 6,
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
+return Positioned(
+  bottom: 2,
+  child: Text(
+    mood.weather,
+    style: const TextStyle(fontSize: 14),
+  ),
+);
   },
 ),
             onDaySelected: (selected, focused) {
