@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
@@ -737,12 +738,12 @@ lunaMessage =
                           const SizedBox(height: 14),
 
                           Expanded(
-  child: widget.petImagePath != null
-      ? Image.file(
-          File(widget.petImagePath!),
-          fit: BoxFit.contain,
-        )
-      : AnimatedBuilder(
+ child: !kIsWeb && widget.petImagePath != null
+    ? Image.file(
+        File(widget.petImagePath!),
+        fit: BoxFit.contain,
+      )
+    : AnimatedBuilder(
           animation: _floatingAnimation,
           builder: (context, child) {
             return Transform.translate(
@@ -2468,57 +2469,120 @@ class MyPageScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F3FA),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 30),
-              const Text(
-                'マイページ',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF8E7BBE),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
+                const Text(
+                  'マイページ',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF8E7BBE),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              CircleAvatar(
-                radius: 90,
-                backgroundColor: Colors.white,
-                backgroundImage: petImagePath != null
-                    ? FileImage(File(petImagePath!))
-                    : const AssetImage('assets/images/luna.png')
-                        as ImageProvider,
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () => pickPetImage(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8E7BBE),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('ペット写真を変更'),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-       builder: (_) => MoodCalendarScreen(
-  moodHistory: moodHistory,
-), 
-      ),
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF6F5F8F),
-    foregroundColor: Colors.white,
-  ),
-  child: const Text('📅 気分カレンダーを見る'),
-),
-            ],
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 70,
+                        backgroundColor: Colors.white,
+                        backgroundImage: !kIsWeb && petImagePath != null
+                            ? FileImage(File(petImagePath!))
+                            : const AssetImage('assets/images/luna.png')
+                                as ImageProvider,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'ルナ',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF8E7BBE),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'いつもそばにいるよ🐶',
+                        style: TextStyle(color: Color(0xFF6D6478)),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                ElevatedButton(
+                  onPressed: () => pickPetImage(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8E7BBE),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('ペット写真を変更'),
+                ),
+
+                const SizedBox(height: 16),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        '📅 気分記録',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF8E7BBE),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${moodHistory.length}回 記録したよ',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF6D6478),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MoodCalendarScreen(
+                          moodHistory: moodHistory,
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5F8F),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('📅 気分カレンダーを見る'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -2596,6 +2660,26 @@ class HitoyasumiCafeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+
+ElevatedButton(
+  onPressed: () {
+    final messages = [
+      '今日は、何も進まなくても大丈夫。',
+      'ちゃんと休むことも、前に進むことの一つだよ。',
+      '深呼吸して、少しだけ肩の力を抜こう。',
+      '今ここにいるだけで、もう十分がんばってるよ。',
+      'あたたかい飲みものみたいに、心を少しゆるめよう。',
+    ];
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(messages[Random().nextInt(messages.length)]),
+      ),
+    );
+  },
+  child: const Text('今日のやさしい一言をもらう ☕️'),
+),
               const Spacer(),
               ElevatedButton(
                 onPressed: onBack,
@@ -2609,13 +2693,21 @@ class HitoyasumiCafeScreen extends StatelessWidget {
   }
 }
 
-class NightShelterScreen extends StatelessWidget {
+class NightShelterScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const NightShelterScreen({
     super.key,
     required this.onBack,
   });
+
+  @override
+  State<NightShelterScreen> createState() =>
+      _NightShelterScreenState();
+}
+
+class _NightShelterScreenState extends State<NightShelterScreen> {
+  final TextEditingController noteController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -2661,9 +2753,50 @@ class NightShelterScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+
+TextField(
+  controller: noteController,
+  maxLines: 4,
+  decoration: InputDecoration(
+    hintText: '今の考えごとをここに置いていこう🌙',
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(20),
+    ),
+  ),
+),
+
+const SizedBox(height: 16),
+
+ElevatedButton(
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('🌙預かったよ'),
+        content: Text(
+  noteController.text.trim().isEmpty
+      ? '今夜は答えを出さなくて大丈夫。\nここに置いて、少し休もう。'
+      : '「${noteController.text.trim()}」\n\n今夜は答えを出さなくて大丈夫。\nここに置いて、少し休もう。',
+),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('ありがとう'),
+          ),
+        ],
+      ),
+    );
+  },
+  child: const Text('考えごとを置いていく'),
+),
               const Spacer(),
-              ElevatedButton(
-  onPressed: onBack,
+ElevatedButton(
+  onPressed: widget.onBack,
   child: const Text('心の広場に戻る'),
 ),
 
@@ -2674,7 +2807,7 @@ class NightShelterScreen extends StatelessWidget {
     );
   }
 }
-class LunaHouseScreen extends StatelessWidget {
+class LunaHouseScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const LunaHouseScreen({
@@ -2682,6 +2815,31 @@ class LunaHouseScreen extends StatelessWidget {
     required this.onBack,
   });
 
+
+  @override
+State<LunaHouseScreen> createState() =>
+    _LunaHouseScreenState();
+}
+
+class _LunaHouseScreenState extends State<LunaHouseScreen> {
+  int fullness = 0;
+  @override
+void initState() {
+  super.initState();
+  loadFullness();
+}
+
+Future<void> loadFullness() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    fullness = prefs.getInt('lunaFullness') ?? 0;
+  });
+}
+
+Future<void> saveFullness() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setInt('lunaFullness', fullness);
+}
 
   @override
   Widget build(BuildContext context) {
@@ -2702,9 +2860,42 @@ class LunaHouseScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Image.asset(
-                'assets/images/luna.png',
-                height: 180,
-              ),
+  'assets/images/luna.png',
+  height: 260,
+  fit: BoxFit.contain,
+),
+Text(
+  '🍚 まんぷく度 $fullness/10',
+  style: const TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: Color(0xFF8E7BBE),
+  ),
+),
+const SizedBox(height: 16),
+
+ElevatedButton(
+onPressed: () async {
+  setState(() {
+    if (fullness < 10) {
+      fullness++;
+    }
+  });
+
+  await saveFullness();
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        fullness >= 10
+            ? '🐶 おなかいっぱい！しあわせ〜🍚✨'
+            : '🐶 もぐもぐ…ありがとう！元気が出たよ🍚',
+      ),
+    ),
+  );
+},
+  child: const Text('ルナにごはんをあげる 🍚'),
+),
               const SizedBox(height: 28),
               Container(
                 width: double.infinity,
@@ -2724,8 +2915,8 @@ class LunaHouseScreen extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              ElevatedButton(
-  onPressed: onBack,
+  ElevatedButton(
+  onPressed: widget.onBack,
   child: const Text('心の広場に戻る'),
 ),
 
