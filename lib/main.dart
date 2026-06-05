@@ -3696,12 +3696,27 @@ final weatherSummary = weatherCounts.entries
 
 
 
-    return Scaffold(
-  backgroundColor: const Color(0xFFF8F3FA),
-
- 
+ return Scaffold(
+  backgroundColor: const Color(0xFFF5F0FA),
 
   appBar: AppBar(
+    title: const Text('ルナのおうち'),
+    backgroundColor: const Color(0xFF8E7BBE),
+    foregroundColor: Colors.white,
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: widget.onBack,
+    ),
+  ),
+
+  bottomNavigationBar: SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: 
+    ),
+  ),
+
+  body: SafeArea(
         title: const Text('気分カレンダー'),
         backgroundColor: const Color(0xFF8E7BBE),
         foregroundColor: Colors.white,
