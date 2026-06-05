@@ -3535,7 +3535,7 @@ Future<void> saveFullness() async {
               const SizedBox(height: 24),
               Image.asset(
   'assets/images/luna.png',
-height: 180,
+height: 140,
   fit: BoxFit.contain,
 ),
 Text(
@@ -3604,6 +3604,12 @@ setState(() {
                 ),
               ),
               const SizedBox(height: 24),
+
+ElevatedButton(
+  onPressed: widget.onBack,
+  child: const Text('心の広場に戻る'),
+),
+
 
 
             ],
@@ -3696,163 +3702,142 @@ final weatherSummary = weatherCounts.entries
 
 
 
- return Scaffold(
-  backgroundColor: const Color(0xFFF5F0FA),
-
+return Scaffold(
+  backgroundColor: const Color(0xFFF8F3FA),
   appBar: AppBar(
-    title: const Text('ルナのおうち'),
+    title: const Text('気分カレンダー'),
     backgroundColor: const Color(0xFF8E7BBE),
     foregroundColor: Colors.white,
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: widget.onBack,
-    ),
   ),
-
-bottomNavigationBar: SafeArea(
-  child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: ElevatedButton(
-      onPressed: widget.onBack,
-      child: const Text('心の広場に戻る'),
-    ),
-  ),
-),
-
   body: SafeArea(
-        title: const Text('気分カレンダー'),
-        backgroundColor: const Color(0xFF8E7BBE),
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          Container(
-  width: double.infinity,
-  margin: const EdgeInsets.all(16),
-  padding: const EdgeInsets.all(16),
-  decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.9),
-    borderRadius: BorderRadius.circular(20),
-  ),
-  child: Column(
-    children: [
-      const Text(
-        '今月の心の天気',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF6F5F8F),
+    child: Column(
+      children: [
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              const Text(
+                '今月の心の天気',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6F5F8F),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                weatherSummary.isEmpty ? 'まだ記録がないよ🌙' : weatherSummary,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
         ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        weatherSummary.isEmpty ? 'まだ記録がないよ🌙' : weatherSummary,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 16),
-      ),
-    ],
-  ),
-),
-          TableCalendar<MoodRecord>(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2035, 12, 31),
-            focusedDay: focusedDay,
-            selectedDayPredicate: (day) {
-              return isSameDay(selectedDay, day);
-            },
-            eventLoader: moodsForDay,
-            calendarBuilders: CalendarBuilders(
-  markerBuilder: (context, day, events) {
-    if (events.isEmpty) return null;
+        TableCalendar<MoodRecord>(
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2035, 12, 31),
+          focusedDay: focusedDay,
+          selectedDayPredicate: (day) {
+            return isSameDay(selectedDay, day);
+          },
+          eventLoader: moodsForDay,
+          calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, day, events) {
+              if (events.isEmpty) return null;
 
- final mood = events.first;
+              final mood = events.first;
 
-return Positioned(
-  bottom: 2,
-  child: Text(
-    mood.weather,
-    style: const TextStyle(fontSize: 14),
-  ),
-);
-  },
-),
-            onDaySelected: (selected, focused) {
-              setState(() {
-                selectedDay = selected;
-                focusedDay = focused;
-              });
+              return Positioned(
+                bottom: 2,
+                child: Text(
+                  mood.weather,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              );
             },
-            calendarStyle: const CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Color(0xFFB9A7E8),
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                color: Color(0xFF8E7BBE),
-                shape: BoxShape.circle,
-              ),
+          ),
+          onDaySelected: (selected, focused) {
+            setState(() {
+              selectedDay = selected;
+              focusedDay = focused;
+            });
+          },
+          calendarStyle: const CalendarStyle(
+            todayDecoration: BoxDecoration(
+              color: Color(0xFFB9A7E8),
+              shape: BoxShape.circle,
             ),
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
+            selectedDecoration: BoxDecoration(
+              color: Color(0xFF8E7BBE),
+              shape: BoxShape.circle,
             ),
           ),
+          headerStyle: const HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: selectedMoods.isEmpty
+              ? const Center(
+                  child: Text('この日の記録はまだないよ🌙'),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: selectedMoods.length,
+                  itemBuilder: (context, index) {
+                    final mood = selectedMoods[index];
 
-          const SizedBox(height: 12),
-
-          Expanded(
-            child: selectedMoods.isEmpty
-                ? const Center(
-                    child: Text('この日の記録はまだないよ🌙'),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: selectedMoods.length,
-                    itemBuilder: (context, index) {
-                      final mood = selectedMoods[index];
-
-                      return Card(
-                        color: moodColor(mood),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          title: Text(
-                            '${mood.createdAt.month}/${mood.createdAt.day}  ${mood.weather}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 6),
-                              ...mood.emotionPercents.entries.map(
-                                (entry) => Text(
-                                  '${entry.key}：${entry.value.round()}%',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF6F5F8F),
-                                  ),
-                                ),
-                              ),
-                              if (mood.memo.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  mood.memo,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF6D6478),
-                                  ),
-                                ),
-                              ],
-                            ],
+                    return Card(
+                      color: moodColor(mood),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        title: Text(
+                          '${mood.createdAt.month}/${mood.createdAt.day}  ${mood.weather}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
                           ),
                         ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 6),
+                            ...mood.emotionPercents.entries.map(
+                              (entry) => Text(
+                                '${entry.key}：${entry.value.round()}%',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF6F5F8F),
+                                ),
+                              ),
+                            ),
+                            if (mood.memo.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                mood.memo,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF6D6478),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    ),
+  ),
+);
   }
 }
