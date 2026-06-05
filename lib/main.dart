@@ -3510,6 +3510,15 @@ Future<void> saveFullness() async {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0FA),
+      appBar: AppBar(
+  title: const Text('ルナのおうち'),
+  backgroundColor: const Color(0xFF8E7BBE),
+  foregroundColor: Colors.white,
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: widget.onBack,
+  ),
+),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -3594,11 +3603,8 @@ setState(() {
                   ),
                 ),
               ),
-              const Spacer(),
-  ElevatedButton(
-  onPressed: widget.onBack,
-  child: const Text('心の広場に戻る'),
-),
+              const SizedBox(height: 24),
+
 
             ],
           ),
@@ -3691,8 +3697,11 @@ final weatherSummary = weatherCounts.entries
 
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3FA),
-      appBar: AppBar(
+  backgroundColor: const Color(0xFFF8F3FA),
+
+ 
+
+  appBar: AppBar(
         title: const Text('気分カレンダー'),
         backgroundColor: const Color(0xFF8E7BBE),
         foregroundColor: Colors.white,
