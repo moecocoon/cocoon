@@ -2677,15 +2677,17 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
       ),
     );
   }
-
-  Widget actionButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
+Widget actionButton({
+  required String label,
+  required IconData icon,
+  required Color color,
+  required VoidCallback onTap,
+}) {
+  return Expanded(
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -2709,8 +2711,9 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
