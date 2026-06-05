@@ -3709,12 +3709,15 @@ final weatherSummary = weatherCounts.entries
     ),
   ),
 
-  bottomNavigationBar: SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: 
+bottomNavigationBar: SafeArea(
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: ElevatedButton(
+      onPressed: widget.onBack,
+      child: const Text('心の広場に戻る'),
     ),
   ),
+),
 
   body: SafeArea(
         title: const Text('気分カレンダー'),
