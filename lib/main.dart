@@ -159,6 +159,8 @@ MoodRecord? previousMood;
 List<MoodRecord> moodHistory = [];
 String? petImagePath;
 int lunaBond = 0;
+int streakDays = 1;
+DateTime? lastMoodDate;
 
 @override
 void initState() {
@@ -168,6 +170,7 @@ void initState() {
   loadMoodRecord();
   loadMoodHistory();
   loadLunaBond();
+  loadStreak();
 }
 
 
@@ -228,6 +231,42 @@ Future<void> saveLunaBond() async {
   await prefs.setInt('lunaBond', lunaBond);
 }
 
+Future<void> saveStreak() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setInt('streakDays', streakDays);
+
+  if (lastMoodDate != null) {
+    await prefs.setString(
+      'lastMoodDate',
+      lastMoodDate!.toIso8601String(),
+    );
+  }
+}
+
+Future<void> loadStreak() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    streakDays = prefs.getInt('streakDays') ?? 1;
+
+    final savedDate = prefs.getString('lastMoodDate');
+
+    if (savedDate != null) {
+      lastMoodDate = DateTime.parse(savedDate);
+    }
+  });
+}
+
+Future<void> addLunaBond(int point) async {
+  setState(() {
+    lunaBond += point;
+  });
+
+  await saveLunaBond();
+}
+
+
 Future<void> loadLunaBond() async {
   final prefs = await SharedPreferences.getInstance();
 
@@ -286,16 +325,44 @@ Future<void> saveChatMessages() async {
   ];
 
 Future<void> saveMood(MoodRecord mood) async {
+  final today = DateTime(
+  mood.createdAt.year,
+  mood.createdAt.month,
+  mood.createdAt.day,
+);
+
+final lastDay = lastMoodDate == null
+    ? null
+    : DateTime(
+        lastMoodDate!.year,
+        lastMoodDate!.month,
+        lastMoodDate!.day,
+      );
+
+if (lastDay == null) {
+  streakDays = 1;
+} else {
+  final difference = today.difference(lastDay).inDays;
+
+  if (difference == 1) {
+    streakDays++;
+  } else if (difference > 1) {
+    streakDays = 1;
+  }
+}
+
+lastMoodDate = today;
   setState(() {
     previousMood = latestMood;
     latestMood = mood;
     moodHistory.add(mood);
-    lunaBond++;
+  lunaBond += 2;
   });
 
   await saveMoodRecord(mood);
   await saveMoodHistory();
   await saveLunaBond();
+  await saveStreak();
 }
 
 
@@ -404,6 +471,8 @@ MyPageScreen(
   petImagePath: petImagePath,
   onPetImageChanged: updatePetImage,
   moodHistory: moodHistory,
+ lunaBond: lunaBond,
+ streakDays: streakDays,
 ),
 
 BreathingGuideScreen(onBack: goToKokoroHiroba),
@@ -1148,11 +1217,41 @@ Future<void> saveCurrentTopic(String topic) async {
   final TextEditingController chatController = TextEditingController();
   final Random random = Random();
 
-  String pick(List<String> replies) {
-    return replies[random.nextInt(replies.length)];
-  }
+ String pick(List<String> replies) {
+  return replies[random.nextInt(replies.length)];
+}
 
-  void sendQuickTopic(String topic) {
+String getFollowUpQuestion() {
+  return pick([
+    'その時、どんな気持ちが一番大きかった？',
+    'その出来事が起きた時、最初に何を思った？',
+    '今振り返ると、一番つらかった部分はどこかな？',
+    'もしその時の自分に声をかけるなら、何て言う？',
+    '本当はどうしてほしかったと思う？',
+    'その気持ちはいつ頃から続いている？',
+    '何が一番心に引っかかっているんだろう？',
+    '今一番伝えたいことは何だと思う？',
+    'どんな未来だったら少し安心できそう？',
+    'ルナはまだ聞けるよ🐶\nもう少し話してみる？',
+  ]);
+}
+
+String getInsightReply() {
+  return pick([
+    'もしかしたら、今苦しいのは出来事そのものより、その意味を考え続けていることなのかもしれないね。',
+    '本当は問題を解決したいというより、誰かに分かってほしい気持ちもあるのかな。',
+    '今の苦しさの奥には、不安よりも寂しさが隠れているようにも見えるよ。',
+    'もしかしたら相手の行動より、自分がどう思われているかが気になっているのかもしれないね。',
+    '頑張れないことが苦しいんじゃなくて、頑張れない自分を責めていることが苦しいのかもしれない。',
+    '今は答えが出ないことより、先が見えないことに疲れているのかな。',
+    'その悩みの中心には、「どうしたらいいか」より「どうしたいか」が隠れている気がするよ。',
+    '本当は怒っているというより、傷ついているのかもしれないね。',
+    '不安をなくしたいというより、安心したい気持ちが大きいのかな。',
+    'ルナには、少しだけ自分に優しくしてほしい気持ちが見えているよ🐶💜',
+  ]);
+}
+
+void sendQuickTopic(String topic) {
   chatController.text = topic;
   sendMessage();
 }
@@ -1225,6 +1324,279 @@ if (mood != null &&
       '今日は何が一番その気持ちにつながっていそう？';
 }
 
+// 悲しい・落ち込み
+if (text.contains('悲しい') ||
+    text.contains('かなしい') ||
+    text.contains('落ち込む') ||
+    text.contains('落ち込んだ') ||
+    text.contains('泣きたい') ||
+    text.contains('泣いた')) {
+  return pick([
+    '悲しい気持ちがかなり近くにいるんだね。\n今は無理に元気になろうとしなくて大丈夫だよ。',
+    '泣きたいくらい、心がいっぱいだったのかもしれないね。\nここではそのまま話していいよ。',
+    'その悲しさには、ちゃんと理由があると思う。\n何が一番心に残ってる？',
+    '悲しい気持ちがかなり近くにいるんだね。\n今いちばん心に残っていることは何かな？',
+
+'無理に元気になろうとしなくて大丈夫だよ。\n今日は何が一番つらかった？',
+
+'悲しい時って、普段なら気にならないことまで苦しく感じることがあるよね。\n何があったのか少し話してみる？',
+
+'その悲しさには、ちゃんと理由があると思う。\nどんな出来事が一番大きかった？',
+
+'今は心が傷ついている途中なのかもしれないね。\n何が一番悲しかった？',
+
+'泣きたくなるくらい頑張ってきたんだね。\n最近ずっと我慢していたことはある？',
+
+'悲しい時は、答えを探すより気持ちを吐き出す方が大事なこともあるんだ。\n今どんな気持ち？',
+
+'失ったものを考えるほど、悲しさは大きく見えることがあるよね。\n今何を失った気持ちがする？',
+
+'心が少し疲れているみたいだね。\n今日は自分に優しくできそう？',
+
+'悲しみって、大切だったものがあった証拠でもあるんだ。\n何がそんなに大切だった？',
+
+'今は前を向かなくても大丈夫。\nまずは今の気持ちをそのまま話してみよう。',
+
+'悲しい時ほど、自分を責めてしまうことがあるよね。\n今、自分にどんな言葉をかけている？',
+
+'ルナには少し元気が少なく見えているよ🐶\n何か心に引っかかっていることがある？',
+
+'誰かに分かってほしい気持ちもあるのかな。\n今どんな言葉をかけてもらえたら嬉しい？',
+
+'悲しい出来事があると、未来まで暗く見えてしまうことがあるよね。\n今一番心配なことは何かな？',
+
+'今は無理に立ち直らなくて大丈夫。\n少しだけここで休んでいこう。',
+
+'悲しさの中に、悔しさや寂しさも混ざっていそうかな。\nどの気持ちが一番大きい？',
+
+'心が重たい日もあるよね。\n今日は何点くらいの元気？',
+
+'その気持ちを抱えながら今日を過ごしてきたんだね。\n本当にお疲れさま。',
+
+'ここでは泣きたい気持ちも、落ち込む気持ちもそのままで大丈夫だよ。\nもう少し話してみる？',
+
+  ]);
+}
+
+// さみしい・孤独
+if (text.contains('寂しい') ||
+    text.contains('さみしい') ||
+    text.contains('孤独') ||
+    text.contains('ひとりぼっち') ||
+    text.contains('誰もいない')) {
+  return pick([
+    'さみしいさんが近くにいる感じかな。\n今は誰かにそばにいてほしい気持ちがあるのかもしれないね。',
+    'ひとりに感じる夜って、心がすごく冷えるよね。\nここで少し一緒にいよう。',
+    '誰にも届いていないように感じる時ってあるよね。\nでも今ここに書いてくれた気持ちは、ちゃんと届いてるよ。',
+    'さみしい気持ちが近くにいるんだね。\n今日はどんな時に一番さみしさを感じた？',
+
+'誰かにそばにいてほしい気持ちがあるのかな。\n今どんなことを考えている？',
+
+'ひとりに感じる夜って、気持ちが少し大きく見えることがあるよね。\n今は何が心に残っている？',
+
+'さみしいと思えるのは、それだけ誰かを大切にしてきた証拠でもあるんだ。\n誰のことを思い浮かべている？',
+
+'今は少し心が冷えている感じかな。\n温かい言葉をかけるとしたら、どんな言葉が欲しい？',
+
+'一人ぼっちみたいに感じる時ってあるよね。\n今日は何があったのかな？',
+
+'ルナはここにいるよ🐶\n今いちばん話したいことは何かな？',
+
+'誰にも言えない気持ちを抱えているんだね。\nここではそのまま話して大丈夫だよ。',
+
+'さみしい時って、時間がゆっくり流れる感じがすることもあるよね。\n今どんな気持ちが近い？',
+
+'本当は誰かに分かってほしい気持ちもあるのかな。\nどんなことを分かってほしい？',
+
+'孤独を感じる時って、自分だけ取り残されたように思うことがあるよね。\n最近そんな瞬間はあった？',
+
+'誰かと比べてしまって苦しくなっているのかな。\n何が一番つらい？',
+
+'さみしさの奥には、不安や悲しさが隠れていることもあるんだ。\n今はどんな気持ちが大きい？',
+
+'今日は誰かと話せた？\nそれともずっと一人で抱えていた？',
+
+'人がいてもさみしい時ってあるよね。\n今はどんなさみしさに近いかな？',
+
+'心が疲れている時は、さみしさも大きく感じやすいんだ。\n今日はちゃんと休めてる？',
+
+'ここに来てくれてありがとう🐶\n今はどんなことを聞いてほしい？',
+
+'さみしい気持ちを無理に消そうとしなくていいよ。\n少しだけ一緒に見てみよう。',
+
+'誰かを恋しく思う気持ちがあるのかな。\n今思い浮かぶ人はいる？',
+
+'ルナには少し寂しいさんが見えているよ🐶🌙\nもう少しだけ話してみる？',
+
+  ]);
+}
+
+// 自己否定
+if (text.contains('自分が嫌') ||
+    text.contains('自分嫌い') ||
+    text.contains('消えたいくらい自分が嫌') ||
+    text.contains('ダメな人間') ||
+    text.contains('価値がない') ||
+    text.contains('何もできない')) {
+  return pick([
+    '今、自分にかなり厳しい言葉を向けている感じがあるね。\nでもその言葉が全部本当とは限らないよ。',
+    '自分を責めたくなるくらい、苦しかったんだと思う。\nまずは何がそこまでつらかったのか、一緒に見ていこう。',
+    '「自分がダメ」って結論にする前に、今日しんどかった出来事を少し分けてみよう。',
+    '今、自分にかなり厳しい言葉を向けているみたいだね。\n何がそんなに苦しかった？',
+
+'自分を責めたくなるくらい、つらい出来事があったのかな。\n何があったか話してみる？',
+
+'ルナには少し自己否定さんが見えているよ🐶\n今、一番自分のどんなところが嫌に感じる？',
+
+'何もできていないように感じる日もあるよね。\nでも今日ここに来たことも一つの行動だよ。',
+
+'自信がなくなる時って、自分の失敗ばかり見えてしまうことがあるんだ。\n最近そんなことがあった？',
+
+'「ダメだな」って思う時ほど、自分に優しくするのは難しいよね。\n今どんな言葉を自分にかけている？',
+
+'価値がない人なんていないと思うよ。\nでも今はそう感じてしまうくらい苦しいんだね。',
+
+'頑張っている人ほど、自分に厳しくなりやすいんだ。\n最近頑張ったことは何かな？',
+
+'今は自分の欠点ばかり見えているのかもしれないね。\n反対に、少しでもできたことはある？',
+
+'誰かと比べて苦しくなっている感じかな。\nどんなことが気になっている？',
+
+'自分が嫌になる日もあるよね。\n今日は何が一番つらかった？',
+
+'「もっとちゃんとしなきゃ」って思い続けて疲れていない？\n少し休めそう？',
+
+'失敗した出来事が頭から離れないのかな。\nどんなことが引っかかっている？',
+
+'本当は認めてほしい気持ちもあるのかな。\nどんな言葉をかけてもらえたら嬉しい？',
+
+'ルナは、今のあなたがダメな人だとは思っていないよ🐶\n何があったのか聞かせてくれる？',
+
+'自分のことを好きになれない時期ってあるよね。\n今一番苦しい部分はどこかな？',
+
+'今は心が疲れていて、自分を厳しく見てしまっているのかもしれない。\n今日は何点くらいの元気？',
+
+'何もできていないように見えても、実際は耐えているだけで精一杯の日もあるんだ。',
+
+'自分の価値を、今のしんどさだけで決めなくて大丈夫。\n最近少しでも嬉しかったことはある？',
+
+'ここでは無理に前向きにならなくていいよ🐶💜\nもう少しだけ話してみる？',
+
+  ]);
+}
+
+// 疲れ・限界
+if (text.contains('疲れた') ||
+    text.contains('つかれた') ||
+    text.contains('しんどい') ||
+    text.contains('限界') ||
+    text.contains('もう無理') ||
+    text.contains('休みたい')) {
+  return pick([
+    'かなり頑張ってきた感じがするね。\n今日は回復を優先していい日かもしれないよ。',
+    '「もう無理」って言葉が出るくらい、心も体もいっぱいなのかもしれない。',
+    '今必要なのは、解決よりも休むことかもしれないね。\n少しだけ力を抜けそう？',
+    '今日は本当にお疲れさま。\n今は何も頑張らなくていい時間かもしれないね。',
+
+'「疲れた」って言葉が出るくらい、たくさん抱えてきたんだね。\n何が一番しんどかった？',
+
+'心も体も少し休みたがっているのかもしれないね。\n今日はどれくらい頑張った？',
+
+'もう無理って感じるくらい、ずっと力を入れてきたのかな。\n最近休めてる？',
+
+'しんどい時は、解決より休息の方が大事なこともあるんだ。\n今必要なのは何だろう？',
+
+'疲れがたまると、普段なら平気なことも苦しく感じるよね。\n今日は何が一番負担だった？',
+
+'ずっと頑張り続けてきた感じがするね。\n最後に心から安心できたのはいつだったかな？',
+
+'今は前に進むより、立ち止まることが必要なのかもしれないね。',
+
+'疲れた時は、自分に厳しくなりやすいんだ。\n今、自分にどんな言葉をかけてる？',
+
+'ルナには少しお疲れさんが見えているよ🐶\n今日は何点くらいの元気？',
+
+'頑張ることばかり考えていない？\n今日は自分を休ませてあげられそう？',
+
+'心の電池が少なくなっている感じかな。\n今どれくらい残っていそう？',
+
+'疲れた時は、小さなことでも大変に感じるよね。\n今一番やりたくないことは何かな？',
+
+'「休みたい」って思うのは悪いことじゃないよ。\nむしろ自然なサインかもしれない。',
+
+'ここまで来るだけでも十分頑張ったと思う。\n今日は何を乗り越えてきた？',
+
+'少し深呼吸してみようか🌙\n今、一番重たい気持ちは何かな？',
+
+'心も体も限界に近い時ってあるよね。\n誰かに頼れそうな人はいる？',
+
+'今日は100点を目指さなくていいよ。\n今できていることだけでも十分なんだ。',
+
+'疲れている時は未来のことまで考えなくて大丈夫。\nまずは今日を終えることを目標にしよう。',
+
+'ルナはここで待っているよ🐶💜\nもう少しだけ話してみる？',
+
+  ]);
+}
+
+// 仕事・学校
+if (text.contains('仕事') ||
+    text.contains('職場') ||
+    text.contains('会社') ||
+    text.contains('上司') ||
+    text.contains('学校') ||
+    text.contains('授業') ||
+    text.contains('テスト')) {
+  return pick([
+    '毎日ちゃんとやらなきゃって思うほど、心が疲れやすいよね。',
+    '仕事や学校のことって、逃げ場が少なく感じることがあるよね。\n今つらいのは人間関係？量の多さ？評価される不安？',
+    'かなり気を張って過ごしているのかもしれないね。\n今日いちばん負担だった場面はどこ？',
+  ]);
+}
+
+// 恋愛：不安・返信・距離感
+if (text.contains('彼氏') ||
+    text.contains('彼女') ||
+    text.contains('好きな人') ||
+    text.contains('恋愛') ||
+    text.contains('返信') ||
+    text.contains('既読') ||
+    text.contains('未読') ||
+    text.contains('冷たい') ||
+    text.contains('会えない') ||
+    text.contains('別れ')) {
+  return pick([
+    '大切な人の反応って、心にすごく影響するよね。\n今いちばんつらいのは、返信のこと？会えないこと？それとも気持ちが見えないこと？',
+    '恋愛の不安って、相手の一言や返信の速さで大きくなりやすいよね。\nまずは「実際に起きたこと」と「想像していること」を分けてみよう。',
+    '好きだからこそ、不安も寂しさも強くなるんだと思う。\n今は相手にどうしてほしい気持ちが一番近い？',
+    '相手の気持ちが見えない時間って苦しいよね。\n今の不安を一人で抱えなくて大丈夫だよ。',
+  ]);
+}
+
+if (text.contains('友達') ||
+    text.contains('友人') ||
+    text.contains('仲良く') ||
+    text.contains('嫌われた') ||
+    text.contains('無視') ||
+    text.contains('距離を置かれた')) {
+  return pick([
+    '人間関係の悩みって、相手の気持ちが見えないから苦しいよね。',
+    '友達とのことが気になっているんだね。\n何があったか少し話してみる？',
+    '嫌われたかもって思う時ほど、不安が大きくなりやすいよね。',
+  ]);
+}
+
+if (text.contains('体調') ||
+    text.contains('病気') ||
+    text.contains('しんどい') ||
+    text.contains('入院') ||
+    text.contains('薬')) {
+  return pick([
+    '体調が不安定だと心も疲れやすいよね。',
+    '体のしんどさと心のしんどさが重なると本当に大変だよね。',
+    '今日は体調は何点くらい？',
+  ]);
+}
     if (text.contains('死にたい') ||
     text.contains('消えたい') ||
     text.contains('自殺') ||
@@ -1250,10 +1622,55 @@ if (currentTopic == '恋愛' &&
     (text.contains('つらい') ||
         text.contains('しんどい') ||
         text.contains('不安'))) {
-  return pick([
-    '恋愛のことも重なって、気持ちがかなり揺れてるのかもしれないね。',
-    '返信や相手の反応のことが、まだ心に残ってそうだね。',
-  ]);
+return '${pick([
+  '恋愛のことも重なって、気持ちがかなり揺れてるのかもしれないね。\n今いちばん気になっていることは何かな？',
+
+  '返信や相手の反応のことが、まだ心に残ってそうだね。\nどんな出来事があったのか、もう少し話してみる？',
+
+  '好きな人のことって、頭では考えすぎないようにしようと思っても難しいよね。\n今は何が一番不安？',
+
+  '相手の気持ちが見えない時間って苦しいよね。\n本当は相手にどんな言葉をかけてほしい？',
+  '好きな人のことって、考えないようにしようとしても難しいよね。\n今いちばん心に引っかかっていることは何かな？',
+
+'相手の反応が気になるほど、大切な存在なんだと思う。\nどんな時に一番不安になる？',
+
+'返信が来ない時間って、実際より長く感じることがあるよね。\n今どんなことを考えてしまう？',
+
+'心が落ち着かないくらい、相手のことを大切に思っているんだね。\n本当はどんな言葉が欲しい？',
+
+'恋愛の不安って、一人で抱えるとどんどん大きく見えることがあるよ。\nここで少し整理してみようか。',
+
+'今は頭よりも心が疲れているのかもしれないね。\n今日は何が一番つらかった？',
+
+'相手の気持ちが見えない時ほど、いろんな想像をしてしまうよね。\n今の不安はどんな想像から来ていると思う？',
+
+'好きだからこそ、些細なことも気になってしまうんだと思う。\n最近気になった出来事はあった？',
+
+'恋愛って嬉しいこともあるけど、不安も一緒についてくることがあるよね。\n今はどっちの気持ちが大きい？',
+
+'本当は安心したいのに、考えれば考えるほど苦しくなることってあるよね。\n何があれば少し安心できそうかな？',
+
+'相手の行動だけじゃなくて、自分の気持ちにも目を向けてみよう。\n今の心は何を求めていると思う？',
+
+'好きな人とのことを考えて眠れなくなる夜もあるよね。\n今日はどんなことが頭から離れない？',
+
+'会えない時間が長いほど、不安が膨らんでしまうこともあるよね。\n一番寂しいと感じるのはどんな時？',
+
+'返信の速さだけで気持ちは決まらないって分かっていても、不安になることはあるよね。\n今はどんな気持ちが近い？',
+
+'恋愛で傷つくのは、それだけ真剣に向き合っている証拠でもあるよ。\nどんなことが一番悲しかった？',
+
+'相手のことを考えてしまう自分を責めなくて大丈夫。\nそれだけ大切だったんだと思う。',
+
+'今は答えを急がなくてもいいかもしれないね。\nまずは今の気持ちをそのまま話してみる？',
+
+'相手の気持ちが分からない時間って、本当に苦しいよね。\n何が一番知りたいと思っている？',
+
+'不安の中でも、きっと本音があると思う。\n本当はどうなったら嬉しい？',
+
+'ルナには、少し不安さんと寂しいさんが見えているよ🐶\n今いちばん大きい気持ちは何かな？',
+
+])}\n\n${getFollowUpQuestion()}';
 }
 
 if (currentTopic == '家族' &&
@@ -1262,6 +1679,45 @@ if (currentTopic == '家族' &&
   return pick([
     '家族のことで気を張り続けて、かなり疲れてるのかもしれないね。',
     '近い存在だからこそ、心の消耗も大きくなりやすいよね。',
+    '家族のことって、近い存在だからこそ苦しくなることがあるよね。\n今どんなことが一番つらい？',
+
+'本当は分かってほしい気持ちもあるのかな。\n何を一番分かってほしいと思ってる？',
+
+'家族だから簡単に距離を取れない苦しさもあるよね。\n何が一番負担になっている？',
+
+'ルナには少し疲れた心が見えているよ🐶\n最近どんなことがあった？',
+
+'家族の言葉って、他の人より深く刺さることがあるよね。\nどんな言葉が心に残ってる？',
+
+'近い関係だからこそ、期待してしまうこともあるよね。\n本当はどうしてほしかった？',
+
+'家族のことで悩むのは、それだけ大切な存在だからなんだと思う。\n何が一番気になっている？',
+
+'分かってもらえない感じが続くと苦しいよね。\nどんな時にそう感じる？',
+
+'我慢を続けてきた感じもあるのかな。\nいつ頃からしんどかった？',
+
+'家族との関係って白黒では割り切れないことが多いよね。\n今はどんな気持ちが一番近い？',
+
+'怒りも悲しみも寂しさも混ざっている感じかな。\nどの気持ちが一番大きそう？',
+
+'家族だからこそ言えないこともあるよね。\nここではそのまま話して大丈夫だよ。',
+
+'誰か一人でも味方がいてくれたら違うのにって思う時もあるよね。\n今はどんな気持ち？',
+
+'頑張って理解しようとしてきたのかもしれないね。\n何が一番難しかった？',
+
+'家族との問題は、心の奥に残りやすいよね。\n最近特に気になった出来事はある？',
+
+'本当は安心できる場所であってほしいのに苦しいとつらいよね。\n何が一番しんどい？',
+
+'ルナはここで話を聞いているよ🐶\n少しずつでも大丈夫。',
+
+'近い存在だからこそ傷つくこともある。\nその気持ちは自然なことだよ。',
+
+'一人で抱え込まなくて大丈夫。\n今一番伝えたいことは何かな？',
+
+'どんな気持ちでもここでは話して大丈夫だよ🐶💜\nもう少し聞かせてくれる？',
   ]);
 }
 // 相談タイプボタン：恋愛
@@ -1277,6 +1733,46 @@ if (text.contains('不安な気持ちを整理したい')) {
   return pick([
     '不安を整理したいんだね。\nまずは「今起きていること」と「想像していること」を分けてみよう。\n今いちばん怖いのは何？',
     '不安って、頭の中で大きくなりやすいよね。\n一緒に小さく分けていこう。\n体もザワザワしてる？それとも考えが止まらない感じ？',
+    '不安な時って、まだ起きていない未来のことを考えていることが多いんだ。\n今いちばん心配していることは何かな？',
+
+'心がずっと警戒モードになっている感じかな。\n最近、不安が強くなったきっかけはあった？',
+
+'不安さんが少し大きくなっているみたいだね。\n今の気持ちを言葉にするとしたら何に近い？',
+
+'答えが出ないことほど、不安は大きく見えやすいんだ。\n今すぐ解決しなきゃいけないことかな？',
+
+'不安な時って、一番悪い未来を想像してしまうことがあるよね。\n今どんな未来を心配している？',
+
+'心配するのは、それだけ大切なことだからなんだと思う。\n何が一番大事だからこそ不安なんだろう？',
+
+'今は心が少し疲れていて、不安を大きく感じやすくなっているのかもしれないね。\n今日はちゃんと休めてる？',
+
+'不安な気持ちを抱えながらここまで来たんだね。\n今その不安は何点くらい？',
+
+'未来が見えない時って、人は不安になりやすいんだ。\n今わかっている事実だけを並べるとどうなるかな？',
+
+'心の中で同じ考えがぐるぐる回っていない？\n今一番繰り返し考えていることは何かな？',
+
+'不安を無理に消そうとしなくて大丈夫。\nまずはどんな不安なのか見てみよう。',
+
+'もしかしたら不安の奥に、悲しさや寂しさも隠れているかもしれないね。\nどんな気持ちが近そう？',
+
+'不安な時ほど、自分を責めてしまうことがあるよね。\n今、自分に厳しくなっていない？',
+
+'何かを失うのが怖い気持ちなのかな。\n何が一番心配？',
+
+'不安な気持ちを抱えているだけでも、実はかなりエネルギーを使うんだ。\n今日は自分を労われそう？',
+
+'今は先のことよりも、今日一日を乗り切ることだけ考えてもいいかもしれないね。\n今必要なのは何だろう？',
+
+'ルナには少し緊張している心が見えているよ🐶\n最近ずっと気になっていることはある？',
+
+'不安って、一人で考えるとどんどん大きくなってしまうことがあるんだ。\nここで少し分けて考えてみようか。',
+
+'今の不安は、現実に起きていることかな？それとも想像の部分が大きいかな？',
+
+'どんなに不安でも、今こうして言葉にできているのは大事な一歩だよ。\nもう少し話してみる？',
+
   ]);
 }
 
@@ -1311,6 +1807,52 @@ String? previousUserText() {
 }
 
 final previousText = previousUserText();
+
+// 会話を深掘りする共通パターン
+if (previousText != null &&
+    (text.contains('うん') ||
+        text.contains('そう') ||
+        text.contains('それ') ||
+        text.contains('わかる') ||
+        text.contains('近い'))) {
+  return pick([
+    'そっか、その感じが近いんだね。\nもう少しだけ聞かせて。どの部分が一番しんどい？',
+    'うん、ちゃんと受け取ったよ。\nその気持ちはいつ頃から強くなってる？',
+    'そこが大事なところかもしれないね。\n本当はどうなったら少し安心できそう？',
+    'その言葉の奥に、まだ残っている気持ちがありそう。\n今いちばん言いたいことは何？',
+  ]);
+}
+
+if (text.contains('わからない') ||
+    text.contains('分からない') ||
+    text.contains('どう思う')) {
+  return pick([
+    'すぐに答えが出ないくらい、大切なことなんだと思う。',
+    '無理に答えを出さなくても大丈夫だよ。\n今の気持ちを整理するところから始めようか。',
+    'わからないって言えるのも大事なことだよ。\n何が一番引っかかっている？',
+    'ルナも一緒に考えるよ🐶\n今の選択肢にはどんなものがありそう？',
+  ]);
+}
+
+if (text.contains('どうしたらいい') ||
+    text.contains('どうすれば') ||
+    text.contains('どうしたら')) {
+  return pick([
+    '正解を探したくなるくらい悩んでいるんだね。\n今の状況をもう少し聞かせてくれる？',
+    '焦って答えを出さなくても大丈夫。\n今いちばん困っていることは何かな？',
+    'どうしたらいいかわからなくなる時ってあるよね。\nまずは今の気持ちを整理してみようか。',
+    'ルナなら、まず自分の気持ちを大事にしてあげたいな🐶\n本当はどうしたいと思ってる？',
+  ]);
+}
+
+if (text.contains('ありがとう')) {
+  return pick([
+    'こちらこそ話してくれてありがとう🐶',
+    '少しでも気持ちが軽くなったなら嬉しいな🌙',
+    'また話したくなったらいつでも来てね🐶💜',
+    'ルナはここにいるよ。\n今日は来てくれてありがとう。',
+  ]);
+}
 
 // 会話の続き：冷たいと言われた後
 if (previousText != null &&
@@ -1606,6 +2148,8 @@ if ((text.contains('またモヤモヤ') ||
 
     // イライラ
     if (text.contains('イライラ') ||
+    text.contains('許せない') ||
+text.contains('むかつく') ||
         text.contains('ムカつく') ||
         text.contains('腹立つ') ||
         text.contains('怒り')) {
@@ -1614,6 +2158,46 @@ if ((text.contains('またモヤモヤ') ||
         '何が一番引っかかった？',
         '怒りって「大事なものが傷ついたサイン」のこともあるよ。',
         '我慢してきたものが溜まってる感じかもしれないね。',
+        'かなり我慢してきた感じがするね。\n何がそんなに腹立たしかった？',
+
+'イライラするのには、ちゃんと理由があると思う。\n何があったのか話してみる？',
+
+'怒りって、自分を守ろうとする心の反応でもあるんだ。\n何を守りたかったのかな？',
+
+'ルナには少しイライラさんが大きく見えているよ🐶\n今日は何があった？',
+
+'本当は怒りの奥に、悲しさや悔しさが隠れていることもあるんだ。\n今はどんな気持ちが近い？',
+
+'許せないって思うくらい、傷ついたのかもしれないね。\n何が一番つらかった？',
+
+'その怒りを一人で抱えてきたんだね。\nここでは遠慮せずに話して大丈夫だよ。',
+
+'理不尽なことがあると、心が追いつかなくなることもあるよね。\n何が納得できなかった？',
+
+'イライラしている時は、心もかなり疲れていることがあるんだ。\n最近ちゃんと休めてる？',
+
+'怒っている自分を責めなくて大丈夫。\nまずは何があったか整理してみよう。',
+
+'その気持ちを抱えたまま過ごすのは苦しかったよね。\n一番言いたかったことは何？',
+
+'悔しい気持ちも混ざっているのかな。\n本当はどうしてほしかった？',
+
+'怒りって、大切なものが傷つけられた時にも出てくるんだ。\n何が大切だった？',
+
+'今は少し感情の波が大きくなっているのかもしれないね。\n深呼吸しながら話してみようか🌙',
+
+'我慢を続けてきた結果、限界に近づいている感じかな。\nいつ頃からモヤモヤしていた？',
+
+'その出来事を思い出すだけでも腹が立つ感じかな。\n何が一番引っかかっている？',
+
+'怒りの中にも、本音が隠れていることがあるんだ。\n今の本音は何だと思う？',
+
+'誰かに分かってほしい気持ちもあるのかな。\nどんなことを分かってほしい？',
+
+'その状況ならイライラするのも自然なことだと思う。\nもう少し詳しく聞かせてくれる？',
+
+'ルナはここで話を聞いているよ🐶💜\n今いちばん伝えたいことは何かな？',
+
       ]);
     }
 
@@ -2447,13 +3031,17 @@ class MyPageScreen extends StatelessWidget {
   final String? petImagePath;
   final Function(String) onPetImageChanged;
   final List<MoodRecord> moodHistory;
+  final int lunaBond;
+  final int streakDays;
 
-  const MyPageScreen({
-    super.key,
-    required this.petImagePath,
-    required this.onPetImageChanged,
-    required this.moodHistory,
-  });
+const MyPageScreen({
+  super.key,
+  required this.petImagePath,
+  required this.onPetImageChanged,
+  required this.moodHistory,
+  required this.lunaBond,
+  required this.streakDays,
+});
 
   Future<void> pickPetImage() async {
     final picker = ImagePicker();
@@ -2533,6 +3121,37 @@ class MyPageScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
+Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(24),
+  ),
+  child: Column(
+    children: [
+      const Text(
+        '❤️ ルナとの絆',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF8E7BBE),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        '$lunaBond',
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF6D6478),
+        ),
+      ),
+    ],
+  ),
+),
+
+const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -2563,6 +3182,36 @@ class MyPageScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 16),
+
+Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(24),
+  ),
+  child: Column(
+    children: [
+      const Text(
+        '🔥 継続日数',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF8E7BBE),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        '$streakDays日',
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF6D6478),
+        ),
+      ),
+    ],
+  ),
+),
 
                 ElevatedButton(
                   onPressed: () {
@@ -2620,10 +3269,10 @@ class HitoyasumiCafeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F0),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
+ body: SafeArea(
+  child: Padding(
+    padding: const EdgeInsets.all(28),
+    child: Column(
             children: [
               const Text(
                 'ひとやすみカフェ',
@@ -2823,6 +3472,18 @@ State<LunaHouseScreen> createState() =>
 
 class _LunaHouseScreenState extends State<LunaHouseScreen> {
   int fullness = 0;
+  int affection = 0;
+  String lunaHouseMessage() {
+  if (affection >= 50) {
+    return '会いに来てくれると、ルナすごくうれしいよ🐶💜';
+  } else if (affection >= 20) {
+    return 'また会えたね！待ってたよ🐶';
+  } else if (affection >= 10) {
+    return '少しずつ仲良くなれてうれしいな🍚';
+  } else {
+    return 'ルナはここで待っているよ。';
+  }
+}
   @override
 void initState() {
   super.initState();
@@ -2831,14 +3492,18 @@ void initState() {
 
 Future<void> loadFullness() async {
   final prefs = await SharedPreferences.getInstance();
+
   setState(() {
     fullness = prefs.getInt('lunaFullness') ?? 0;
+    affection = prefs.getInt('lunaAffection') ?? 0;
   });
 }
 
 Future<void> saveFullness() async {
   final prefs = await SharedPreferences.getInstance();
+
   await prefs.setInt('lunaFullness', fullness);
+  await prefs.setInt('lunaAffection', affection);
 }
 
   @override
@@ -2861,7 +3526,7 @@ Future<void> saveFullness() async {
               const SizedBox(height: 24),
               Image.asset(
   'assets/images/luna.png',
-  height: 260,
+height: 180,
   fit: BoxFit.contain,
 ),
 Text(
@@ -2872,15 +3537,30 @@ Text(
     color: Color(0xFF8E7BBE),
   ),
 ),
+
+const SizedBox(height: 8),
+
+Text(
+  '❤️ なつき度 $affection/100',
+  style: const TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: Color(0xFF8E7BBE),
+  ),
+),
 const SizedBox(height: 16),
 
 ElevatedButton(
 onPressed: () async {
-  setState(() {
-    if (fullness < 10) {
-      fullness++;
-    }
-  });
+setState(() {
+  if (fullness < 10) {
+    fullness++;
+  }
+
+  if (affection < 100) {
+    affection++;
+  }
+});
 
   await saveFullness();
 
@@ -2904,8 +3584,8 @@ onPressed: () async {
                   color: Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: const Text(
-                  'ルナはここで待っているよ。\n何かを話しても、何も話さなくても大丈夫。\n今日は少しだけ、そばで休もう。',
+                child: Text(
+  '${lunaHouseMessage()}\n\n何かを話しても、何も話さなくても大丈夫。\n今日は少しだけ、そばで休もう。',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
