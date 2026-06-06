@@ -1251,6 +1251,45 @@ String getInsightReply() {
   ]);
 }
 
+String getLunaInsight(List<ChatMessage> pastMessages) {
+  final userTexts = pastMessages
+      .where((message) => message.isUser)
+      .map((message) => message.text)
+      .join(' ');
+
+  final insights = <String>[];
+
+  if (userTexts.contains('不安') ||
+      userTexts.contains('怖い') ||
+      userTexts.contains('心配')) {
+    insights.add('不安さん');
+  }
+
+  if (userTexts.contains('寂しい') ||
+      userTexts.contains('さみしい') ||
+      userTexts.contains('孤独')) {
+    insights.add('さみしいさん');
+  }
+
+  if (userTexts.contains('疲れた') ||
+      userTexts.contains('しんどい') ||
+      userTexts.contains('限界')) {
+    insights.add('おつかれさん');
+  }
+
+  if (userTexts.contains('彼氏') ||
+      userTexts.contains('恋愛') ||
+      userTexts.contains('返信')) {
+    insights.add('恋愛の不安');
+  }
+
+  if (insights.isEmpty) {
+    return '🐶ルナの気づき\n\n今日はまだ、気持ちを少しずつ探している途中みたい。\n焦らず話して大丈夫だよ。';
+  }
+
+  return '🐶ルナの気づき\n\n今日は ${insights.join('・')} が近くにいるみたい。\nその中で、今いちばん大きい気持ちはどれかな？';
+}
+
 void sendQuickTopic(String topic) {
   chatController.text = topic;
   sendMessage();
@@ -1276,16 +1315,22 @@ void sendMessage() {
 }
 
 
- String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
+String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
   final text = userText.toLowerCase();
-  if (text.contains('彼氏') ||
-    text.contains('恋愛') ||
-    text.contains('返信') ||
-    text.contains('既読')) {
- currentTopic = '恋愛';
-saveCurrentTopic('恋愛');
 
-}
+  if (text.contains('気づき') ||
+      text.contains('整理して') ||
+      text.contains('まとめて')) {
+    return getLunaInsight(pastMessages);
+  }
+
+  if (text.contains('彼氏') ||
+      text.contains('恋愛') ||
+      text.contains('返信') ||
+      text.contains('既読')) {
+    currentTopic = '恋愛';
+    saveCurrentTopic('恋愛');
+  }
 
 if (text.contains('家族') ||
     text.contains('親')) {
@@ -2463,35 +2508,57 @@ Padding(
               ),
             ),
             Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-              color: Colors.white.withOpacity(0.92),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: chatController,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: '今の気持ちを書いてね',
-                        filled: true,
-                        fillColor: const Color(0xFFF8F3FA),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onFieldSubmitted: (_) => sendMessage(),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: sendMessage,
-                    icon: const Icon(Icons.send),
-                    color: const Color(0xFF8E7BBE),
-                  ),
-                ],
+  padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+  color: Colors.white.withOpacity(0.92),
+  child: Column(
+    children: [
+      ElevatedButton(
+        onPressed: () {
+          setState(() {
+            widget.messages.add(
+              ChatMessage(
+                text: getLunaInsight(widget.messages),
+                isUser: false,
               ),
+            );
+          });
+
+          widget.onMessagesChanged();
+        },
+        child: const Text('🐶 ルナの気づきを見る'),
+      ),
+
+      const SizedBox(height: 8),
+
+      Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: chatController,
+              minLines: 1,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: '今の気持ちを書いてね',
+                filled: true,
+                fillColor: const Color(0xFFF8F3FA),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onFieldSubmitted: (_) => sendMessage(),
             ),
+          ),
+          IconButton(
+            onPressed: sendMessage,
+            icon: const Icon(Icons.send),
+            color: const Color(0xFF8E7BBE),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
           ],
         ),
       ),
@@ -3523,9 +3590,10 @@ Future<void> saveFullness() async {
   ),
 ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
+  child: SingleChildScrollView(
+    child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(
             children: [
               const Text(
                 'ルナのおうち',
@@ -3613,14 +3681,13 @@ ElevatedButton(
   child: const Text('心の広場に戻る'),
 ),
 
-
-
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class SpeechBubbleTailPainter extends CustomPainter {
