@@ -994,6 +994,11 @@ widget.onSave(
     createdAt: DateTime.now(),
   ),
 );
+ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(
+    content: Text('気分記録を保存しました🌱'),
+  ),
+);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('記録できたよ🌿')),
@@ -3113,6 +3118,42 @@ const MyPageScreen({
   required this.streakDays,
 });
 
+Widget myPageCard({
+  required String icon,
+  required String title,
+  required String subtitle,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 28)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title),
+                Text(subtitle),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
+    ),
+  );
+}
+
   Future<void> pickPetImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
@@ -3179,15 +3220,83 @@ const MyPageScreen({
                 ),
 
                 const SizedBox(height: 24),
+GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecoveryAlbumScreen(
+          moodHistory: moodHistory,
+          lunaBond: lunaBond,
+          streakDays: streakDays,
+        ),
+      ),
+    );
+  },
+  child: Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      children: [
+        const Text(
+          '📖 回復アルバム',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${moodHistory.length}件の思い出',
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF6D6478),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
 
-                ElevatedButton(
-                  onPressed: () => pickPetImage(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8E7BBE),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('ペット写真を変更'),
-                ),
+const SizedBox(height: 16),
+
+              GestureDetector(
+  onTap: () => pickPetImage(),
+  child: Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      children: [
+        const Text(
+          '🐶 ルナの写真',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'ホームのルナを変更する',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF6D6478),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
 
                 const SizedBox(height: 16),
 
@@ -3283,23 +3392,48 @@ Container(
   ),
 ),
 
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MoodCalendarScreen(
-                          moodHistory: moodHistory,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5F8F),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('📅 気分カレンダーを見る'),
-                ),
+const SizedBox(height: 16),
+
+GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MoodCalendarScreen(
+          moodHistory: moodHistory,
+        ),
+      ),
+    );
+  },
+  child: Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      children: [
+        const Text(
+          '📅 気分カレンダー',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          '心の変化を振り返る',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF6D6478),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
               ],
             ),
           ),
@@ -3909,5 +4043,99 @@ return Scaffold(
     ),
   ),
 );
+  }
+}
+class RecoveryAlbumScreen extends StatelessWidget {
+  final List<MoodRecord> moodHistory;
+  final int lunaBond;
+  final int streakDays;
+
+  const RecoveryAlbumScreen({
+    super.key,
+    required this.moodHistory,
+    required this.lunaBond,
+    required this.streakDays,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final records = moodHistory.reversed.toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF8E7BBE),
+        foregroundColor: Colors.white,
+        title: const Text('回復アルバム'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Text(
+              '🐶 ルナより\n\nここまでの記録は、あなたが歩いてきた大切な足あとだよ。\n\n連続記録：$streakDays日\nルナとの絆：$lunaBond',
+              style: const TextStyle(
+                fontSize: 16,
+                height: 1.6,
+                color: Color(0xFF6D5D7A),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          if (records.isEmpty)
+            const Text(
+              'まだ記録がありません。\n気分記録をすると、ここに回復の足あとが残るよ🌱',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.6,
+                color: Color(0xFF6D5D7A),
+              ),
+            ),
+
+          ...records.map((record) {
+            final date =
+                '${record.createdAt.year}/${record.createdAt.month}/${record.createdAt.day}';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    date,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8E7BBE),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('天気：${record.weather}'),
+                  const SizedBox(height: 8),
+                  Text('メモ：${record.memo.isEmpty ? "メモなし" : record.memo}'),
+                  const SizedBox(height: 8),
+                  Text(
+                    '感情：${record.emotionPercents.entries.map((e) => '${e.key} ${(e.value).round()}%').join(' / ')}',
+                    style: const TextStyle(height: 1.5),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 }
