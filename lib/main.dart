@@ -427,6 +427,7 @@ void goToLunaHouse() {
   latestMood: latestMood,
   petImagePath: petImagePath,
   lunaBond: lunaBond,
+  streakDays: streakDays,
   onTalkAboutMood: () {
     setState(() {
       selectedIndex = 2;
@@ -531,12 +532,14 @@ class HomeScreen extends StatefulWidget {
   final String? petImagePath;
   final VoidCallback onTalkAboutMood;
   final int lunaBond;
+  final int streakDays;
 
  const HomeScreen({
   super.key,
   this.latestMood,
   this.petImagePath,
   required this.lunaBond,
+  required this.streakDays,
   required this.onTalkAboutMood,
 });
 
@@ -549,6 +552,36 @@ class _HomeScreenState extends State<HomeScreen>
 
 late AnimationController _controller;
 late Animation<double> _floatingAnimation;
+
+String getLunaMessage() {
+  if (widget.streakDays >= 100) {
+    return '100日も来てくれたんだね。\nルナは幸せだよ🐶';
+  }
+
+  if (widget.streakDays >= 30) {
+    return '30日達成！\nここまで本当に頑張ったね🌙';
+  }
+
+  if (widget.streakDays >= 7) {
+    return '1週間続いたね！\nルナもうれしい🐶';
+  }
+
+  if (widget.streakDays >= 3) {
+    return '3日連続だね！\n少しずつ前に進んでるよ✨';
+  }
+
+  final messages = [
+    'おかえり。\n今日も会えてうれしいよ。',
+    '無理しなくていいよ。\nここで少し休もう。',
+    '今日の気持ち、\nあとで聞かせてね。',
+    'ここに来るだけでも十分だよ。',
+    'ルナはいつでも待ってるよ🌙',
+    '疲れたらここで休んでね。',
+  ];
+
+  messages.shuffle();
+  return messages.first;
+}
 
 @override
 void initState() {
@@ -580,12 +613,22 @@ void dispose() {
     final size = MediaQuery.of(context).size;
     final lunaHeight = (size.height * 0.42).clamp(250.0, 460.0);
 
-    final lunaMessages = [
+final lunaMessages = [
   'おかえり。\n今日も会えてうれしいよ。',
   '無理しなくていいよ。\nここで少し休もう。',
   '今日の気持ち、\nあとで聞かせてね。',
-  'ここに来てくれてありがとう。\nゆっくりで大丈夫。',
-  'がんばれない日も、\nここにいていいよ。',
+  '今日も来てくれてありがとう🐶',
+  'ここに来るだけでも十分だよ。',
+  'ルナはいつでも待ってるよ🌙',
+  '深呼吸していこうか。',
+  '今日はどんな一日だった？',
+  'ちゃんとご飯食べた？',
+  '頑張れない日があっても大丈夫。',
+  '疲れたらここで休んでね。',
+  'ひとりじゃないよ。',
+  '少しだけ肩の力を抜いてみよう。',
+  '今日も生きててえらい。',
+  'ルナはあなたの味方だよ🐶',
 ];
 
 final specialLunaMessages = [
@@ -690,8 +733,7 @@ if (widget.lunaBond >= 100) {
   allMessages = lunaMessages;
 }
 
-lunaMessage =
-    '$timeMessage${allMessages[Random().nextInt(allMessages.length)]}';
+lunaMessage = '$timeMessage${getLunaMessage()}';
 
 
 }
@@ -2512,8 +2554,14 @@ Padding(
                 },
               ),
             ),
-            Container(
-  padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+
+Container(
+  padding: EdgeInsets.fromLTRB(
+    14,
+    10,
+    14,
+    14 + MediaQuery.of(context).viewInsets.bottom,
+  ),
   color: Colors.white.withOpacity(0.92),
   child: Column(
     children: [
