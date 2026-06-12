@@ -1349,27 +1349,27 @@ void sendMessage() {
 
   setState(() {
     widget.messages.add(ChatMessage(text: text, isUser: true));
-  widget.messages.add(
-  ChatMessage(
-    text: makeCocoonReply(text, widget.messages),
-    isUser: false,
-  ),
-);
-
-Future.delayed(const Duration(milliseconds: 100), () {
-  if (scrollController.hasClients) {
-    scrollController.animateTo(
-      scrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+    widget.messages.add(
+      ChatMessage(
+        text: makeCocoonReply(text, widget.messages),
+        isUser: false,
+      ),
     );
-  }
-});
 
     chatController.clear();
   });
 
   widget.onMessagesChanged();
+
+  Future.delayed(const Duration(milliseconds: 100), () {
+    if (scrollController.hasClients) {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  });
 }
 
 
