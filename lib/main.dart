@@ -1263,6 +1263,7 @@ Future<void> saveCurrentTopic(String topic) async {
 }
   final TextEditingController chatController = TextEditingController();
   final Random random = Random();
+  final ScrollController scrollController = ScrollController();
 
  String pick(List<String> replies) {
   return replies[random.nextInt(replies.length)];
@@ -1354,6 +1355,16 @@ void sendMessage() {
     isUser: false,
   ),
 );
+
+Future.delayed(const Duration(milliseconds: 100), () {
+  if (scrollController.hasClients) {
+    scrollController.animateTo(
+      scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+});
 
     chatController.clear();
   });
@@ -2472,9 +2483,10 @@ if (text.contains('誰にも言えない') ||
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF8F3FA),
-      child: SafeArea(
+   return Scaffold(
+  resizeToAvoidBottomInset: true,
+  backgroundColor: const Color(0xFFF8F3FA),
+  body: SafeArea(
         child: Column(
           children: [
             Container(
@@ -2518,26 +2530,30 @@ if (text.contains('誰にも言えない') ||
 ),
 Padding(
   padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-  child: Wrap(
-    spacing: 8,
-    runSpacing: 8,
-    children: [
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      children: [
       ActionChip(
         label: const Text('💔 恋愛'),
         onPressed: () => sendQuickTopic('恋愛のことで話したい'),
       ),
+      const SizedBox(width: 12),
       ActionChip(
         label: const Text('😰 不安'),
         onPressed: () => sendQuickTopic('不安な気持ちを整理したい'),
       ),
+      const SizedBox(width: 12),
       ActionChip(
         label: const Text('🌙 眠れない'),
         onPressed: () => sendQuickTopic('眠れない夜でつらい'),
       ),
+      const SizedBox(width: 12),
       ActionChip(
         label: const Text('🏠 家族'),
         onPressed: () => sendQuickTopic('家族のことで悩んでいる'),
       ),
+      const SizedBox(width: 12),
       ActionChip(
         label: const Text('🫂 ただ話したい'),
         onPressed: () => sendQuickTopic('ただ話を聞いてほしい'),
@@ -2545,10 +2561,12 @@ Padding(
     ],
   ),
 ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(18),
-                itemCount: widget.messages.length,
+),
+           Expanded(
+  child: ListView.builder(
+    controller: scrollController,
+    padding: const EdgeInsets.all(18),
+    itemCount: widget.messages.length,
                 itemBuilder: (context, index) {
                   return ChatBubble(message: widget.messages[index]);
                 },
