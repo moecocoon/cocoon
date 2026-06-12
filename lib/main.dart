@@ -2530,14 +2530,20 @@ if (text.contains('誰にも言えない') ||
 ),
 Padding(
   padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+  child: SizedBox(
+  width: double.infinity,
   child: SingleChildScrollView(
     scrollDirection: Axis.horizontal,
     child: Row(
       children: [
-      ActionChip(
-        label: const Text('💔 恋愛'),
-        onPressed: () => sendQuickTopic('恋愛のことで話したい'),
-      ),
+     ActionChip(
+  label: const Text(
+    '💔 恋愛',
+    style: TextStyle(fontSize: 15),
+  ),
+  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  onPressed: () => sendQuickTopic('恋愛のことで話したい'),
+),
       const SizedBox(width: 12),
       ActionChip(
         label: const Text('😰 不安'),
@@ -2562,28 +2568,31 @@ Padding(
   ),
 ),
 ),
-           Expanded(
+),
+Expanded(
   child: ListView.builder(
     controller: scrollController,
     padding: const EdgeInsets.all(18),
     itemCount: widget.messages.length,
-                itemBuilder: (context, index) {
-                  return ChatBubble(message: widget.messages[index]);
-                },
-              ),
-            ),
+    itemBuilder: (context, index) {
+      return ChatBubble(message: widget.messages[index]);
+    },
+  ),
+),
 
 Container(
-  padding: EdgeInsets.fromLTRB(
+  padding: const EdgeInsets.fromLTRB(
     14,
     10,
     14,
-    14 + MediaQuery.of(context).viewInsets.bottom,
+    14,
   ),
   color: Colors.white.withOpacity(0.92),
-  child: Column(
-    children: [
-      ElevatedButton(
+child: Column(
+  children: [
+    SizedBox(
+      height: 38,
+      child: ElevatedButton(
         onPressed: () {
           setState(() {
             widget.messages.add(
@@ -2596,8 +2605,12 @@ Container(
 
           widget.onMessagesChanged();
         },
-        child: const Text('🐶 ルナの気づきを見る'),
+       child: const Text(
+  '🐶 気づき',
+  style: TextStyle(fontSize: 13),
+),
       ),
+    ),
 
       const SizedBox(height: 8),
 
