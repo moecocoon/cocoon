@@ -570,17 +570,44 @@ String getLunaMessage() {
     return '3日連続だね！\n少しずつ前に進んでるよ✨';
   }
 
-  final messages = [
-    'おかえり。\n今日も会えてうれしいよ。',
-    '無理しなくていいよ。\nここで少し休もう。',
-    '今日の気持ち、\nあとで聞かせてね。',
-    'ここに来るだけでも十分だよ。',
-    'ルナはいつでも待ってるよ🌙',
-    '疲れたらここで休んでね。',
-  ];
+final hour = DateTime.now().hour;
 
-  messages.shuffle();
-  return messages.first;
+List<String> messages;
+
+if (hour >= 5 && hour < 11) {
+  messages = [
+    'おはよう☀️ 今日も無理せずいこうね。',
+    '朝ごはんは食べた？🐶',
+    '新しい一日の始まりだね🌷',
+    '眠かったらゆっくりスタートで大丈夫。',
+  ];
+} else if (hour >= 11 && hour < 17) {
+  messages = [
+    'こんにちは🌼',
+    'お昼はちゃんと食べた？',
+    '少し休憩するのも大事だよ🐶',
+    '今日の心の天気はどうかな？',
+  ];
+} else if (hour >= 17 && hour < 23) {
+  messages = [
+    '今日もお疲れさま🌙',
+    'ここまで頑張ったね。',
+    '今日はどんな一日だった？',
+    '少し肩の力を抜いてみよう🐶',
+  ];
+} else {
+  messages = [
+    'まだ起きてたんだね🌙',
+    '眠れない夜もあるよね。',
+    'ルナはここにいるよ🐶',
+    '夜は考えごとが増えるよね。',
+    '無理に寝ようとしなくても大丈夫。',
+  ];
+}
+
+messages.shuffle();
+return messages.first;
+
 }
 
 @override
