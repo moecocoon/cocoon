@@ -3154,60 +3154,76 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
 
 
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEAF8EF),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            children: [
-              const Text(
-                '深呼吸の森',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3C946F),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ScaleTransition(
-                scale: controller,
-                child: Container(
-                  width: 220,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+   body: SizedBox.expand(
+  child: Container(
+    decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/breath_forest_bg.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        color: Colors.white.withOpacity(0.25),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              children: [
+                const Text(
+                  '深呼吸の森',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3C946F),
                   ),
-                  child: Center(
-                    child: Text(
-                      isBreathingIn ? '吸って…' : '吐いて…',
-                      style: const TextStyle(fontSize: 28),
+                ),
+                const SizedBox(height: 20),
+
+                ScaleTransition(
+                  scale: controller,
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.85),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        isBreathingIn ? '吸って…' : '吐いて…',
+                        style: const TextStyle(fontSize: 28),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              Image.asset(
-                'assets/images/luna.png',
-                height: 140,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-  onPressed: widget.onBack,
-  child: const Text('心の広場に戻る'),
-),
 
+                const SizedBox(height: 40),
 
-            ],
+                Image.asset(
+                  'assets/images/luna.png',
+                  height: 140,
+                ),
+
+                const SizedBox(height: 24),
+
+                ElevatedButton(
+                  onPressed: widget.onBack,
+                  child: const Text('心の広場に戻る'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
+       ),
+  ),
+);
 }
+}
+
 class MyPageScreen extends StatelessWidget {
   final String? petImagePath;
   final Function(String) onPetImageChanged;
@@ -3577,9 +3593,20 @@ class HitoyasumiCafeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F0),
- body: SafeArea(
+   return Scaffold(
+  body: SizedBox.expand(
+    child: Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(
+            'assets/images/cafe_bg.png',
+          ),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        color: Colors.white.withOpacity(0.20),
+        child: SafeArea(
   child: Padding(
     padding: const EdgeInsets.all(28),
     child: Column(
@@ -3643,8 +3670,11 @@ ElevatedButton(
               ElevatedButton(
                 onPressed: onBack,
                 child: const Text('心の広場に戻る'),
+   ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),

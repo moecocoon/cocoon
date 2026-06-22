@@ -26,12 +26,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/home_bg.png
-    - assets/images/luna.png
-    - assets/images/kokoro_bg.png
-    - assets/images/emotion_anxiety.png
-    - assets/images/emotion_peace.png
-    - assets/images/emotion_lonely.png
-    - assets/images/emotion_tired.png
-    - assets/images/emotion_angry.png
+    - assets/images/
+
     
