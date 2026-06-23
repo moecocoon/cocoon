@@ -672,7 +672,7 @@ void dispose() {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-final lunaHeight = (size.height * 0.32).clamp(220.0, 300.0);
+final lunaHeight = (size.height * 0.32).clamp(220.0, 320.0);
 
 final lunaMessages = [
   'おかえり。\n今日も会えてうれしいよ。',
@@ -907,10 +907,11 @@ lunaMessage = getLunaMessage();
                             ],
                           ),
 
-                          const SizedBox(height: 14),
+                         const SizedBox(height: 6),
 
-                          Expanded(
- child: !kIsWeb && widget.petImagePath != null
+        SizedBox(
+  height: 160,
+  child: !kIsWeb && widget.petImagePath != null           
     ? Image.file(
         File(widget.petImagePath!),
         fit: BoxFit.contain,
@@ -927,7 +928,7 @@ child: GestureDetector(
   onTap: () {},
   child: Image.asset(
     'assets/images/luna.png',
-   height: 200,
+   height: 220,
     fit: BoxFit.contain,
   ),
 ),
