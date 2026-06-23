@@ -928,7 +928,7 @@ child: GestureDetector(
   onTap: () {},
   child: Image.asset(
     'assets/images/luna.png',
-   height: 220,
+   height: 200,
     fit: BoxFit.contain,
   ),
 ),
