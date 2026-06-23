@@ -258,6 +258,40 @@ Future<void> loadStreak() async {
   });
 }
 
+String getLunaMessage() {
+  final hour = DateTime.now().hour;
+
+  if (streakDays >= 30) {
+    return 'もう1か月も会いに来てくれてるんだね。ルナ、すごくうれしいよ。';
+  }
+
+  if (streakDays >= 7) {
+    return '1週間も続いてるね。ちゃんと自分の気持ちを見ててえらいよ。';
+  }
+
+  if (streakDays >= 3) {
+    return '3日連続だね。今日も会えてうれしいな。';
+  }
+
+  if (lunaBond >= 100) {
+    return '君が来てくれると、ルナも安心するんだ。';
+  }
+
+  if (lunaBond >= 50) {
+    return 'また来てくれたね。ルナ、ちゃんと覚えてるよ。';
+  }
+
+  if (hour >= 5 && hour < 11) {
+    return 'おはよう。今日も無理しすぎないでね。';
+  } else if (hour >= 11 && hour < 17) {
+    return '少し休憩できてる？ルナはここにいるよ。';
+  } else if (hour >= 17 && hour < 22) {
+    return '今日もおつかれさま。ここでは力を抜いていいよ。';
+  } else {
+    return '眠れない夜かな。ルナはここにいるよ。';
+  }
+}
+
 Future<void> addLunaBond(int point) async {
   setState(() {
     lunaBond += point;
@@ -423,7 +457,7 @@ void goToLunaHouse() {
   @override
   Widget build(BuildContext context) {
     final pages = [
-   HomeScreen(
+  HomeScreen(
   latestMood: latestMood,
   petImagePath: petImagePath,
   lunaBond: lunaBond,
@@ -638,7 +672,7 @@ void dispose() {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final lunaHeight = (size.height * 0.42).clamp(250.0, 460.0);
+final lunaHeight = (size.height * 0.32).clamp(220.0, 300.0);
 
 final lunaMessages = [
   'おかえり。\n今日も会えてうれしいよ。',
@@ -760,7 +794,7 @@ if (widget.lunaBond >= 100) {
   allMessages = lunaMessages;
 }
 
-lunaMessage = '$timeMessage${getLunaMessage()}';
+lunaMessage = getLunaMessage();
 
 
 }
@@ -889,27 +923,11 @@ lunaMessage = '$timeMessage${getLunaMessage()}';
               child: child,
             );
           },
-          child: GestureDetector(
-  onTap: () {
-    final messages = [
-      'おかえり🌙',
-      '今日も来てくれてありがとう',
-      'ちゃんとご飯食べた？',
-      '無理しすぎてない？',
-      '少し休憩しよう🐶',
-      'ルナはここにいるよ',
-    ];
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          messages[Random().nextInt(messages.length)],
-        ),
-      ),
-    );
-  },
+child: GestureDetector(
+  onTap: () {},
   child: Image.asset(
     'assets/images/luna.png',
+   height: 200,
     fit: BoxFit.contain,
   ),
 ),
@@ -921,7 +939,7 @@ lunaMessage = '$timeMessage${getLunaMessage()}';
 
 
                     const SizedBox(height: 16),
-
+                    
                     if (widget.latestMood != null)
                       Container(
                         width: double.infinity,
@@ -3701,8 +3719,19 @@ class _NightShelterScreenState extends State<NightShelterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEEF0FA),
-      body: SafeArea(
+  body: SizedBox.expand(
+    child: Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(
+            'assets/images/night_shelter_bg.png',
+          ),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        color: Colors.black54,
+        child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(28),
           child: Column(
@@ -3790,11 +3819,14 @@ ElevatedButton(
 ),
 
             ],
+                        ),
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 class LunaHouseScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -3849,8 +3881,7 @@ Future<void> saveFullness() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FA),
-      appBar: AppBar(
+  appBar: AppBar(
   title: const Text('ルナのおうち'),
   backgroundColor: const Color(0xFF8E7BBE),
   foregroundColor: Colors.white,
@@ -3859,8 +3890,20 @@ Future<void> saveFullness() async {
     onPressed: widget.onBack,
   ),
 ),
-      body: SafeArea(
-  child: SingleChildScrollView(
+     body: SizedBox.expand(
+  child: Container(
+    decoration: const BoxDecoration(
+      image: DecorationImage(
+        image: AssetImage(
+          'assets/images/luna_home_bg.png',
+        ),
+        fit: BoxFit.cover,
+      ),
+    ),
+    child: Container(
+      color: Colors.white.withOpacity(0.15),
+      child: SafeArea(
+        child: SingleChildScrollView(
     child: Padding(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -3870,7 +3913,7 @@ Future<void> saveFullness() async {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF8E7BBE),
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 24),
@@ -3884,7 +3927,7 @@ Text(
   style: const TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
-    color: Color(0xFF8E7BBE),
+    color: Colors.white,
   ),
 ),
 
@@ -3895,7 +3938,7 @@ Text(
   style: const TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
-    color: Color(0xFF8E7BBE),
+    color: Colors.white,
   ),
 ),
 const SizedBox(height: 16),
@@ -3956,10 +3999,12 @@ ElevatedButton(
         ),
       ),
     ),
-  );
+  ),
+),
+),
+);
 }
 }
-
 class SpeechBubbleTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
