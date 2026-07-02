@@ -894,40 +894,65 @@ if (widget.lunaBond >= 100) {
 }
 String lunaMessage = '';
 
+
 if (widget.latestMood != null &&
     widget.latestMood!.emotionPercents.isNotEmpty) {
   final strongestEmotion = widget.latestMood!.emotionPercents.entries
       .reduce((a, b) => a.value >= b.value ? a : b);
 
-  if (strongestEmotion.key.contains('不安')) {
-    lunaMessage = '${timeMessage}今日は不安さんが少し大きいみたい。\nここで一緒にゆっくりしよう。';
-  } else if (strongestEmotion.key.contains('疲れ')) {
-    lunaMessage = '${timeMessage}今日はおつかれさんが近くにいるね。\n無理しない時間にしよう。';
-  } else if (strongestEmotion.key.contains('さみしい')) {
-    lunaMessage = '${timeMessage}今日はさみしいさんが顔を出してるね。\nルナがそばにいるよ。';
-  } else if (strongestEmotion.key.contains('イライラ')) {
-    lunaMessage = '${timeMessage}今日はイライラさんが強めかも。\nここで少しほどいていこう。';
-  } else if (strongestEmotion.key.contains('安心')) {
-    lunaMessage = '${timeMessage}今日は安心さんもいるね。\nそのやわらかい気持ち、大事にしよう。';
-  } else {
-    lunaMessage = '${timeMessage}今日の気持ち、ちゃんと届いてるよ。\n少し一緒に整理しよう。';
-  }
-} else {
-List<String> allMessages;
+if (strongestEmotion.key.contains('不安')) {
+  lunaMessage = [
+    '${timeMessage}今日は不安さんが少し大きいみたい。\nここで一緒にゆっくりしよう。',
+    '${timeMessage}少し心が落ち着かないのかな。\nルナは今日もそばにいるよ🐶',
+    '${timeMessage}不安な日もあるよね。\n今日は無理をしなくて大丈夫。',
+  ][Random().nextInt(3)];
+} else if (strongestEmotion.key.contains('疲れ')) {
+  lunaMessage = [
+    '${timeMessage}今日はおつかれさんが近くにいるね。\n無理しない時間にしよう。',
+    '${timeMessage}少し心と体が疲れているみたい。\n今日は休むことも大事にしよう🐶',
+    '${timeMessage}頑張りすぎた日なのかな。\nここでは力を抜いて大丈夫だよ。',
+  ][Random().nextInt(3)];
 
-if (widget.lunaBond >= 100) {
-  allMessages = [...lunaMessages, ...familyMessages];
-} else if (widget.lunaBond >= 30) {
-  allMessages = [...lunaMessages, ...bestFriendMessages];
-} else if (widget.lunaBond >= 10) {
-  allMessages = [...lunaMessages, ...specialLunaMessages];
+} else if (strongestEmotion.key.contains('さみしい')) {
+  lunaMessage = [
+    '${timeMessage}今日はさみしいさんが顔を出してるね。\nルナがそばにいるよ。',
+    '${timeMessage}ひとりに感じる日もあるよね。\nここではその気持ちを置いていっていいよ🐶',
+    '${timeMessage}誰かに聞いてほしい気持ちがあるのかな。\nルナはちゃんと聞くよ。',
+  ][Random().nextInt(3)];
+
+} else if (strongestEmotion.key.contains('イライラ')) {
+  lunaMessage = [
+    '${timeMessage}今日はイライラさんが強めかも。\nここで少しほどいていこう。',
+    '${timeMessage}心が少しぎゅっとしているのかな。\nまずは深呼吸してみよう🐶',
+    '${timeMessage}怒りの奥に、疲れや悲しさもあるかもしれないね。\nゆっくり見ていこう。',
+  ][Random().nextInt(3)];
+
+} else if (strongestEmotion.key.contains('安心')) {
+  lunaMessage = [
+    '${timeMessage}今日は安心さんもいるね。\nそのやわらかい気持ち、大事にしよう。',
+    '${timeMessage}少し心が落ち着いているみたいだね。\nルナもうれしいよ🐶',
+    '${timeMessage}穏やかな気持ちがある日だね。\nその安心を少し覚えておこう🌙',
+  ][Random().nextInt(3)];
 } else {
-  allMessages = lunaMessages;
+  lunaMessage =
+      '${timeMessage}今日の気持ち、ちゃんと届いてるよ。\n少し一緒に整理しよう。';
 }
 
-lunaMessage = getLunaMessage();
 
+} else {
+  List<String> allMessages;
 
+  if (widget.lunaBond >= 100) {
+    allMessages = [...lunaMessages, ...familyMessages];
+  } else if (widget.lunaBond >= 30) {
+    allMessages = [...lunaMessages, ...bestFriendMessages];
+  } else if (widget.lunaBond >= 10) {
+    allMessages = [...lunaMessages, ...specialLunaMessages];
+  } else {
+    allMessages = lunaMessages;
+  }
+
+  lunaMessage = getLunaMessage();
 }
 
 if (widget.latestMemory != null) {
@@ -992,7 +1017,7 @@ if (widget.latestMemory != null) {
 
 
                     SizedBox(
-                      height: lunaHeight,
+                      height: lunaHeight+ 50,
                       width: double.infinity,
                       child: Column(
                         children: [
