@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cocoon/theme/app_colors.dart';
+import 'package:cocoon/theme/app_text_styles.dart';
+import 'package:cocoon/widgets/cocoon_card.dart';
 import 'dart:math';
 import 'dart:io';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
+
 
 
 void main() {
@@ -698,267 +702,125 @@ class HomeScreen extends StatefulWidget {
   final int streakDays;
   final LunaMemory? latestMemory;
 
- const HomeScreen({
-  super.key,
-  this.latestMood,
-  this.petImagePath,
-  this.latestMemory,
-  required this.lunaBond,
-  required this.streakDays,
-  required this.onTalkAboutMood,
-});
+  const HomeScreen({
+    super.key,
+    this.latestMood,
+    this.petImagePath,
+    this.latestMemory,
+    required this.lunaBond,
+    required this.streakDays,
+    required this.onTalkAboutMood,
+  });
 
-@override
-State<HomeScreen> createState() => _HomeScreenState();
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _floatingAnimation;
 
-late AnimationController _controller;
-late Animation<double> _floatingAnimation;
+  @override
+  void initState() {
+    super.initState();
 
-String getLunaMessage() {
-  if (widget.streakDays >= 100) {
-    return '100日も来てくれたんだね。\nルナは幸せだよ🐶';
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
+    _floatingAnimation = Tween<double>(
+      begin: -6,
+      end: 6,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
-  if (widget.streakDays >= 30) {
-    return '30日達成！\nここまで本当に頑張ったね🌙';
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  if (widget.streakDays >= 7) {
-    return '1週間続いたね！\nルナもうれしい🐶';
+  String getBondLevel() {
+    if (widget.lunaBond >= 100) return 'かぞく';
+    if (widget.lunaBond >= 30) return 'しんゆう';
+    if (widget.lunaBond >= 10) return 'なかよし';
+    return 'おともだち';
   }
 
-  if (widget.streakDays >= 3) {
-    return '3日連続だね！\n少しずつ前に進んでるよ✨';
+  String getLunaMessage() {
+    final hour = DateTime.now().hour;
+
+    if (widget.latestMemory != null) {
+      return 'この前話してくれた\n「${widget.latestMemory!.summary}」\nその後どうだった？🐶';
+    }
+
+    if (widget.streakDays >= 100) {
+      return '100日も来てくれたんだね。\nルナは幸せだよ🐶';
+    }
+
+    if (widget.streakDays >= 30) {
+      return '30日達成！\nここまで本当に頑張ったね🌙';
+    }
+
+    if (widget.streakDays >= 7) {
+      return '1週間続いたね！\nルナもうれしい🐶';
+    }
+
+    if (widget.latestMood != null &&
+        widget.latestMood!.emotionPercents.isNotEmpty) {
+      final strongestEmotion = widget.latestMood!.emotionPercents.entries
+          .reduce((a, b) => a.value >= b.value ? a : b);
+
+      if (strongestEmotion.key.contains('不安')) {
+        return '今日は不安さんが少し大きいみたい。\nここで一緒にゆっくりしよう。';
+      } else if (strongestEmotion.key.contains('疲れ')) {
+        return '今日はおつかれさんが近くにいるね。\n無理しない時間にしよう。';
+      } else if (strongestEmotion.key.contains('さみしい')) {
+        return '今日はさみしいさんが顔を出してるね。\nルナがそばにいるよ。';
+      } else if (strongestEmotion.key.contains('イライラ')) {
+        return '今日はイライラさんが強めかも。\nここで少しほどいていこう。';
+      } else if (strongestEmotion.key.contains('安心')) {
+        return '今日は安心さんもいるね。\nそのやわらかい気持ち、大事にしよう。';
+      }
+    }
+
+    if (hour >= 5 && hour < 11) {
+      return 'おはよう☀️\n今日も無理せずいこうね。';
+    } else if (hour >= 11 && hour < 17) {
+      return 'こんにちは🌼\n少し休憩するのも大事だよ。';
+    } else if (hour >= 17 && hour < 23) {
+      return '今日もお疲れさま🌙\nここまで頑張ったね。';
+    } else {
+      return 'まだ起きてたんだね🌙\nルナはここにいるよ🐶';
+    }
   }
 
-final hour = DateTime.now().hour;
+  Color getOverlayColor() {
+    final hour = DateTime.now().hour;
 
-List<String> messages;
+    if (hour >= 5 && hour < 11) {
+      return Colors.orange.withOpacity(0.12);
+    } else if (hour >= 11 && hour < 17) {
+      return Colors.white.withOpacity(0.05);
+    } else if (hour >= 17 && hour < 22) {
+      return Colors.deepPurple.withOpacity(0.18);
+    } else {
+      return Colors.indigo.withOpacity(0.30);
+    }
+  }
 
-if (hour >= 5 && hour < 11) {
-  messages = [
-    'おはよう☀️ 今日も無理せずいこうね。',
-    '朝ごはんは食べた？🐶',
-    '新しい一日の始まりだね🌷',
-    '眠かったらゆっくりスタートで大丈夫。',
-  ];
-} else if (hour >= 11 && hour < 17) {
-  messages = [
-    'こんにちは🌼',
-    'お昼はちゃんと食べた？',
-    '少し休憩するのも大事だよ🐶',
-    '今日の心の天気はどうかな？',
-  ];
-} else if (hour >= 17 && hour < 23) {
-  messages = [
-    '今日もお疲れさま🌙',
-    'ここまで頑張ったね。',
-    '今日はどんな一日だった？',
-    '少し肩の力を抜いてみよう🐶',
-  ];
-} else {
-  messages = [
-    'まだ起きてたんだね🌙',
-    '眠れない夜もあるよね。',
-    'ルナはここにいるよ🐶',
-    '夜は考えごとが増えるよね。',
-    '無理に寝ようとしなくても大丈夫。',
-  ];
-}
-
-messages.shuffle();
-return messages.first;
-
-}
-
-@override
-void initState() {
-  super.initState();
-
-  _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 3),
-  )..repeat(reverse: true);
-
-  _floatingAnimation = Tween<double>(
-    begin: -6,
-    end: 6,
-  ).animate(
-    CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ),
-  );
-}
-
-@override
-void dispose() {
-  _controller.dispose();
-  super.dispose();
-}
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-final lunaHeight = (size.height * 0.32).clamp(220.0, 320.0);
-
-final lunaMessages = [
-  'おかえり。\n今日も会えてうれしいよ。',
-  '無理しなくていいよ。\nここで少し休もう。',
-  '今日の気持ち、\nあとで聞かせてね。',
-  '今日も来てくれてありがとう🐶',
-  'ここに来るだけでも十分だよ。',
-  'ルナはいつでも待ってるよ🌙',
-  '深呼吸していこうか。',
-  '今日はどんな一日だった？',
-  'ちゃんとご飯食べた？',
-  '頑張れない日があっても大丈夫。',
-  '疲れたらここで休んでね。',
-  'ひとりじゃないよ。',
-  '少しだけ肩の力を抜いてみよう。',
-  '今日も生きててえらい。',
-  'ルナはあなたの味方だよ🐶',
-];
-
-final specialLunaMessages = [
-  'ルナ、少しずつあなたのことがわかってきたよ。',
-  'ここに来てくれるたびに、ルナとの絆が深まってるね。',
-  '今日も会えてうれしい。\nルナはちゃんと待ってたよ。',
-  '前より少し、ここが安心できる場所になっていたらうれしいな。',
-];
-
-final bestFriendMessages = [
-  '会えるの楽しみにしてたよ。',
-  '今日も一緒にいようね。',
-  'ルナはあなたのこと、ちゃんと覚えてるよ。',
-  'しんどい日も嬉しい日も、一緒に過ごしてきたね。',
-];
-
-final familyMessages = [
-  'おかえり、待ってたよ。',
-  'どんな日でもルナは味方だよ。',
-  'ここはあなたの居場所だからね。',
-  'ルナにとって大切な家族だよ。',
-];
-
-final hour = DateTime.now().hour;
-String timeMessage;
-
-Color overlayColor;
-
-if (hour >= 5 && hour < 11) {
-  overlayColor = Colors.orange.withOpacity(0.12);
-} else if (hour >= 11 && hour < 17) {
-  overlayColor = Colors.white.withOpacity(0.05);
-} else if (hour >= 17 && hour < 22) {
-  overlayColor = Colors.deepPurple.withOpacity(0.18);
-} else {
-  overlayColor = Colors.indigo.withOpacity(0.30);
-}
-
-if (hour >= 5 && hour < 11) {
-  timeMessage = 'おはよう。\n';
-} else if (hour >= 11 && hour < 17) {
-  timeMessage = '今日も来てくれてありがとう。\n';
-} else if (hour >= 17 && hour < 22) {
-  timeMessage = '今日も一日おつかれさま。\n';
-} else {
-  timeMessage = 'まだ起きてたんだね。\n';
-}
-
-String bondLevel;
-
-Color speechBubbleColor;
-
-if (widget.lunaBond >= 100) {
-  speechBubbleColor = const Color(0xFFFFF4D6); // 金色っぽい
-} else if (widget.lunaBond >= 30) {
-  speechBubbleColor = const Color(0xFFFFE6F0); // ピンク
-} else if (widget.lunaBond >= 10) {
-  speechBubbleColor = const Color(0xFFF0E8FF); // 薄紫
-} else {
-  speechBubbleColor = Colors.white;
-}
-
-if (widget.lunaBond >= 100) {
-  bondLevel = 'かぞく';
-} else if (widget.lunaBond >= 30) {
-  bondLevel = 'しんゆう';
-} else if (widget.lunaBond >= 10) {
-  bondLevel = 'なかよし';
-} else {
-  bondLevel = 'おともだち';
-}
-String lunaMessage = '';
-
-
-if (widget.latestMood != null &&
-    widget.latestMood!.emotionPercents.isNotEmpty) {
-  final strongestEmotion = widget.latestMood!.emotionPercents.entries
-      .reduce((a, b) => a.value >= b.value ? a : b);
-
-if (strongestEmotion.key.contains('不安')) {
-  lunaMessage = [
-    '${timeMessage}今日は不安さんが少し大きいみたい。\nここで一緒にゆっくりしよう。',
-    '${timeMessage}少し心が落ち着かないのかな。\nルナは今日もそばにいるよ🐶',
-    '${timeMessage}不安な日もあるよね。\n今日は無理をしなくて大丈夫。',
-  ][Random().nextInt(3)];
-} else if (strongestEmotion.key.contains('疲れ')) {
-  lunaMessage = [
-    '${timeMessage}今日はおつかれさんが近くにいるね。\n無理しない時間にしよう。',
-    '${timeMessage}少し心と体が疲れているみたい。\n今日は休むことも大事にしよう🐶',
-    '${timeMessage}頑張りすぎた日なのかな。\nここでは力を抜いて大丈夫だよ。',
-  ][Random().nextInt(3)];
-
-} else if (strongestEmotion.key.contains('さみしい')) {
-  lunaMessage = [
-    '${timeMessage}今日はさみしいさんが顔を出してるね。\nルナがそばにいるよ。',
-    '${timeMessage}ひとりに感じる日もあるよね。\nここではその気持ちを置いていっていいよ🐶',
-    '${timeMessage}誰かに聞いてほしい気持ちがあるのかな。\nルナはちゃんと聞くよ。',
-  ][Random().nextInt(3)];
-
-} else if (strongestEmotion.key.contains('イライラ')) {
-  lunaMessage = [
-    '${timeMessage}今日はイライラさんが強めかも。\nここで少しほどいていこう。',
-    '${timeMessage}心が少しぎゅっとしているのかな。\nまずは深呼吸してみよう🐶',
-    '${timeMessage}怒りの奥に、疲れや悲しさもあるかもしれないね。\nゆっくり見ていこう。',
-  ][Random().nextInt(3)];
-
-} else if (strongestEmotion.key.contains('安心')) {
-  lunaMessage = [
-    '${timeMessage}今日は安心さんもいるね。\nそのやわらかい気持ち、大事にしよう。',
-    '${timeMessage}少し心が落ち着いているみたいだね。\nルナもうれしいよ🐶',
-    '${timeMessage}穏やかな気持ちがある日だね。\nその安心を少し覚えておこう🌙',
-  ][Random().nextInt(3)];
-} else {
-  lunaMessage =
-      '${timeMessage}今日の気持ち、ちゃんと届いてるよ。\n少し一緒に整理しよう。';
-}
-
-
-} else {
-  List<String> allMessages;
-
-  if (widget.lunaBond >= 100) {
-    allMessages = [...lunaMessages, ...familyMessages];
-  } else if (widget.lunaBond >= 30) {
-    allMessages = [...lunaMessages, ...bestFriendMessages];
-  } else if (widget.lunaBond >= 10) {
-    allMessages = [...lunaMessages, ...specialLunaMessages];
-  } else {
-    allMessages = lunaMessages;
-  }
-
-  lunaMessage = getLunaMessage();
-}
-
-if (widget.latestMemory != null) {
-  lunaMessage =
-      'この前話してくれた\n「${widget.latestMemory!.summary}」\nその後どうだった？🐶';
-}
+    final bondLevel = getBondLevel();
+    final lunaMessage = getLunaMessage();
 
     return Scaffold(
       body: Stack(
@@ -971,201 +833,194 @@ if (widget.latestMemory != null) {
           ),
           Positioned.fill(
             child: Container(
-              color:overlayColor,
+              color: getOverlayColor(),
             ),
           ),
           SafeArea(
-            child: SizedBox.expand(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: size.width < 500 ? 24 : size.width * 0.18,
-                ),
-                child: SingleChildScrollView(
-  child: Column(
-    children: [
-                    SizedBox(height: size.height * 0.04),
-
-                    const Text(
-                      'COCOON',
-                      style: TextStyle(
-                        fontSize: 38,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 4,
-                        color: Color(0xFF8E7BBE),
-                      ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width < 500 ? 24 : size.width * 0.18,
+                vertical: 24,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'COCOON',
+                    style: AppTextStyles.heading.copyWith(
+                      fontSize: 40,
+                      letterSpacing: 5,
+                      color: AppColors.accent,
                     ),
+                  ),
 
-               Container(
-  padding: const EdgeInsets.symmetric(
-    horizontal: 16,
-    vertical: 8,
-  ),
-  decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.85),
-    borderRadius: BorderRadius.circular(20),
-  ),
-  child: Text(
-   '🐶 ルナとの絆 ${widget.lunaBond}\n🌙 $bondLevel',
-    style: const TextStyle(
-      fontWeight: FontWeight.bold,
-      color: Color(0xFF8E7BBE),
-    ),
-  ),
-),
+                  const SizedBox(height: 14),
 
-                  const SizedBox(height: 18),
-
-
-                    SizedBox(
-                      height: lunaHeight+ 50,
-                      width: double.infinity,
-                      child: Column(
-                        children: [
-                          Stack(
-                            clipBehavior: Clip.none,
-                            alignment: Alignment.bottomCenter,
+                  CocoonCard(
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Color(0xFFE9D5FF),
+                          child: Text(
+                            '🐶',
+                            style: TextStyle(fontSize: 24),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 14,
-                                ),
-                               decoration: BoxDecoration(
-  color: speechBubbleColor,
-  borderRadius: BorderRadius.circular(26),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.12),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-  lunaMessage,
-  
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    height: 1.5,
-                                    color: Color(0xFF6D6478),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                              Text(
+                                'ルナとの絆 ${widget.lunaBond}',
+                                style: AppTextStyles.title,
                               ),
-
-                              Positioned(
-                                bottom: -10,
-                                child: Transform.rotate(
-                                  angle: 0.785398,
-                                child: Container(
-  width: 20,
-  height: 20,
-  color: speechBubbleColor,
-),
-                                ),
+                              const SizedBox(height: 4),
+                              Text(
+                                bondLevel,
+                                style: AppTextStyles.caption,
                               ),
                             ],
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                         const SizedBox(height: 6),
+                  const SizedBox(height: 18),
 
-        SizedBox(
-  height: 160,
-  child: !kIsWeb && widget.petImagePath != null           
-    ? Image.file(
-        File(widget.petImagePath!),
-        fit: BoxFit.contain,
-      )
-    : AnimatedBuilder(
-          animation: _floatingAnimation,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, _floatingAnimation.value),
-              child: child,
-            );
-          },
-child: GestureDetector(
-  onTap: () {},
-  child: Image.asset(
-    'assets/images/luna.png',
-   height: 200,
-    fit: BoxFit.contain,
-  ),
-),
-        ),
-),
+                  CocoonCard(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '💌 ルナからのメッセージ',
+                          style: AppTextStyles.title.copyWith(
+                            fontSize: 17,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          lunaMessage,
+                          style: AppTextStyles.body.copyWith(
+                            height: 1.6,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF6D6478),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  SizedBox(
+                    height: 170,
+                    child: !kIsWeb && widget.petImagePath != null
+                        ? Image.file(
+                            File(widget.petImagePath!),
+                            fit: BoxFit.contain,
+                          )
+                        : AnimatedBuilder(
+                            animation: _floatingAnimation,
+                            builder: (context, child) {
+                              return Transform.translate(
+                                offset: Offset(0, _floatingAnimation.value),
+                                child: child,
+                              );
+                            },
+                            child: Image.asset(
+                              'assets/images/luna.png',
+                              height: 170,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  if (widget.latestMood != null)
+                    CocoonCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '😊 今日の気分',
+                            style: AppTextStyles.title.copyWith(
+                              color: AppColors.accent,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          Center(
+                            child: Text(
+                              widget.latestMood!.weather,
+                              style: const TextStyle(fontSize: 36),
+                            ),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          ...widget.latestMood!.emotionPercents.entries.map(
+                            (entry) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      entry.key,
+                                      style: AppTextStyles.body,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${entry.value.round()}%',
+                                    style: AppTextStyles.body.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.accent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          if (widget.latestMood!.memo.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              widget.latestMood!.memo,
+                              style: AppTextStyles.caption.copyWith(
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 18),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: widget.onTalkAboutMood,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                              child: const Text('この気持ちをCOCOONに話す'),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-
-
-                    const SizedBox(height: 16),
-                    
-                    if (widget.latestMood != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Column(
-                          children: [
-                            const Text(
-                              '今日の記録',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF6F5F8F),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                             widget.latestMood!.weather,
-                              style: const TextStyle(fontSize: 34),
-                            ),
-                            const SizedBox(height: 8),
-                            ...widget.latestMood!.emotionPercents.entries.map(
-                              (entry) => Text(
-                                '${entry.key}：${entry.value.round()}%',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF6F5F8F),
-                                ),
-                              ),
-                            ),
-                            if (widget.latestMood!.memo.isNotEmpty)
-                             ...[
-                              const SizedBox(height: 10),
-                              Text(
-                                widget.latestMood!.memo,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF6D6478),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-
-ElevatedButton(
-  onPressed: widget.onTalkAboutMood,
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF8E7BBE),
-    foregroundColor: Colors.white,
-  ),
-  child: const Text('この気持ちをCOCOONに話す'),
-),
-
-                            ],
-                          ],
-                        ),
-                      ),
-
-                    
-                  ],
-                ),
+                ],
               ),
-             ),
             ),
           ),
         ],
