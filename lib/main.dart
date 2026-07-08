@@ -594,6 +594,7 @@ void goToLunaHouse() {
   petImagePath: petImagePath,
   lunaBond: lunaBond,
   streakDays: streakDays,
+ moodHistory: moodHistory, 
   onTalkAboutMood: () {
     setState(() {
       selectedIndex = 2;
@@ -701,6 +702,7 @@ class HomeScreen extends StatefulWidget {
   final int lunaBond;
   final int streakDays;
   final LunaMemory? latestMemory;
+  final List<MoodRecord> moodHistory;
 
   const HomeScreen({
     super.key,
@@ -710,6 +712,7 @@ class HomeScreen extends StatefulWidget {
     required this.lunaBond,
     required this.streakDays,
     required this.onTalkAboutMood,
+    required this.moodHistory,
   });
 
   @override
@@ -815,6 +818,32 @@ class _HomeScreenState extends State<HomeScreen>
       return Colors.indigo.withOpacity(0.30);
     }
   }
+
+  Color getEmotionColor(String emotionKey) {
+  if (emotionKey.contains('うれしい')) {
+    return const Color(0xFFFFD966);
+  } else if (emotionKey.contains('安心')) {
+    return const Color(0xFF9AD7B5);
+  } else if (emotionKey.contains('がんばった')) {
+    return const Color(0xFFFFB6C1);
+  } else if (emotionKey.contains('不安')) {
+    return const Color(0xFF8FAADC);
+  } else if (emotionKey.contains('悲しい')) {
+    return const Color(0xFF9DC3E6);
+  } else if (emotionKey.contains('疲れ')) {
+    return const Color(0xFFBFBFBF);
+  } else if (emotionKey.contains('イライラ')) {
+    return const Color(0xFFD99694);
+  } else if (emotionKey.contains('さみしい')) {
+    return const Color(0xFFC5A3FF);
+  }
+  return AppColors.accent;
+}
+
+String getWeekday(DateTime date) {
+  const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
+  return weekdays[date.weekday - 1];
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1019,6 +1048,161 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 16),
+
+if (widget.moodHistory.isNotEmpty)
+  CocoonCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '📊 最近7日間の気分',
+          style: AppTextStyles.title.copyWith(
+            color: AppColors.accent,
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: widget.moodHistory
+              .where((mood) {
+                final now = DateTime.now();
+                return mood.createdAt.isAfter(
+                  now.subtract(const Duration(days: 7)),
+                );
+              })
+              .take(7)
+              .map((mood) {
+                final strongest = mood.emotionPercents.entries.reduce(
+                  (a, b) => a.value >= b.value ? a : b,
+                );
+
+          final emotionColor = getEmotionColor(strongest.key);
+
+return GestureDetector(
+  onTap: () {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          title: Text(
+            '${getWeekday(mood.createdAt)}曜日の記録',
+            style: AppTextStyles.title.copyWith(
+              color: AppColors.accent,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  mood.weather,
+                  style: const TextStyle(fontSize: 40),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              ...mood.emotionPercents.entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    '${entry.key}：${entry.value.round()}%',
+                    style: AppTextStyles.body,
+                  ),
+                ),
+              ),
+
+              if (mood.memo.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'メモ',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  mood.memo,
+                  style: AppTextStyles.body,
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('閉じる'),
+            ),
+          ],
+        );
+      },
+    );
+  },
+  child: Column(
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+    Text(
+      '${strongest.value.round()}%',
+      style: AppTextStyles.caption.copyWith(
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      ),
+    ),
+
+    const SizedBox(height: 6),
+
+    Container(
+      width: 28,
+      height: 110,
+      alignment: Alignment.bottomCenter,
+      decoration: BoxDecoration(
+        color: emotionColor.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: 28,
+        height: (strongest.value / 100) * 110,
+        decoration: BoxDecoration(
+          color: emotionColor,
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 8),
+
+    Text(
+      getWeekday(mood.createdAt),
+      style: AppTextStyles.caption.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+
+    const SizedBox(height: 4),
+
+    Text(
+      mood.weather,
+      style: const TextStyle(fontSize: 20),
+    ),
+  ],
+  ),
+);
+              }).toList(),
+        ),
+      ],
+    ),
+  ),
                    const SizedBox(height: 180), 
                 ],
               ),
@@ -1029,7 +1213,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 }
-
 
 class MoodRecordScreen extends StatefulWidget {
   final Function(MoodRecord) onSave;
@@ -1048,31 +1231,29 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
   final Map<String, double> emotionPercents = {};
   final TextEditingController memoController = TextEditingController();
 
-  final List<String> weathers = [
-    '☀️',
-    '🌤️',
-    '☁️',
-    '🌧️',
-    '🌪️',
-    '🌙',
-  ];
+  final List<String> weathers = ['☀️', '🌤️', '☁️', '🌧️', '🌙'];
 
-  final List<String> emotions = [
-    '😰 不安',
-    '😢 悲しい',
-    '😡 イライラ',
-    '😴 疲れ',
-    '🫂 さみしい',
-    '🌿 安心',
-    '🥹 がんばった',
-  ];
+  final List<String> emotions = ['😊', '😌', '🥹', '😰', '😢', '😴', '😡', '🫂'];
 
-  void toggleEmotion(String emotion) {
+  final Map<String, String> emotionNames = {
+    '😊': 'うれしい',
+    '😌': '安心',
+    '🥹': 'がんばった',
+    '😰': '不安',
+    '😢': '悲しい',
+    '😴': '疲れ',
+    '😡': 'イライラ',
+    '🫂': 'さみしい',
+  };
+
+  void toggleEmotion(String emoji) {
     setState(() {
-      if (emotionPercents.containsKey(emotion)) {
-        emotionPercents.remove(emotion);
+      final key = '$emoji ${emotionNames[emoji]}';
+
+      if (emotionPercents.containsKey(key)) {
+        emotionPercents.remove(key);
       } else {
-        emotionPercents[emotion] = 50;
+        emotionPercents[key] = 50;
       }
     });
   }
@@ -1091,192 +1272,213 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
       );
       return;
     }
-widget.onSave(
-  MoodRecord(
-    weather: selectedWeather!,
-    emotionPercents: Map.from(emotionPercents),
-    memo: memoController.text,
-    createdAt: DateTime.now(),
-  ),
-);
-ScaffoldMessenger.of(context).showSnackBar(
-  const SnackBar(
-    content: Text('気分記録を保存しました🌱'),
-  ),
-);
+
+    widget.onSave(
+      MoodRecord(
+        weather: selectedWeather!,
+        emotionPercents: Map.from(emotionPercents),
+        memo: memoController.text,
+        createdAt: DateTime.now(),
+      ),
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('記録できたよ🌿')),
     );
   }
-   @override
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF8F3FA),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('今日の気分'),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppColors.textPrimary,
+      ),
+      body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '気分記録',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF8E7BBE),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '今の気持ちを、ここにそっと置いていこう',
-                style: TextStyle(color: Color(0xFF6D6478)),
-              ),
-              const SizedBox(height: 30),
-
-              const Text(
+              Text(
                 '今日の心の天気は？',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.heading.copyWith(fontSize: 24),
               ),
-              const SizedBox(height: 12),
-
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: weathers.map((weather) {
-                  final selected = selectedWeather == weather;
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedWeather = weather;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? const Color(0xFFE7DCF8)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        weather,
-                        style: const TextStyle(fontSize: 30),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 30),
-
-              const Text(
-                '近い感情は？',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: emotions.map((emotion) {
-                  final selected = emotionPercents.containsKey(emotion);
-
-                  return ChoiceChip(
-                    label: Text(emotion),
-                    selected: selected,
-                    onSelected: (_) => toggleEmotion(emotion),
-                    selectedColor: const Color(0xFFE7DCF8),
-                    backgroundColor: Colors.white,
-                  );
-                }).toList(),
-              ),
-
               const SizedBox(height: 20),
 
-              Column(
-                children: emotionPercents.entries.map((entry) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
+              CocoonCard(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: weathers.map((weather) {
+                    final selected = selectedWeather == weather;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedWeather = weather;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          color: selected ? AppColors.secondary : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.accent
+                                : AppColors.border,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            weather,
+                            style: const TextStyle(fontSize: 28),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              Text(
+                '今近い感情は？',
+                style: AppTextStyles.heading.copyWith(fontSize: 24),
+              ),
+              const SizedBox(height: 20),
+
+              CocoonCard(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: emotions.map((emoji) {
+                    final key = '$emoji ${emotionNames[emoji]}';
+                    final selected = emotionPercents.containsKey(key);
+
+                    return ChoiceChip(
+                      label: Text(key),
+                      selected: selected,
+                      onSelected: (_) => toggleEmotion(emoji),
+                      selectedColor: AppColors.secondary,
+                      backgroundColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: selected
+                            ? AppColors.accent
+                            : AppColors.textPrimary,
+                        fontWeight:
+                            selected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              ...emotionPercents.entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: CocoonCard(
+                    padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '${entry.key}：${entry.value.round()}%',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF6F5F8F),
+                          style: AppTextStyles.title.copyWith(
+                            color: AppColors.accent,
                           ),
                         ),
-                        Slider(
-                          value: entry.value,
-                          min: 0,
-                          max: 100,
-                          divisions: 20,
-                          activeColor: const Color(0xFF8E7BBE),
-                          onChanged: (value) {
-                            setState(() {
-                              emotionPercents[entry.key] = value;
-                            });
-                          },
-                        ),
+                       const SizedBox(height: 12),
+
+ClipRRect(
+  borderRadius: BorderRadius.circular(999),
+  child: LinearProgressIndicator(
+    value: entry.value / 100,
+    minHeight: 14,
+    backgroundColor: AppColors.secondary.withOpacity(0.45),
+    valueColor: const AlwaysStoppedAnimation<Color>(
+      AppColors.accent,
+    ),
+  ),
+),
+
+const SizedBox(height: 10),
+
+Slider(
+  value: entry.value,
+  min: 0,
+  max: 100,
+  divisions: 20,
+  activeColor: AppColors.accent,
+  inactiveColor: AppColors.secondary,
+  onChanged: (value) {
+    setState(() {
+      emotionPercents[entry.key] = value;
+    });
+  },
+),
                       ],
                     ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 16),
-
-              const Text(
-                'ひとことメモ',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: memoController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: '今日のひとこと',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(22),
-                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
+
+              Text(
+                'ひとことメモ',
+                style: AppTextStyles.heading.copyWith(fontSize: 24),
+              ),
+              const SizedBox(height: 14),
+
+              CocoonCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                child: TextFormField(
+                  controller: memoController,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    hintText: '今日のことを少しだけ書いてみる',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 28),
 
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: saveRecord,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8E7BBE),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
-                  child: const Text('記録する'),
+                  child: const Text(
+                    '記録する',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
+
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -1284,7 +1486,6 @@ ScaffoldMessenger.of(context).showSnackBar(
     );
   }
 }
-
 
 class ChatScreen extends StatefulWidget {
   final List<ChatMessage> messages;
@@ -3713,36 +3914,55 @@ if (text.contains('誰にも言えない') ||
                   bottom: Radius.circular(28),
                 ),
               ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'COCOON',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF8E7BBE),
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    '気持ちを急がず、やさしく整理しよう。',
-                    style: TextStyle(color: Color(0xFF6D6478)),
-                  ),
-                ],
+  child: Column(
+  children: [
+    Row(
+      children: [
+        Image.asset(
+          'assets/images/luna.png',
+          height: 70,
+        ),
+
+        const SizedBox(width: 14),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'COCOON',
+                style: AppTextStyles.heading.copyWith(
+                  color: AppColors.accent,
+                ),
               ),
-            ),
-            const Padding(
-  padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
-  child: Text(
-    'COCOONは医療・専門相談の代わりではありません。危険を感じる時は、すぐに身近な人や緊急窓口に連絡してください。',
-    style: TextStyle(
-      fontSize: 12,
-      color: Color(0xFF8A7D96),
+              const SizedBox(height: 6),
+              Text(
+                'おかえり。\n今日はどんなことがあった？',
+                style: AppTextStyles.body.copyWith(
+                  height: 1.5,
+                  color: const Color(0xFF6D6478),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     ),
-    textAlign: TextAlign.center,
-  ),
+
+    const SizedBox(height: 10),
+
+    const Text(
+      'COCOONは医療・専門相談の代わりではありません。危険を感じる時は、すぐに身近な人や緊急窓口に連絡してください。',
+      style: TextStyle(
+        fontSize: 12,
+        color: Color(0xFF8A7D96),
+      ),
+      textAlign: TextAlign.center,
+    ),
+  ],
 ),
+            ),
+
 Padding(
   padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
   child: SizedBox(
@@ -3848,11 +4068,29 @@ child: Column(
               onFieldSubmitted: (_) => sendMessage(),
             ),
           ),
-          IconButton(
-            onPressed: sendMessage,
-            icon: const Icon(Icons.send),
-            color: const Color(0xFF8E7BBE),
-          ),
+         Container(
+  width: 52,
+  height: 52,
+  decoration: BoxDecoration(
+    color: AppColors.accent,
+    shape: BoxShape.circle,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.12),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  ),
+ child: IconButton(
+  onPressed: sendMessage,
+  icon: Image.asset(
+    'assets/images/paw.png',
+    width: 24,
+    height: 24,
+  ),
+),
+),
         ],
       ),
     ],
@@ -3864,7 +4102,6 @@ child: Column(
     );
   }
 }
-
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
 
@@ -3879,22 +4116,57 @@ class ChatBubble extends StatelessWidget {
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.74,
-        ),
-        decoration: BoxDecoration(
-          color: isUser ? const Color(0xFF8E7BBE) : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: isUser ? Colors.white : const Color(0xFF5F566B),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.secondary,
+              child: Image.asset(
+                'assets/images/luna.png',
+                height: 24,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+
+          Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 13,
+            ),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.68,
+            ),
+            decoration: BoxDecoration(
+              color: isUser ? AppColors.accent : Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(24),
+                topRight: const Radius.circular(24),
+                bottomLeft: Radius.circular(isUser ? 24 : 8),
+                bottomRight: Radius.circular(isUser ? 8 : 24),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Text(
+              message.text,
+              style: AppTextStyles.body.copyWith(
+                color: isUser ? Colors.white : const Color(0xFF5F566B),
+                height: 1.45,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
