@@ -1064,146 +1064,187 @@ if (widget.moodHistory.isNotEmpty)
         ),
 
         const SizedBox(height: 18),
+Row(
+  crossAxisAlignment: CrossAxisAlignment.end,
+  children: List.generate(7, (index) {
+    final today = DateTime.now();
+    final targetDay = today.subtract(Duration(days: 6 - index));
 
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: widget.moodHistory
-              .where((mood) {
-                final now = DateTime.now();
-                return mood.createdAt.isAfter(
-                  now.subtract(const Duration(days: 7)),
-                );
-              })
-              .take(7)
-              .map((mood) {
-                final strongest = mood.emotionPercents.entries.reduce(
-                  (a, b) => a.value >= b.value ? a : b,
-                );
+    final moodsOfDay = widget.moodHistory.where((mood) {
+      return mood.createdAt.year == targetDay.year &&
+          mood.createdAt.month == targetDay.month &&
+          mood.createdAt.day == targetDay.day;
+    }).toList();
 
-          final emotionColor = getEmotionColor(strongest.key);
+    final mood = moodsOfDay.isNotEmpty ? moodsOfDay.last : null;
 
-return GestureDetector(
-  onTap: () {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          title: Text(
-            '${getWeekday(mood.createdAt)}曜日の記録',
-            style: AppTextStyles.title.copyWith(
-              color: AppColors.accent,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Text(
-                  mood.weather,
-                  style: const TextStyle(fontSize: 40),
-                ),
+    if (mood == null) {
+      return Expanded(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            const Text(''),
+            const SizedBox(height: 6),
+            Container(
+              width: 24,
+              height: 110,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(999),
               ),
-              const SizedBox(height: 16),
-
-              ...mood.emotionPercents.entries.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    '${entry.key}：${entry.value.round()}%',
-                    style: AppTextStyles.body,
-                  ),
-                ),
-              ),
-
-              if (mood.memo.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'メモ',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  mood.memo,
-                  style: AppTextStyles.body,
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('閉じる'),
             ),
-          ],
-        );
-      },
-    );
-  },
-  child: Column(
-    mainAxisAlignment: MainAxisAlignment.end,
-    children: [
-    Text(
-      '${strongest.value.round()}%',
+            const SizedBox(height: 8),
+           Builder(
+  builder: (context) {
+    final isToday =
+        targetDay.year == DateTime.now().year &&
+        targetDay.month == DateTime.now().month &&
+        targetDay.day == DateTime.now().day;
+
+    return Text(
+      getWeekday(targetDay),
       style: AppTextStyles.caption.copyWith(
         fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+        color: isToday
+            ? AppColors.accent
+            : AppColors.textPrimary,
       ),
-    ),
-
-    const SizedBox(height: 6),
-
-    Container(
-      width: 28,
-      height: 110,
-      alignment: Alignment.bottomCenter,
-      decoration: BoxDecoration(
-        color: emotionColor.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: 28,
-        height: (strongest.value / 100) * 110,
-        decoration: BoxDecoration(
-          color: emotionColor,
-          borderRadius: BorderRadius.circular(999),
+    );
+  },
+),
+            const SizedBox(height: 4),
+            const SizedBox(height: 24),
+          ],
         ),
-      ),
-    ),
+      );
+    }
 
-    const SizedBox(height: 8),
+    final strongest = mood.emotionPercents.entries.reduce(
+      (a, b) => a.value >= b.value ? a : b,
+    );
 
-    Text(
+    final emotionColor = getEmotionColor(strongest.key);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (_) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                title: Text(
+                  '${getWeekday(mood.createdAt)}曜日の記録',
+                  style: AppTextStyles.title.copyWith(
+                    color: AppColors.accent,
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        mood.weather,
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ...mood.emotionPercents.entries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          '${entry.key}：${entry.value.round()}%',
+                          style: AppTextStyles.body,
+                        ),
+                      ),
+                    ),
+                    if (mood.memo.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'メモ',
+                        style: AppTextStyles.caption.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(mood.memo, style: AppTextStyles.body),
+                    ],
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('閉じる'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              '${strongest.value.round()}%',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 24,
+              height: 110,
+              alignment: Alignment.bottomCenter,
+              decoration: BoxDecoration(
+                color: emotionColor.withOpacity(0.22),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 24,
+                height: (strongest.value / 100) * 110,
+                decoration: BoxDecoration(
+                  color: emotionColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+           Builder(
+  builder: (context) {
+    final isToday =
+        mood.createdAt.year == DateTime.now().year &&
+        mood.createdAt.month == DateTime.now().month &&
+        mood.createdAt.day == DateTime.now().day;
+
+    return Text(
       getWeekday(mood.createdAt),
       style: AppTextStyles.caption.copyWith(
         fontWeight: FontWeight.bold,
+        color: isToday
+            ? AppColors.accent
+            : AppColors.textPrimary,
       ),
-    ),
-
-    const SizedBox(height: 4),
-
-    Text(
-      mood.weather,
-      style: const TextStyle(fontSize: 20),
-    ),
-  ],
-  ),
-);
-              }).toList(),
+    );
+  },
+),
+            const SizedBox(height: 4),
+            Text(mood.weather, style: const TextStyle(fontSize: 20)),
+          ],
         ),
+      ),
+    );
+  }),
+),
       ],
     ),
   ),
-                   const SizedBox(height: 180), 
+
+                  const SizedBox(height: 180),
                 ],
               ),
             ),
@@ -1213,6 +1254,8 @@ return GestureDetector(
     );
   }
 }
+
+
 
 class MoodRecordScreen extends StatefulWidget {
   final Function(MoodRecord) onSave;
@@ -1509,17 +1552,35 @@ const ChatScreen({
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  bool isThinking = false;
+  List<TimelineEvent> timelineEvents = [];
   String? currentTopic;
   @override
 void initState() {
   super.initState();
   loadCurrentTopic();
+  loadTimelineEventsForChat();
 }
 
 Future<void> loadCurrentTopic() async {
   final prefs = await SharedPreferences.getInstance();
   setState(() {
     currentTopic = prefs.getString('currentTopic');
+  });
+}
+
+Future<void> loadTimelineEventsForChat() async {
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getString('timelineEvents');
+
+  if (saved == null) return;
+
+  final List decoded = jsonDecode(saved);
+
+  setState(() {
+    timelineEvents = decoded
+        .map((item) => TimelineEvent.fromJson(item))
+        .toList();
   });
 }
 
@@ -1609,7 +1670,7 @@ void sendQuickTopic(String topic) {
   sendMessage();
 }
 
-void sendMessage() {
+Future<void> sendMessage() async {
   final text = chatController.text.trim();
   if (text.isEmpty) return;
 
@@ -1617,14 +1678,22 @@ void sendMessage() {
 
   setState(() {
     widget.messages.add(ChatMessage(text: text, isUser: true));
+    chatController.clear();
+    isThinking = true;
+  });
+
+  widget.onMessagesChanged();
+
+  await Future.delayed(const Duration(milliseconds: 900));
+
+  setState(() {
+    isThinking = false;
     widget.messages.add(
       ChatMessage(
         text: makeCocoonReply(text, widget.messages),
         isUser: false,
       ),
     );
-
-    chatController.clear();
   });
 
   widget.onMessagesChanged();
@@ -1644,6 +1713,55 @@ void sendMessage() {
 String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
   final text = userText.toLowerCase();
 
+if (timelineEvents.isNotEmpty) {
+  String? targetCategory;
+
+  if (text.contains('仕事') ||
+      text.contains('職場') ||
+      text.contains('自信') ||
+      text.contains('将来')) {
+    targetCategory = '仕事';
+  } else if (text.contains('恋愛') ||
+      text.contains('彼氏') ||
+      text.contains('彼女') ||
+      text.contains('好きな人')) {
+    targetCategory = '恋愛';
+  } else if (text.contains('家族') ||
+      text.contains('親') ||
+      text.contains('母') ||
+      text.contains('父')) {
+    targetCategory = '家族';
+  } else if (text.contains('体調') ||
+      text.contains('病気') ||
+      text.contains('健康') ||
+      text.contains('疲れた')) {
+    targetCategory = '健康';
+  }
+
+  if (targetCategory != null) {
+    final matchedEvents = timelineEvents
+        .where((event) => event.category == targetCategory)
+        .toList();
+
+
+ if (matchedEvents.isNotEmpty) {
+  final recentEvents = matchedEvents.reversed.take(3).toList();
+
+  final eventText = recentEvents
+      .map((event) => '・${event.year}年「${event.title}」')
+      .join('\n');
+
+  return '🐶\n\n'
+      '今の話を聞いていて、'
+      'わたし年表の出来事をいくつか思い出したよ。\n\n'
+      '$eventText\n\n'
+      'こうして振り返ると、'
+      'あなたはこのテーマと何度も向き合ってきたんだね。\n\n'
+      '今の気持ちは、この中のどの出来事と一番つながっていると思う？';
+}
+  }
+}
+
 if (text.contains('死にたい') ||
     text.contains('消えたい') ||
     text.contains('自殺') ||
@@ -1656,6 +1774,7 @@ if (text.contains('死にたい') ||
       '今すぐ近くの人、家族、先生、友達、または地域の緊急窓口に連絡してね。\n'
       'もし今すぐ自分や誰かを傷つけそうなら、ためらわずに119や110に連絡してね。';
 }  
+
 
   if (text.contains('気づき') ||
       text.contains('整理して') ||
@@ -4005,13 +4124,24 @@ Padding(
 ),
 ),
 Expanded(
-  child: ListView.builder(
-    controller: scrollController,
-    padding: const EdgeInsets.all(18),
-    itemCount: widget.messages.length,
-    itemBuilder: (context, index) {
-      return ChatBubble(message: widget.messages[index]);
-    },
+  child: Column(
+    children: [
+      Expanded(
+        child: ListView.builder(
+          controller: scrollController,
+          padding: const EdgeInsets.all(18),
+          itemCount: widget.messages.length,
+          itemBuilder: (context, index) {
+            return ChatBubble(
+              message: widget.messages[index],
+            );
+          },
+        ),
+      ),
+
+      if (isThinking)
+        const ThinkingBubble(),
+    ],
   ),
 ),
 
@@ -4167,6 +4297,63 @@ class ChatBubble extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ThinkingBubble extends StatefulWidget {
+  const ThinkingBubble({super.key});
+
+  @override
+  State<ThinkingBubble> createState() => _ThinkingBubbleState();
+}
+
+class _ThinkingBubbleState extends State<ThinkingBubble>
+    with SingleTickerProviderStateMixin {
+  late AnimationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(left: 18, bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final dotCount = ((controller.value * 3).floor() + 1);
+
+            return Text(
+              '🐶 ルナが考え中${'.' * dotCount}',
+              style: const TextStyle(
+                color: Color(0xFF8E7BBE),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -4847,6 +5034,48 @@ GestureDetector(
 ),
 
 const SizedBox(height: 16),
+
+GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MyTimelineScreen(),
+      ),
+    );
+  },
+  child: Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      children: const [
+        Text(
+          '🌱 わたし年表',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          '人生の出来事を記録する',
+          style: TextStyle(
+            fontSize: 15,
+            color: Color(0xFF6D6478),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
+const SizedBox(height: 16),
+
 
               GestureDetector(
   onTap: () => pickPetImage(),
@@ -5758,6 +5987,461 @@ class RecoveryAlbumScreen extends StatelessWidget {
             );
           }),
         ],
+      ),
+    );
+  }
+}
+
+class TimelineEvent {
+  final int year;
+  final String title;
+  final String category;
+
+  TimelineEvent({
+    required this.year,
+    required this.title,
+    required this.category,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'year': year,
+      'title': title,
+      'category': category,
+    };
+  }
+
+  factory TimelineEvent.fromJson(Map<String, dynamic> json) {
+    return TimelineEvent(
+      year: json['year'],
+      title: json['title'],
+      category: json['category'] ?? 'その他',
+    );
+  }
+}
+
+class MyTimelineScreen extends StatefulWidget {
+  const MyTimelineScreen({super.key});
+
+  @override
+  State<MyTimelineScreen> createState() => _MyTimelineScreenState();
+}
+
+class _MyTimelineScreenState extends State<MyTimelineScreen> {
+final List<TimelineEvent> events = [];
+
+
+  @override
+void initState() {
+  super.initState();
+  loadTimelineEvents();
+}
+
+Future<void> saveTimelineEvents() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final encoded = jsonEncode(
+    events.map((event) => event.toJson()).toList(),
+  );
+
+  await prefs.setString('timelineEvents', encoded);
+}
+
+Future<void> loadTimelineEvents() async {
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getString('timelineEvents');
+
+  if (saved == null) return;
+
+  final List decoded = jsonDecode(saved);
+
+  setState(() {
+    events
+      ..clear()
+      ..addAll(
+        decoded.map(
+          (item) => TimelineEvent.fromJson(item),
+        ),
+      );
+  });
+}
+
+void addEvent() {
+  final yearController = TextEditingController();
+  final titleController = TextEditingController();
+
+  String selectedCategory = 'その他';
+
+final categories = [
+  '恋愛',
+  '家族',
+  '仕事',
+  '学校',
+  '健康',
+  '成長',
+  '思い出',
+  'その他',
+];
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('出来事を追加'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: yearController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: '年',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: '出来事',
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+DropdownButtonFormField<String>(
+  value: selectedCategory,
+  decoration: const InputDecoration(
+    labelText: 'カテゴリー',
+  ),
+  items: categories.map((category) {
+    return DropdownMenuItem(
+      value: category,
+      child: Text(category),
+    );
+  }).toList(),
+  onChanged: (value) {
+    if (value == null) return;
+    selectedCategory = value;
+  },
+),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (yearController.text.isEmpty ||
+                  titleController.text.isEmpty) {
+                return;
+              }
+
+              setState(() {
+                events.add(
+                 TimelineEvent(
+  year: int.parse(yearController.text),
+  title: titleController.text,
+  category: selectedCategory,
+),
+                );
+
+                events.sort(
+                  (a, b) => a.year.compareTo(b.year),
+                );
+              });
+
+              await saveTimelineEvents();
+
+              Navigator.pop(context);
+            },
+            child: const Text('追加'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void editEvent(TimelineEvent event) {
+  final yearController = TextEditingController(
+    text: event.year.toString(),
+  );
+
+  final titleController = TextEditingController(
+    text: event.title,
+  );
+
+  String selectedCategory = event.category;
+
+  const categories = [
+    '恋愛',
+    '家族',
+    '仕事',
+    '学校',
+    '健康',
+    '成長',
+    '思い出',
+    'その他',
+  ];
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('出来事を編集'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: yearController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '年'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: '出来事'),
+            ),
+            const SizedBox(height: 12),
+
+DropdownButtonFormField<String>(
+  value: selectedCategory,
+  decoration: const InputDecoration(
+    labelText: 'カテゴリー',
+  ),
+  items: categories.map((category) {
+    return DropdownMenuItem(
+      value: category,
+      child: Text(category),
+    );
+  }).toList(),
+  onChanged: (value) {
+    if (value == null) return;
+    selectedCategory = value;
+  },
+),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (yearController.text.isEmpty ||
+                  titleController.text.isEmpty) {
+                return;
+              }
+
+              setState(() {
+                final index = events.indexOf(event);
+
+               events[index] = TimelineEvent(
+  year: int.parse(yearController.text),
+  title: titleController.text,
+  category: selectedCategory,
+);
+
+                events.sort((a, b) => a.year.compareTo(b.year));
+              });
+            
+
+              await saveTimelineEvents();
+
+              Navigator.pop(context);
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+String getCategoryEmoji(String category) {
+  switch (category) {
+    case '恋愛':
+      return '💕';
+    case '家族':
+      return '👨‍👩‍👧';
+    case '仕事':
+      return '💼';
+    case '学校':
+      return '🎓';
+    case '健康':
+      return '❤️';
+    case '成長':
+      return '🌱';
+    case '思い出':
+      return '📸';
+    default:
+      return '📌';
+  }
+}
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('わたし年表'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppColors.textPrimary,
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(
+              '🌱 わたし年表',
+              style: AppTextStyles.heading.copyWith(
+                color: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'あなたの歩いてきた時間を、少しずつ残していこう。',
+              style: AppTextStyles.caption,
+            ),
+            const SizedBox(height: 24),
+
+            if (events.isEmpty)
+  CocoonCard(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      children: [
+        const Text(
+          '🌱',
+          style: TextStyle(fontSize: 48),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'まだ年表はありません',
+          style: AppTextStyles.title.copyWith(
+            color: AppColors.accent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'あなたの人生を\n少しずつ残していこう。',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.body,
+        ),
+      ],
+    ),
+  ),
+
+const SizedBox(height: 20),
+
+if (events.isEmpty)
+  CocoonCard(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      children: [
+        Image.asset(
+          'assets/images/luna.png',
+          height: 90,
+        ),
+
+        const SizedBox(height: 16),
+
+        Text(
+          'ルナより 🐶',
+          style: AppTextStyles.title.copyWith(
+            color: AppColors.accent,
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        Text(
+          'ここは、あなたの人生を残していく場所だよ。\n\n'
+          'うれしかったことも、\n'
+          'つらかったことも、\n'
+          '全部あなたの大切な足あと。\n\n'
+          '最初の一歩を書いてみよう🌱',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.body.copyWith(
+            height: 1.7,
+          ),
+        ),
+      ],
+    ),
+  ),
+
+const SizedBox(height: 20),
+
+            ...events.map(
+              (event) => CocoonCard(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Text(
+                      '${event.year}',
+                      style: AppTextStyles.title.copyWith(
+                        color: AppColors.accent,
+                      ),
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        '${getCategoryEmoji(event.category)} ${event.category}',
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.accent,
+        ),
+      ),
+
+      const SizedBox(height: 4),
+
+      Text(
+        event.title,
+        style: AppTextStyles.body,
+      ),
+    ],
+  ),
+),
+
+                    IconButton(
+  icon: const Icon(Icons.edit_outlined),
+  color: AppColors.accent,
+  onPressed: () => editEvent(event),
+),
+
+                    IconButton(
+  icon: const Icon(Icons.delete_outline),
+  color: AppColors.textSecondary,
+ onPressed: () async {
+  setState(() {
+    events.remove(event);
+  });
+
+  await saveTimelineEvents();
+},
+),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: addEvent,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('＋ 出来事を追加'),
+            ),
+          ],
+        ),
       ),
     );
   }
