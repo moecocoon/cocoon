@@ -1553,6 +1553,12 @@ const ChatScreen({
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+
+  DateTime? birthday;
+String birthOrder = '';
+String siblings = '';
+String familyStyle = '';
+String currentStatus = '';
   List<JapanEvent> japanEvents = [];
   bool isThinking = false;
   List<TimelineEvent> timelineEvents = [];
@@ -1563,6 +1569,7 @@ void initState() {
   loadCurrentTopic();
   loadTimelineEventsForChat();
   loadJapanEvents();
+  loadProfileForChat();
 }
 
 Future<void> loadCurrentTopic() async {
@@ -1597,6 +1604,22 @@ Future<void> loadJapanEvents() async {
     japanEvents = decoded
         .map((item) => JapanEvent.fromJson(item))
         .toList();
+  });
+}
+
+Future<void> loadProfileForChat() async {
+  final prefs = await SharedPreferences.getInstance();
+  final savedBirthday = prefs.getString('birthday');
+
+  setState(() {
+    if (savedBirthday != null) {
+      birthday = DateTime.parse(savedBirthday);
+    }
+
+    birthOrder = prefs.getString('birthOrder') ?? '';
+    siblings = prefs.getString('siblings') ?? '';
+    familyStyle = prefs.getString('familyStyle') ?? '';
+    currentStatus = prefs.getString('currentStatus') ?? '';
   });
 }
 
@@ -1729,6 +1752,19 @@ Future<void> sendMessage() async {
 String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
   final text = userText.toLowerCase();
 
+  if (text.contains('自己紹介') ||
+    text.contains('私のこと') ||
+    text.contains('プロフィール')) {
+
+  return '🐶\n\n'
+      '今わかっていることだよ✨\n\n'
+      '🎂 生年月日：${birthday != null ? '${birthday!.year}/${birthday!.month}/${birthday!.day}' : '未設定'}\n'
+      '👶 出生順位：${birthOrder.isEmpty ? '未設定' : birthOrder}\n'
+      '👨‍👩‍👧‍👦 兄弟姉妹：${siblings.isEmpty ? '未設定' : siblings}\n'
+      '🏠 家族との距離感：${familyStyle.isEmpty ? '未設定' : familyStyle}\n'
+      '💼 現在の状況：${currentStatus.isEmpty ? '未設定' : currentStatus}';
+}
+
 if (timelineEvents.isNotEmpty) {
   String? targetCategory;
 
@@ -1777,6 +1813,36 @@ if (timelineEvents.isNotEmpty) {
 }
   }
 }
+
+if (japanEvents.isNotEmpty) {
+  JapanEvent? matchedJapanEvent;
+
+  for (final event in japanEvents) {
+    if ((text.contains('将来') ||
+            text.contains('仕事') ||
+            text.contains('お金')) &&
+        event.category == '経済') {
+      matchedJapanEvent = event;
+      break;
+    }
+
+    if ((text.contains('地震') ||
+            text.contains('災害')) &&
+        event.category == '災害') {
+      matchedJapanEvent = event;
+      break;
+    }
+  }
+
+  if (matchedJapanEvent != null) {
+    return '🐶\n\n'
+        'そういえば、日本では${matchedJapanEvent.year}年に'
+        '「${matchedJapanEvent.title}」という出来事があったね。\n\n'
+        '${matchedJapanEvent.description}\n\n'
+        '今の気持ちと重なる部分があるのかもしれないね。';
+  }
+}
+
 
 if (text.contains('死にたい') ||
     text.contains('消えたい') ||
@@ -6578,7 +6644,8 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   DateTime? birthday;
   String birthOrder = '';
-  int siblings = 0;
+  String siblings = '';
+  String familyStyle = '';
   String currentStatus = '';
 
   @override
@@ -6595,13 +6662,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     await prefs.setString('birthOrder', birthOrder);
-    await prefs.setInt('siblings', siblings);
+    await prefs.setString('siblings', siblings);
+    await prefs.setString('familyStyle', familyStyle);
     await prefs.setString('currentStatus', currentStatus);
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('プロフィールを保存したよ🌱')),
+      const SnackBar(content: Text('ルナに教えてくれてありがとう🌱')),
     );
   }
 
@@ -6615,9 +6683,49 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       }
 
       birthOrder = prefs.getString('birthOrder') ?? '';
-      siblings = prefs.getInt('siblings') ?? 0;
+      siblings = prefs.getString('siblings') ?? '';
+      familyStyle = prefs.getString('familyStyle') ?? '';
       currentStatus = prefs.getString('currentStatus') ?? '';
     });
+  }
+
+  Widget profileCard({
+    required String icon,
+    required String title,
+    required String value,
+    required List<String> options,
+    required Function(String) onSelected,
+  }) {
+    return CocoonCard(
+      child: ListTile(
+        leading: Text(icon, style: const TextStyle(fontSize: 26)),
+        title: Text(title),
+        subtitle: Text(value.isEmpty ? 'まだ設定していません' : value),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () async {
+          final result = await showModalBottomSheet<String>(
+            context: context,
+            builder: (_) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: options.map((option) {
+                    return ListTile(
+                      title: Text(option),
+                      onTap: () => Navigator.pop(context, option),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          );
+
+          if (result != null) {
+            onSelected(result);
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -6654,7 +6762,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: birthday ?? DateTime(2000),
-                  firstDate: DateTime(1950),
+                  firstDate: DateTime(1940),
                   lastDate: DateTime.now(),
                 );
 
@@ -6669,11 +6777,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
           const SizedBox(height: 16),
 
-          profileSelectCard(
-            icon: '👨‍👩‍👧',
+          profileCard(
+            icon: '👶',
             title: '出生順位',
             value: birthOrder,
-            options: const ['長女', '長男', '真ん中', '末っ子', '一人っ子'],
+            options: const ['長女', '長男', '真ん中', '末っ子', '一人っ子', 'その他'],
             onSelected: (value) {
               setState(() {
                 birthOrder = value;
@@ -6683,29 +6791,39 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
           const SizedBox(height: 16),
 
-          profileSelectCard(
+          profileCard(
             icon: '👨‍👩‍👧‍👦',
-            title: '兄弟姉妹の人数',
-            value: siblings == 0 ? '' : '$siblings人',
-            options: const ['1人', '2人', '3人', '4人', '5人以上'],
+            title: '兄弟姉妹',
+            value: siblings,
+            options: const ['一人っ子', '2人きょうだい', '3人きょうだい', '4人以上', '答えたくない'],
             onSelected: (value) {
               setState(() {
-                if (value == '5人以上') {
-                  siblings = 5;
-                } else {
-                  siblings = int.parse(value.replaceAll('人', ''));
-                }
+                siblings = value;
               });
             },
           ),
 
           const SizedBox(height: 16),
 
-          profileSelectCard(
+          profileCard(
+            icon: '🏠',
+            title: '家族との距離感',
+            value: familyStyle,
+            options: const ['近い', '普通', '少し距離がある', '複雑', '答えたくない'],
+            onSelected: (value) {
+              setState(() {
+                familyStyle = value;
+              });
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          profileCard(
             icon: '💼',
             title: '現在の状況',
             value: currentStatus,
-            options: const ['学生', '社会人', '休職中', '主婦・主夫', 'その他'],
+            options: const ['学生', '社会人', '休職中', '転職活動中', '主婦・主夫', 'その他'],
             onSelected: (value) {
               setState(() {
                 currentStatus = value;
@@ -6727,49 +6845,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   borderRadius: BorderRadius.circular(28),
                 ),
               ),
-              child: const Text('保存する'),
+              child: const Text(
+                '保存する',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget profileSelectCard({
-    required String icon,
-    required String title,
-    required String value,
-    required List<String> options,
-    required Function(String) onSelected,
-  }) {
-    return CocoonCard(
-      child: ListTile(
-        leading: Text(icon, style: const TextStyle(fontSize: 26)),
-        title: Text(title),
-        subtitle: Text(value.isEmpty ? 'まだ設定していません' : value),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
-          final result = await showModalBottomSheet<String>(
-            context: context,
-            builder: (_) {
-              return SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: options.map((option) {
-                    return ListTile(
-                      title: Text(option),
-                      onTap: () => Navigator.pop(context, option),
-                    );
-                  }).toList(),
-                ),
-              );
-            },
-          );
-
-          if (result != null) {
-            onSelected(result);
-          }
-        },
       ),
     );
   }
