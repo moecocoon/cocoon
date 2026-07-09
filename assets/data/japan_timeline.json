@@ -1,0 +1,244 @@
+[
+    {
+  "year": 1945,
+  "title": "終戦",
+  "category": "歴史",
+  "description": "第二次世界大戦が終わり、日本社会が大きく変化"
+},
+{
+  "year": 1947,
+  "title": "日本国憲法施行",
+  "category": "制度",
+  "description": "現在の日本国憲法が施行された"
+},
+{
+  "year": 1954,
+  "title": "自衛隊発足",
+  "category": "制度",
+  "description": "自衛隊が発足した"
+},
+{
+  "year": 1955,
+  "title": "高度経済成長期へ",
+  "category": "経済",
+  "description": "日本経済が大きく成長していく時期"
+},
+{
+  "year": 1956,
+  "title": "国際連合加盟",
+  "category": "国際",
+  "description": "日本が国際連合に加盟した"
+},
+{
+  "year": 1959,
+  "title": "伊勢湾台風",
+  "category": "災害",
+  "description": "大きな被害をもたらした台風"
+},
+{
+  "year": 1960,
+  "title": "日米新安保条約",
+  "category": "制度",
+  "description": "日米安全保障体制が大きく変わった"
+},
+{
+  "year": 1964,
+  "title": "東海道新幹線開業",
+  "category": "交通",
+  "description": "東京〜新大阪を結ぶ新幹線が開業"
+},
+{
+  "year": 1964,
+  "title": "東京オリンピック",
+  "category": "スポーツ",
+  "description": "日本で初めて夏季オリンピックが開催"
+},
+{
+  "year": 1968,
+  "title": "小笠原諸島返還",
+  "category": "社会",
+  "description": "小笠原諸島が日本に返還された"
+
+},
+{
+  "year": 1970,
+  "title": "大阪万博",
+  "category": "社会",
+  "description": "日本初の万国博覧会が大阪で開催された"
+},
+{
+  "year": 1971,
+  "title": "環境庁発足",
+  "category": "環境",
+  "description": "公害問題への対策が本格化した"
+},
+{
+  "year": 1972,
+  "title": "沖縄返還",
+  "category": "社会",
+  "description": "沖縄が日本へ返還された"
+},
+{
+  "year": 1972,
+  "title": "札幌オリンピック",
+  "category": "スポーツ",
+  "description": "日本初の冬季オリンピック開催"
+},
+{
+  "year": 1973,
+  "title": "第一次オイルショック",
+  "category": "経済",
+  "description": "物価が急上昇し、生活へ大きな影響が出た"
+},
+{
+  "year": 1978,
+  "title": "成田空港開港",
+  "category": "交通",
+  "description": "成田国際空港が開港した"
+},
+{
+  "year": 1979,
+  "title": "第二次オイルショック",
+  "category": "経済",
+  "description": "再び物価や景気に大きな影響を与えた"
+},
+{
+  "year": 1985,
+  "title": "つくば科学万博",
+  "category": "科学",
+  "description": "科学技術をテーマにした国際博覧会"
+},
+{
+  "year": 1985,
+  "title": "男女雇用機会均等法成立",
+  "category": "制度",
+  "description": "男女が平等に働くための法律が制定された"
+},
+{
+  "year": 1985,
+  "title": "日航機墜落事故",
+  "category": "災害",
+  "description": "日本航空123便墜落事故が発生"
+},
+{
+  "year": 1988,
+  "title": "青函トンネル開通",
+  "category": "交通",
+  "description": "本州と北海道が鉄道で結ばれた"
+},
+{
+  "year": 1988,
+  "title": "瀬戸大橋開通",
+  "category": "交通",
+  "description": "本州と四国を結ぶ橋が開通した"
+},
+{
+  "year": 1989,
+  "title": "平成へ改元",
+  "category": "社会",
+  "description": "昭和から平成へ元号が変わった"
+},
+{
+  "year": 1989,
+  "title": "消費税3%開始",
+  "category": "経済",
+  "description": "日本で初めて消費税が導入された"
+},
+{
+  "year": 1990,
+  "title": "バブル経済崩壊",
+  "category": "経済",
+  "description": "日本経済が長期不況へ向かい始めた"
+},
+{
+  "year": 1991,
+  "title": "雲仙普賢岳噴火",
+  "category": "災害",
+  "description": "長崎県で大規模な火山災害が発生"
+},
+{
+  "year": 1993,
+  "title": "Jリーグ開幕",
+  "category": "スポーツ",
+  "description": "日本のプロサッカーリーグが開幕"
+},
+{
+  "year": 1993,
+  "title": "冷夏・米不足",
+  "category": "社会",
+  "description": "記録的な冷夏で米不足となり外国産米も流通した"
+},
+{
+  "year": 1994,
+  "title": "関西国際空港開港",
+  "category": "交通",
+  "description": "世界初の本格的な海上空港が開港した"
+
+},
+ {
+    "year": 1995,
+    "title": "阪神・淡路大震災",
+    "category": "災害",
+    "description": "兵庫県を中心に大きな被害が発生"
+  },
+  {
+    "year": 1997,
+    "title": "消費税5%",
+    "category": "経済",
+    "description": "消費税率が5%へ"
+  },
+  {
+    "year": 2001,
+    "title": "USJ開園",
+    "category": "文化",
+    "description": "ユニバーサル・スタジオ・ジャパン開園"
+  },
+  {
+    "year": 2008,
+    "title": "リーマンショック",
+    "category": "経済",
+    "description": "世界金融危機"
+  },
+  {
+    "year": 2011,
+    "title": "東日本大震災",
+    "category": "災害",
+    "description": "東北地方を中心に甚大な被害"
+  },
+  {
+    "year": 2019,
+    "title": "令和へ改元",
+    "category": "社会",
+    "description": "平成から令和へ"
+  },
+  {
+    "year": 2020,
+    "title": "新型コロナ流行",
+    "category": "社会",
+    "description": "学校・仕事・生活が大きく変化"
+  },
+  {
+    "year": 2021,
+    "title": "東京オリンピック",
+    "category": "スポーツ",
+    "description": "延期後に開催"
+  },
+  {
+    "year": 2022,
+    "title": "成人年齢18歳",
+    "category": "制度",
+    "description": "成人年齢が18歳へ"
+  },
+  {
+    "year": 2022,
+    "title": "円安・物価高",
+    "category": "経済",
+    "description": "生活費が上昇"
+  },
+  {
+    "year": 2024,
+    "title": "新紙幣発行",
+    "category": "制度",
+    "description": "新しい紙幣が発行"
+  }
+]

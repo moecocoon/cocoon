@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter/services.dart';
 
 
 
@@ -1552,6 +1553,7 @@ const ChatScreen({
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  List<JapanEvent> japanEvents = [];
   bool isThinking = false;
   List<TimelineEvent> timelineEvents = [];
   String? currentTopic;
@@ -1560,6 +1562,7 @@ void initState() {
   super.initState();
   loadCurrentTopic();
   loadTimelineEventsForChat();
+  loadJapanEvents();
 }
 
 Future<void> loadCurrentTopic() async {
@@ -1580,6 +1583,19 @@ Future<void> loadTimelineEventsForChat() async {
   setState(() {
     timelineEvents = decoded
         .map((item) => TimelineEvent.fromJson(item))
+        .toList();
+  });
+}
+
+Future<void> loadJapanEvents() async {
+  final jsonString =
+      await rootBundle.loadString('assets/data/japan_timeline.json');
+
+  final List decoded = jsonDecode(jsonString);
+
+  setState(() {
+    japanEvents = decoded
+        .map((item) => JapanEvent.fromJson(item))
         .toList();
   });
 }
@@ -5040,6 +5056,47 @@ GestureDetector(
     Navigator.push(
       context,
       MaterialPageRoute(
+        builder: (_) => const ProfileSetupScreen(),
+      ),
+    );
+  },
+  child: Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: const Column(
+      children: [
+        Text(
+          '🌱 あなたのこと',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          'ルナにあなたのことを教える',
+          style: TextStyle(
+            fontSize: 15,
+            color: Color(0xFF6D6478),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
+const SizedBox(height: 16),
+
+GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
         builder: (_) => const MyTimelineScreen(),
       ),
     );
@@ -5077,39 +5134,6 @@ GestureDetector(
 const SizedBox(height: 16),
 
 
-              GestureDetector(
-  onTap: () => pickPetImage(),
-  child: Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-    ),
-    child: Column(
-      children: [
-        const Text(
-          '🐶 ルナの写真',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF8E7BBE),
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'ホームのルナを変更する',
-          style: TextStyle(
-            fontSize: 16,
-            color: Color(0xFF6D6478),
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-
-                const SizedBox(height: 16),
 
 Container(
   width: double.infinity,
@@ -6020,6 +6044,104 @@ class TimelineEvent {
   }
 }
 
+class JapanEvent {
+  final int year;
+  final String title;
+  final String category;
+  final String description;
+
+  JapanEvent({
+    required this.year,
+    required this.title,
+    required this.category,
+    required this.description,
+  });
+
+  factory JapanEvent.fromJson(Map<String, dynamic> json) {
+    return JapanEvent(
+      year: json['year'],
+      title: json['title'],
+      category: json['category'],
+      description: json['description'],
+    );
+  }
+}
+
+final List<JapanEvent> japanEvents = [
+  JapanEvent(
+    year: 1995,
+    title: '阪神・淡路大震災',
+    category: '災害',
+    description: '大きな震災が発生',
+  ),
+  JapanEvent(
+    year: 1997,
+    title: '消費税5%開始',
+    category: '経済',
+    description: '消費税率が5%になった',
+  ),
+  JapanEvent(
+    year: 2001,
+    title: 'USJ開園',
+    category: '文化',
+    description: 'ユニバーサル・スタジオ・ジャパン開園',
+  ),
+  JapanEvent(
+    year: 2008,
+    title: 'リーマンショック',
+    category: '経済',
+    description: '世界的な金融危機',
+  ),
+  JapanEvent(
+    year: 2011,
+    title: '東日本大震災',
+    category: '災害',
+    description: '日本全体に大きな影響を与えた震災',
+  ),
+  JapanEvent(
+    year: 2014,
+    title: '消費税8%開始',
+    category: '経済',
+    description: '消費税率が8%になった',
+  ),
+  JapanEvent(
+    year: 2019,
+    title: '令和へ改元',
+    category: '社会',
+    description: '新しい元号「令和」が始まった',
+  ),
+  JapanEvent(
+    year: 2020,
+    title: '新型コロナ流行',
+    category: '社会',
+    description: '生活・学校・仕事に大きな変化',
+  ),
+  JapanEvent(
+    year: 2021,
+    title: '東京オリンピック',
+    category: 'スポーツ',
+    description: '1年延期して開催',
+  ),
+  JapanEvent(
+    year: 2022,
+    title: '成人年齢18歳へ',
+    category: '制度',
+    description: '成人年齢が18歳になった',
+  ),
+  JapanEvent(
+    year: 2022,
+    title: '円安・物価高',
+    category: '経済',
+    description: '生活費が上がり始めた',
+  ),
+  JapanEvent(
+    year: 2024,
+    title: '新紙幣発行',
+    category: '制度',
+    description: '新しい紙幣が発行された',
+  ),
+];
+
 class MyTimelineScreen extends StatefulWidget {
   const MyTimelineScreen({super.key});
 
@@ -6442,6 +6564,212 @@ const SizedBox(height: 20),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+class ProfileSetupScreen extends StatefulWidget {
+  const ProfileSetupScreen({super.key});
+
+  @override
+  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+}
+
+class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+  DateTime? birthday;
+  String birthOrder = '';
+  int siblings = 0;
+  String currentStatus = '';
+
+  @override
+  void initState() {
+    super.initState();
+    loadProfile();
+  }
+
+  Future<void> saveProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (birthday != null) {
+      await prefs.setString('birthday', birthday!.toIso8601String());
+    }
+
+    await prefs.setString('birthOrder', birthOrder);
+    await prefs.setInt('siblings', siblings);
+    await prefs.setString('currentStatus', currentStatus);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('プロフィールを保存したよ🌱')),
+    );
+  }
+
+  Future<void> loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedBirthday = prefs.getString('birthday');
+
+    setState(() {
+      if (savedBirthday != null) {
+        birthday = DateTime.parse(savedBirthday);
+      }
+
+      birthOrder = prefs.getString('birthOrder') ?? '';
+      siblings = prefs.getInt('siblings') ?? 0;
+      currentStatus = prefs.getString('currentStatus') ?? '';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('🌱 あなたのこと'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppColors.textPrimary,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'ルナは、あなたのことをもっと知りたいな🐶\n正解はないから、今のあなたに近いものを教えてね。',
+            style: AppTextStyles.body.copyWith(height: 1.6),
+          ),
+
+          const SizedBox(height: 24),
+
+          CocoonCard(
+            child: ListTile(
+              leading: const Text('🎂', style: TextStyle(fontSize: 26)),
+              title: const Text('生年月日'),
+              subtitle: Text(
+                birthday == null
+                    ? 'まだ設定していません'
+                    : '${birthday!.year}/${birthday!.month}/${birthday!.day}',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: birthday ?? DateTime(2000),
+                  firstDate: DateTime(1950),
+                  lastDate: DateTime.now(),
+                );
+
+                if (picked != null) {
+                  setState(() {
+                    birthday = picked;
+                  });
+                }
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          profileSelectCard(
+            icon: '👨‍👩‍👧',
+            title: '出生順位',
+            value: birthOrder,
+            options: const ['長女', '長男', '真ん中', '末っ子', '一人っ子'],
+            onSelected: (value) {
+              setState(() {
+                birthOrder = value;
+              });
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          profileSelectCard(
+            icon: '👨‍👩‍👧‍👦',
+            title: '兄弟姉妹の人数',
+            value: siblings == 0 ? '' : '$siblings人',
+            options: const ['1人', '2人', '3人', '4人', '5人以上'],
+            onSelected: (value) {
+              setState(() {
+                if (value == '5人以上') {
+                  siblings = 5;
+                } else {
+                  siblings = int.parse(value.replaceAll('人', ''));
+                }
+              });
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          profileSelectCard(
+            icon: '💼',
+            title: '現在の状況',
+            value: currentStatus,
+            options: const ['学生', '社会人', '休職中', '主婦・主夫', 'その他'],
+            onSelected: (value) {
+              setState(() {
+                currentStatus = value;
+              });
+            },
+          ),
+
+          const SizedBox(height: 28),
+
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              child: const Text('保存する'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget profileSelectCard({
+    required String icon,
+    required String title,
+    required String value,
+    required List<String> options,
+    required Function(String) onSelected,
+  }) {
+    return CocoonCard(
+      child: ListTile(
+        leading: Text(icon, style: const TextStyle(fontSize: 26)),
+        title: Text(title),
+        subtitle: Text(value.isEmpty ? 'まだ設定していません' : value),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () async {
+          final result = await showModalBottomSheet<String>(
+            context: context,
+            builder: (_) {
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: options.map((option) {
+                    return ListTile(
+                      title: Text(option),
+                      onTap: () => Navigator.pop(context, option),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          );
+
+          if (result != null) {
+            onSelected(result);
+          }
+        },
       ),
     );
   }

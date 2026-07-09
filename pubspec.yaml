@@ -27,5 +27,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/data/japan_timeline.json
+
 
     
