@@ -199,46 +199,93 @@
     "category": "経済",
     "description": "世界金融危機"
   },
-  {
-    "year": 2011,
-    "title": "東日本大震災",
-    "category": "災害",
-    "description": "東北地方を中心に甚大な被害"
-  },
+ {
+  "year": 2011,
+  "title": "東日本大震災",
+  "category": "災害",
+  "description": "東北地方を中心に甚大な被害",
+  "keywords": [
+    "地震",
+    "災害",
+    "家族",
+    "不安",
+    "怖い",
+    "喪失",
+    "防災"
+  ]
+},
   {
     "year": 2019,
     "title": "令和へ改元",
     "category": "社会",
     "description": "平成から令和へ"
   },
-  {
-    "year": 2020,
-    "title": "新型コロナ流行",
-    "category": "社会",
-    "description": "学校・仕事・生活が大きく変化"
-  },
-  {
-    "year": 2021,
-    "title": "東京オリンピック",
-    "category": "スポーツ",
-    "description": "延期後に開催"
-  },
-  {
-    "year": 2022,
-    "title": "成人年齢18歳",
-    "category": "制度",
-    "description": "成人年齢が18歳へ"
-  },
-  {
-    "year": 2022,
-    "title": "円安・物価高",
-    "category": "経済",
-    "description": "生活費が上昇"
-  },
-  {
-    "year": 2024,
-    "title": "新紙幣発行",
-    "category": "制度",
-    "description": "新しい紙幣が発行"
-  }
+{
+  "year": 2020,
+  "title": "新型コロナ流行",
+  "category": "社会",
+  "description": "学校・仕事・生活が大きく変化",
+  "keywords": [
+    "将来",
+    "学校",
+    "仕事",
+    "就職",
+    "進路",
+    "孤独",
+    "不安",
+    "友達"
+  ]
+},
+{
+  "year": 2021,
+  "title": "東京オリンピック",
+  "category": "スポーツ",
+  "description": "延期後に開催",
+  "keywords": [
+    "夢",
+    "挑戦",
+    "努力",
+    "スポーツ",
+    "希望"
+  ]
+},
+ {
+  "year": 2022,
+  "title": "成人年齢18歳",
+  "category": "制度",
+  "description": "成人年齢が18歳へ",
+  "keywords": [
+    "将来",
+    "進路",
+    "責任",
+    "大人",
+    "不安"
+  ]
+},
+ {
+  "year": 2022,
+  "title": "円安・物価高",
+  "category": "経済",
+  "description": "生活費が上昇",
+  "keywords": [
+    "お金",
+    "生活費",
+    "将来",
+    "仕事",
+    "貯金",
+    "不安",
+    "物価"
+  ]
+},
+{
+  "year": 2024,
+  "title": "新紙幣発行",
+  "category": "制度",
+  "description": "新しい紙幣が発行",
+  "keywords": [
+    "お金",
+    "生活",
+    "経済"
+  ]
+}
 ]

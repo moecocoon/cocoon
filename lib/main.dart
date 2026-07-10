@@ -413,68 +413,76 @@ Future<void> loadLunaMemories() async {
   });
 }
 Future<void> addLunaMemoryFromText(String text) async {
-  String? topic;
-  String? summary;
+  final trimmedText = text.trim();
 
-  if (text.contains('彼氏')) {
+  if (trimmedText.isEmpty) return;
+
+  String? topic;
+
+  if (trimmedText.contains('彼氏') ||
+      trimmedText.contains('彼女') ||
+      trimmedText.contains('好きな人') ||
+      trimmedText.contains('恋愛')) {
     topic = '恋愛';
-    summary = '彼氏さんとのこと';
-  } else if (text.contains('彼女')) {
-    topic = '恋愛';
-    summary = '彼女さんとのこと';
-  } else if (text.contains('好きな人')) {
-    topic = '恋愛';
-    summary = '好きな人とのこと';
-  } else if (text.contains('面接')) {
-    topic = '将来';
-    summary = '面接のこと';
-  } else if (text.contains('就職')) {
-    topic = '将来';
-    summary = '就職のこと';
-  } else if (text.contains('転職')) {
-    topic = '将来';
-    summary = '転職のこと';
-  } else if (text.contains('仕事')) {
+  } else if (trimmedText.contains('仕事') ||
+      trimmedText.contains('職場') ||
+      trimmedText.contains('会社')) {
     topic = '仕事';
-    summary = '仕事のこと';
-  } else if (text.contains('職場')) {
-    topic = '仕事';
-    summary = '職場のこと';
-  } else if (text.contains('家族')) {
-    topic = '家族';
-    summary = '家族とのこと';
-  } else if (text.contains('母')) {
-    topic = '家族';
-    summary = 'お母さんとのこと';
-  } else if (text.contains('父')) {
-    topic = '家族';
-    summary = 'お父さんとのこと';
-  } else if (text.contains('友達')) {
-    topic = '友達';
-    summary = '友達とのこと';
-  } else if (text.contains('旅行')) {
-    topic = '友達';
-    summary = '旅行のこと';
-  } else if (text.contains('お金')) {
+  } else if (trimmedText.contains('就職') ||
+      trimmedText.contains('転職') ||
+      trimmedText.contains('面接') ||
+      trimmedText.contains('将来') ||
+      trimmedText.contains('一人暮らし') ||
+      trimmedText.contains('お金')) {
     topic = '将来';
-    summary = 'お金のこと';
-  } else if (text.contains('一人暮らし')) {
-    topic = '将来';
-    summary = '一人暮らしのこと';
+  } else if (trimmedText.contains('家族') ||
+      trimmedText.contains('母') ||
+      trimmedText.contains('父') ||
+      trimmedText.contains('親')) {
+    topic = '家族';
+  } else if (trimmedText.contains('友達') ||
+      trimmedText.contains('親友') ||
+      trimmedText.contains('旅行')) {
+    topic = '友達';
+  } else if (trimmedText.contains('学校') ||
+      trimmedText.contains('勉強') ||
+      trimmedText.contains('授業')) {
+    topic = '学校';
+  } else if (trimmedText.contains('体調') ||
+      trimmedText.contains('病気') ||
+      trimmedText.contains('通院') ||
+      trimmedText.contains('入院')) {
+    topic = '健康';
   }
 
-  if (topic == null || summary == null) return;
+  // 記憶するテーマが見つからなければ保存しない
+  if (topic == null) return;
+
+  // 長すぎる文章は短くする
+  final summary = trimmedText.length > 60
+      ? '${trimmedText.substring(0, 60)}…'
+      : trimmedText;
+
+  // 同じ内容を重複して保存しない
+  final alreadySaved = lunaMemories.any(
+    (memory) =>
+        memory.topic == topic &&
+        memory.summary == summary,
+  );
+
+  if (alreadySaved) return;
 
   setState(() {
     lunaMemories.add(
       LunaMemory(
         topic: topic!,
-        summary: summary!,
+        summary: summary,
         createdAt: DateTime.now(),
       ),
     );
 
-    if (lunaMemories.length > 5) {
+    // 古い記憶から削除し、最大20件にする
+    while (lunaMemories.length > 20) {
       lunaMemories.removeAt(0);
     }
   });
@@ -1605,6 +1613,17 @@ Future<void> loadJapanEvents() async {
         .map((item) => JapanEvent.fromJson(item))
         .toList();
   });
+
+  debugPrint('日本年表の件数：${japanEvents.length}');
+
+
+for (final event in japanEvents) {
+  if (event.year == 2020 || event.year == 2022) {
+    debugPrint(
+      '確認：${event.year} ${event.title} keywords=${event.keywords}',
+    );
+  }
+}
 }
 
 Future<void> loadProfileForChat() async {
@@ -1752,6 +1771,20 @@ Future<void> sendMessage() async {
 String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
   final text = userText.toLowerCase();
 
+  int? age;
+
+if (birthday != null) {
+  final now = DateTime.now();
+
+  age = now.year - birthday!.year;
+
+  if (now.month < birthday!.month ||
+      (now.month == birthday!.month &&
+          now.day < birthday!.day)) {
+    age--;
+  }
+}
+
   if (text.contains('自己紹介') ||
     text.contains('私のこと') ||
     text.contains('プロフィール')) {
@@ -1763,6 +1796,73 @@ String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
       '👨‍👩‍👧‍👦 兄弟姉妹：${siblings.isEmpty ? '未設定' : siblings}\n'
       '🏠 家族との距離感：${familyStyle.isEmpty ? '未設定' : familyStyle}\n'
       '💼 現在の状況：${currentStatus.isEmpty ? '未設定' : currentStatus}';
+}
+
+if ((text.contains('家族') ||
+          text.contains('親') ||
+          text.contains('母') ||
+          text.contains('父')) &&
+      familyStyle.isNotEmpty) {
+    return '🐶\n\n'
+        '家族との距離感を「$familyStyle」と教えてくれていたね。\n\n'
+        'その中で今の悩みを抱えるのは、きっと気を使うことも多かったと思うよ。\n'
+        '今いちばんしんどいのは、どんなところ？';
+  }
+
+  if ((text.contains('仕事') ||
+        text.contains('会社') ||
+        text.contains('学校') ||
+        text.contains('勉強') ||
+        text.contains('疲れた') ||
+        text.contains('つらい')) &&
+    currentStatus.isNotEmpty) {
+  return '🐶\n\n'
+      '今は「$currentStatus」と教えてくれていたね。\n\n'
+      'その環境の中で毎日頑張っているからこそ、今の気持ちが大きくなっているのかもしれないね。\n\n'
+      '最近、一番負担に感じていることは何かな？';
+}
+
+if ((text.contains('全部私が') ||
+        text.contains('全部自分が') ||
+        text.contains('頼られる') ||
+        text.contains('責任') ||
+        text.contains('我慢') ||
+        text.contains('しっかりしなきゃ')) &&
+    birthOrder.isNotEmpty) {
+  return '🐶\n\n'
+      '出生順位は「$birthOrder」と教えてくれていたね。\n\n'
+      'それだけで性格が決まるわけではないけれど、'
+      '家族の中で役割や責任を感じる場面があったのかな。\n\n'
+      'いつ頃から「自分が頑張らなきゃ」と感じるようになった？';
+}
+
+if (birthday != null && japanEvents.isNotEmpty) {
+  final matchedJapanEvents = japanEvents.where((event) {
+    final isBornAlready =
+        event.year >= birthday!.year &&
+        event.year <= DateTime.now().year;
+
+    final hasMatchingKeyword = event.keywords.any(
+      (keyword) => text.contains(keyword.toLowerCase()),
+    );
+
+    return isBornAlready && hasMatchingKeyword;
+  }).toList()
+    ..sort((a, b) => b.year.compareTo(a.year));
+
+    debugPrint('入力文：$text / 一致件数：${matchedJapanEvents.length}');
+
+  if (matchedJapanEvents.isNotEmpty) {
+    final event = matchedJapanEvents.first;
+    final ageAtEvent = event.year - birthday!.year;
+
+    return '🐶\n\n'
+        '今は${age ?? ''}歳なんだね。\n\n'
+        '日本年表を見ると、だいたい${ageAtEvent}歳頃の'
+        '${event.year}年に「${event.title}」という出来事があったよ。\n\n'
+        '${event.description}\n\n'
+        'その頃の社会の変化が、今の気持ちに少し影響している部分もあるのかな？';
+  }
 }
 
 if (timelineEvents.isNotEmpty) {
@@ -1811,35 +1911,6 @@ if (timelineEvents.isNotEmpty) {
       'あなたはこのテーマと何度も向き合ってきたんだね。\n\n'
       '今の気持ちは、この中のどの出来事と一番つながっていると思う？';
 }
-  }
-}
-
-if (japanEvents.isNotEmpty) {
-  JapanEvent? matchedJapanEvent;
-
-  for (final event in japanEvents) {
-    if ((text.contains('将来') ||
-            text.contains('仕事') ||
-            text.contains('お金')) &&
-        event.category == '経済') {
-      matchedJapanEvent = event;
-      break;
-    }
-
-    if ((text.contains('地震') ||
-            text.contains('災害')) &&
-        event.category == '災害') {
-      matchedJapanEvent = event;
-      break;
-    }
-  }
-
-  if (matchedJapanEvent != null) {
-    return '🐶\n\n'
-        'そういえば、日本では${matchedJapanEvent.year}年に'
-        '「${matchedJapanEvent.title}」という出来事があったね。\n\n'
-        '${matchedJapanEvent.description}\n\n'
-        '今の気持ちと重なる部分があるのかもしれないね。';
   }
 }
 
@@ -6115,98 +6186,53 @@ class JapanEvent {
   final String title;
   final String category;
   final String description;
+  final List<String> keywords;
+  final List<String> emotions;
+  final int? affectedAgeMin;
+  final int? affectedAgeMax;
 
   JapanEvent({
     required this.year,
     required this.title,
     required this.category,
     required this.description,
+    required this.keywords,
+    required this.emotions,
+    this.affectedAgeMin,
+    this.affectedAgeMax,
   });
 
   factory JapanEvent.fromJson(Map<String, dynamic> json) {
+    final affectedAge = json['affectedAge'];
+
     return JapanEvent(
       year: json['year'],
       title: json['title'],
       category: json['category'],
       description: json['description'],
+
+      // keywordsがない古いデータでもエラーにならない
+      keywords: List<String>.from(
+        json['keywords'] ?? [],
+      ),
+
+      // emotionsがない古いデータでもエラーにならない
+      emotions: List<String>.from(
+        json['emotions'] ?? [],
+      ),
+
+      // affectedAgeがないデータでもエラーにならない
+      affectedAgeMin: affectedAge is Map
+          ? affectedAge['min'] as int?
+          : null,
+
+      affectedAgeMax: affectedAge is Map
+          ? affectedAge['max'] as int?
+          : null,
     );
   }
 }
 
-final List<JapanEvent> japanEvents = [
-  JapanEvent(
-    year: 1995,
-    title: '阪神・淡路大震災',
-    category: '災害',
-    description: '大きな震災が発生',
-  ),
-  JapanEvent(
-    year: 1997,
-    title: '消費税5%開始',
-    category: '経済',
-    description: '消費税率が5%になった',
-  ),
-  JapanEvent(
-    year: 2001,
-    title: 'USJ開園',
-    category: '文化',
-    description: 'ユニバーサル・スタジオ・ジャパン開園',
-  ),
-  JapanEvent(
-    year: 2008,
-    title: 'リーマンショック',
-    category: '経済',
-    description: '世界的な金融危機',
-  ),
-  JapanEvent(
-    year: 2011,
-    title: '東日本大震災',
-    category: '災害',
-    description: '日本全体に大きな影響を与えた震災',
-  ),
-  JapanEvent(
-    year: 2014,
-    title: '消費税8%開始',
-    category: '経済',
-    description: '消費税率が8%になった',
-  ),
-  JapanEvent(
-    year: 2019,
-    title: '令和へ改元',
-    category: '社会',
-    description: '新しい元号「令和」が始まった',
-  ),
-  JapanEvent(
-    year: 2020,
-    title: '新型コロナ流行',
-    category: '社会',
-    description: '生活・学校・仕事に大きな変化',
-  ),
-  JapanEvent(
-    year: 2021,
-    title: '東京オリンピック',
-    category: 'スポーツ',
-    description: '1年延期して開催',
-  ),
-  JapanEvent(
-    year: 2022,
-    title: '成人年齢18歳へ',
-    category: '制度',
-    description: '成人年齢が18歳になった',
-  ),
-  JapanEvent(
-    year: 2022,
-    title: '円安・物価高',
-    category: '経済',
-    description: '生活費が上がり始めた',
-  ),
-  JapanEvent(
-    year: 2024,
-    title: '新紙幣発行',
-    category: '制度',
-    description: '新しい紙幣が発行された',
-  ),
-];
 
 class MyTimelineScreen extends StatefulWidget {
   const MyTimelineScreen({super.key});
