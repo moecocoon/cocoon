@@ -1561,6 +1561,7 @@ const ChatScreen({
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  bool isLunaCardCollapsed = false;
 
   DateTime? birthday;
 String birthOrder = '';
@@ -1571,13 +1572,31 @@ String currentStatus = '';
   bool isThinking = false;
   List<TimelineEvent> timelineEvents = [];
   String? currentTopic;
-  @override
+@override
 void initState() {
   super.initState();
+
   loadCurrentTopic();
   loadTimelineEventsForChat();
   loadJapanEvents();
   loadProfileForChat();
+
+  scrollController.addListener(() {
+    if (scrollController.offset > 10 &&
+        !isLunaCardCollapsed &&
+        mounted) {
+      setState(() {
+        isLunaCardCollapsed = true;
+      });
+    }
+  });
+}
+
+@override
+void dispose() {
+  scrollController.dispose();
+  chatController.dispose();
+  super.dispose();
 }
 
 Future<void> loadCurrentTopic() async {
@@ -4192,7 +4211,7 @@ if (text.contains('誰にも言えない') ||
       children: [
         Image.asset(
           'assets/images/luna.png',
-          height: 70,
+        height: 45,
         ),
 
         const SizedBox(width: 14),
@@ -4234,63 +4253,107 @@ if (text.contains('誰にも言えない') ||
   ],
 ),
             ),
-
-Container(
-  margin: const EdgeInsets.fromLTRB(18, 14, 18, 10),
-  padding: const EdgeInsets.all(18),
+AnimatedContainer(
+  duration: const Duration(milliseconds: 300),
+  curve: Curves.easeInOut,
+  margin: EdgeInsets.fromLTRB(
+    16,
+    isLunaCardCollapsed ? 6 : 10,
+    16,
+    6,
+  ),
+  padding: EdgeInsets.all(
+    isLunaCardCollapsed ? 8 : 12,
+  ),
   decoration: BoxDecoration(
     color: Colors.white.withOpacity(0.9),
-    borderRadius: BorderRadius.circular(26),
+    borderRadius: BorderRadius.circular(
+      isLunaCardCollapsed ? 18 : 24,
+    ),
     boxShadow: [
       BoxShadow(
         color: Colors.black.withOpacity(0.06),
-        blurRadius: 18,
-        offset: const Offset(0, 8),
+        blurRadius: isLunaCardCollapsed ? 10 : 16,
+        offset: const Offset(0, 5),
       ),
     ],
   ),
-  child: Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Container(
-        width: 64,
-        height: 64,
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          color: Color(0xFFF4ECFA),
-          shape: BoxShape.circle,
-        ),
-        child: Image.asset(
-          'assets/images/luna.png',
-          fit: BoxFit.contain,
-        ),
-      ),
-      const SizedBox(width: 16),
-      const Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '🐶 ルナ',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF6F5B8E),
+  child: AnimatedSwitcher(
+    duration: const Duration(milliseconds: 250),
+    child: isLunaCardCollapsed
+        ? Row(
+            key: const ValueKey('smallLunaCard'),
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF4ECFA),
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/images/luna.png',
+                  fit: BoxFit.contain,
+                ),
               ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'おかえり🌱\n今日はどんなことを話そうか？',
-              style: TextStyle(
-                fontSize: 15,
-                color: Color(0xFF6B6574),
-                height: 1.4,
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'ルナはここで聞いてるよ🐶',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6F5B8E),
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    ],
+            ],
+          )
+        : Row(
+            key: const ValueKey('largeLunaCard'),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF4ECFA),
+                  shape: BoxShape.circle,
+                ),
+                child: Image.asset(
+                  'assets/images/luna.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🐶 ルナ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6F5B8E),
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'おかえり🌱\n今日は何を話そうか？',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6B6574),
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
   ),
 ),
 
@@ -4601,29 +4664,6 @@ Container(
   color: Colors.white.withOpacity(0.92),
 child: Column(
   children: [
-    SizedBox(
-      height: 38,
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            widget.messages.add(
-              ChatMessage(
-                text: getLunaInsight(widget.messages),
-                isUser: false,
-              ),
-            );
-          });
-
-          widget.onMessagesChanged();
-        },
-       child: const Text(
-  '🐶 気づき',
-  style: TextStyle(fontSize: 13),
-),
-      ),
-    ),
-
-      const SizedBox(height: 8),
 
       Row(
         children: [
@@ -4688,11 +4728,15 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isUser = message.isUser;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isUser = message.isUser;
+    final double screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(
+        left: 12,
+        right: 12,
+        bottom: 14,
+      ),
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -4700,86 +4744,97 @@ class ChatBubble extends StatelessWidget {
         children: [
           if (!isUser) ...[
             Container(
-              width: 42,
-              height: 42,
-              padding: const EdgeInsets.all(5),
+              width: 38,
+              height: 38,
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2EAF8),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFFDCCCED),
-                  width: 1.5,
+                  color: const Color(0xFFE0D2EC),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
               child: Image.asset(
                 'assets/images/luna.png',
                 fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
           ],
 
           Flexible(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: screenWidth * 0.72,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                gradient: isUser
-                    ? const LinearGradient(
-                        colors: [
-                          Color(0xFF9A86C8),
-                          Color(0xFF806BB1),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: isUser ? null : Colors.white.withOpacity(0.94),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(24),
-                  topRight: const Radius.circular(24),
-                  bottomLeft: Radius.circular(isUser ? 24 : 6),
-                  bottomRight: Radius.circular(isUser ? 6 : 24),
-                ),
-                border: isUser
-                    ? null
-                    : Border.all(
-                        color: const Color(0xFFE8DFF0),
+            child: Column(
+              crossAxisAlignment: isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (!isUser)
+                  const Padding(
+                    padding: EdgeInsets.only(
+                      left: 4,
+                      bottom: 4,
+                    ),
+                    child: Text(
+                      'ルナ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF8A7D96),
                       ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF5F4B75).withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 7),
+                    ),
                   ),
-                ],
-              ),
-              child: Text(
-                message.text,
-                style: AppTextStyles.body.copyWith(
-                  color: isUser
-                      ? Colors.white
-                      : const Color(0xFF5F566B),
-                  height: 1.55,
-                  fontSize: 15,
+
+                Container(
+                  constraints: BoxConstraints(
+                    maxWidth: screenWidth * 0.72,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 11,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isUser
+                        ? const Color(0xFF8E7BBE)
+                        : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: Radius.circular(
+                        isUser ? 20 : 5,
+                      ),
+                      bottomRight: Radius.circular(
+                        isUser ? 5 : 20,
+                      ),
+                    ),
+                    border: isUser
+                        ? null
+                        : Border.all(
+                            color: const Color(0xFFE9E1EF),
+                          ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    message.text,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: isUser
+                          ? Colors.white
+                          : const Color(0xFF514A59),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
 
-          if (isUser) const SizedBox(width: 8),
+          if (isUser) const SizedBox(width: 4),
         ],
       ),
     );
