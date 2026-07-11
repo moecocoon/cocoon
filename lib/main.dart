@@ -4235,6 +4235,65 @@ if (text.contains('誰にも言えない') ||
 ),
             ),
 
+Container(
+  margin: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+  padding: const EdgeInsets.all(18),
+  decoration: BoxDecoration(
+    color: Colors.white.withOpacity(0.9),
+    borderRadius: BorderRadius.circular(26),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.06),
+        blurRadius: 18,
+        offset: const Offset(0, 8),
+      ),
+    ],
+  ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        width: 64,
+        height: 64,
+        padding: const EdgeInsets.all(8),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF4ECFA),
+          shape: BoxShape.circle,
+        ),
+        child: Image.asset(
+          'assets/images/luna.png',
+          fit: BoxFit.contain,
+        ),
+      ),
+      const SizedBox(width: 16),
+      const Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🐶 ルナ',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF6F5B8E),
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'おかえり🌱\n今日はどんなことを話そうか？',
+              style: TextStyle(
+                fontSize: 15,
+                color: Color(0xFF6B6574),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
+
 Padding(
   padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
   child: SizedBox(
@@ -4243,42 +4302,275 @@ Padding(
     scrollDirection: Axis.horizontal,
     child: Row(
       children: [
-     ActionChip(
-  label: const Text(
-    '💔 恋愛',
-    style: TextStyle(fontSize: 15),
-  ),
-  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-  onPressed: () => sendQuickTopic('恋愛のことで話したい'),
-),
-      const SizedBox(width: 12),
-      ActionChip(
-        label: const Text('😰 不安'),
-        onPressed: () => sendQuickTopic('不安な気持ちを整理したい'),
-      ),
-      const SizedBox(width: 12),
-      ActionChip(
-        label: const Text('🌙 眠れない'),
-        onPressed: () => sendQuickTopic('眠れない夜でつらい'),
-      ),
-      const SizedBox(width: 12),
-      ActionChip(
-        label: const Text('🏠 家族'),
-        onPressed: () => sendQuickTopic('家族のことで悩んでいる'),
-      ),
-      const SizedBox(width: 12),
-      ActionChip(
-        label: const Text('🫂 ただ話したい'),
-        onPressed: () => sendQuickTopic('ただ話を聞いてほしい'),
+  Container(
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [
+        Color(0xFFFFF2F6),
+        Color(0xFFF6EAF4),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
       ),
     ],
+    border: Border.all(
+      color: const Color(0xFFE8CFE0),
+    ),
+  ),
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => sendQuickTopic('恋愛のことで話したい'),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 12,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '💔',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(width: 8),
+            Text(
+              '恋愛相談',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF7C536C),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
   ),
 ),
+ Container(
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [
+        Color(0xFFFFF8E8),
+        Color(0xFFFFF1CC),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
+    border: Border.all(
+      color: Color(0xFFEFD89B),
+    ),
+  ),
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => sendQuickTopic('不安な気持ちを整理したい'),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 12,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('😰', style: TextStyle(fontSize: 18)),
+            SizedBox(width: 8),
+            Text(
+              '不安を整理',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8C6A00),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
 ),
+Container(
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [
+        Color(0xFFEAF1FF),
+        Color(0xFFDCE8FF),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
+    border: Border.all(
+      color: Color(0xFFC7D8FF),
+    ),
+  ),
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => sendQuickTopic('眠れない夜でつらい'),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 12,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🌙', style: TextStyle(fontSize: 18)),
+            SizedBox(width: 8),
+            Text(
+              '眠れない夜',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5066A8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
 ),
+Container(
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [
+        Color(0xFFEFFAF0),
+        Color(0xFFDDF3E0),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
+    border: Border.all(
+      color: Color(0xFFC9E5CE),
+    ),
+  ),
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => sendQuickTopic('家族のことで悩んでいる'),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 12,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🏠', style: TextStyle(fontSize: 18)),
+            SizedBox(width: 8),
+            Text(
+              '家族のこと',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4D7A52),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+),
+Container(
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [
+        Color(0xFFF4EEFF),
+        Color(0xFFE9DEFF),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
+    border: Border.all(
+      color: Color(0xFFD9C8FF),
+    ),
+  ),
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => sendQuickTopic('ただ話を聞いてほしい'),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 12,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('🫂', style: TextStyle(fontSize: 18)),
+            SizedBox(width: 8),
+            Text(
+              '話を聞いて',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF6F5B8E),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+),
+
+        ],
+      ),
+    ),
+  ),
+),
+
 Expanded(
-  child: Column(
-    children: [
+  child: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFFF8F4FC),
+          Color(0xFFFFFFFF),
+        ],
+      ),
+    ),
+    child: Column(
+      children: [
       Expanded(
         child: ListView.builder(
           controller: scrollController,
@@ -4296,6 +4588,7 @@ Expanded(
         const ThinkingBubble(),
     ],
   ),
+),
 ),
 
 Container(
@@ -4344,7 +4637,7 @@ child: Column(
                 filled: true,
                 fillColor: const Color(0xFFF8F3FA),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -4383,7 +4676,7 @@ child: Column(
         ),
       ),
     );
-  }
+}
 }
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -4396,59 +4689,97 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.secondary,
+            Container(
+              width: 42,
+              height: 42,
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2EAF8),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFDCCCED),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Image.asset(
                 'assets/images/luna.png',
-                height: 24,
+                fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
           ],
 
-          Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 13,
-            ),
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.68,
-            ),
-            decoration: BoxDecoration(
-              color: isUser ? AppColors.accent : Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(24),
-                topRight: const Radius.circular(24),
-                bottomLeft: Radius.circular(isUser ? 24 : 8),
-                bottomRight: Radius.circular(isUser ? 8 : 24),
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: screenWidth * 0.72,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 14,
+              ),
+              decoration: BoxDecoration(
+                gradient: isUser
+                    ? const LinearGradient(
+                        colors: [
+                          Color(0xFF9A86C8),
+                          Color(0xFF806BB1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: isUser ? null : Colors.white.withOpacity(0.94),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(24),
+                  topRight: const Radius.circular(24),
+                  bottomLeft: Radius.circular(isUser ? 24 : 6),
+                  bottomRight: Radius.circular(isUser ? 6 : 24),
                 ),
-              ],
-            ),
-            child: Text(
-              message.text,
-              style: AppTextStyles.body.copyWith(
-                color: isUser ? Colors.white : const Color(0xFF5F566B),
-                height: 1.45,
+                border: isUser
+                    ? null
+                    : Border.all(
+                        color: const Color(0xFFE8DFF0),
+                      ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF5F4B75).withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 7),
+                  ),
+                ],
+              ),
+              child: Text(
+                message.text,
+                style: AppTextStyles.body.copyWith(
+                  color: isUser
+                      ? Colors.white
+                      : const Color(0xFF5F566B),
+                  height: 1.55,
+                  fontSize: 15,
+                ),
               ),
             ),
           ),
+
+          if (isUser) const SizedBox(width: 8),
         ],
       ),
     );
