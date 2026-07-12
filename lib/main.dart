@@ -5010,37 +5010,94 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
       ),
     );
   }
-    Widget areaCard(
-    String emoji,
-    String title,
-    String subtitle, {
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
+Widget areaCard(
+  String emoji,
+  String title,
+  String subtitle, {
+  VoidCallback? onTap,
+}) {
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 150,
-        padding: const EdgeInsets.all(14),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.92),
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFFE8DFEE),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Column(
+        child: Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 34)),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF4ECFA),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 26),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6F5B8E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Color(0xFF6D6478),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 26,
+              color: Color(0xFF9A8AAC),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 Widget actionButton({
   required String label,
   required IconData icon,
@@ -5102,24 +5159,70 @@ Widget actionButton({
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'COCOON',
-                  style: TextStyle(
-                    fontSize: 34,
-                    letterSpacing: 5,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3F3A48),
-                  ),
-                ),
-                const Text(
-                  '心の広場',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF5D8A6D),
-                  ),
-                ),
-                const SizedBox(height: 18),
+               Container(
+  width: double.infinity,
+  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+  decoration: BoxDecoration(
+    color: Colors.white.withOpacity(0.90),
+    borderRadius: BorderRadius.circular(26),
+    border: Border.all(
+      color: const Color(0xFFE8DFEE),
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.06),
+        blurRadius: 16,
+        offset: const Offset(0, 6),
+      ),
+    ],
+  ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        width: 52,
+        height: 52,
+        decoration: const BoxDecoration(
+          color: Color(0xFFF1E8F8),
+          shape: BoxShape.circle,
+        ),
+        child: const Center(
+          child: Text(
+            '🌳',
+            style: TextStyle(fontSize: 26),
+          ),
+        ),
+      ),
+      const SizedBox(width: 14),
+      const Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '心の広場',
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF6F5B8E),
+              ),
+            ),
+            SizedBox(height: 5),
+            Text(
+              '今日はどこで休んでいく？\nルナと一緒に、今の心に合う場所を探そう🐶',
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: Color(0xFF6D6478),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
+
+const SizedBox(height: 18),
 
                 SizedBox(
                   height: 530,
@@ -5225,49 +5328,47 @@ Widget actionButton({
                   ),
                 ),
 
-                const SizedBox(height: 24),
+const SizedBox(height: 24),
 
-                Wrap(
-                  spacing: 14,
-                  runSpacing: 14,
-                  children: [
-                    areaCard(
-  '🌲',
-  '深呼吸の森',
-  '3分でリセット',
-  onTap: widget.onBreathing,
+Column(
+  children: [
+    areaCard(
+      '🌲',
+      '深呼吸の森',
+      '3分でリセット',
+      onTap: widget.onBreathing,
+    ),
+
+    const SizedBox(height: 12),
+
+    areaCard(
+      '☕',
+      'ひとやすみカフェ',
+      'やさしい言葉で一息',
+      onTap: widget.onCafe,
+    ),
+
+    const SizedBox(height: 12),
+
+    areaCard(
+      '🌙',
+      '夜の避難所',
+      '眠れない夜の安心',
+      onTap: widget.onNightShelter,
+    ),
+
+    const SizedBox(height: 12),
+
+    areaCard(
+      '🏠',
+      'ルナのおうち',
+      'ルナと過ごす時間',
+      onTap: widget.onLunaHouse,
+    ),
+  ],
 ),
 
-                    areaCard(
-  '☕',
-  'ひとやすみカフェ',
-  'やさしい言葉で一息',
-  onTap: widget.onCafe,
-),
 
-areaCard(
-  '🌙',
-  '夜の避難所',
-  '眠れない夜の安心',
-  onTap: () {
-    setState(() {
-      guideMessage = '夜の避難所が押されたよ';
-    });
-    widget.onNightShelter();
-  },
-),
-
-areaCard(
-  '🏠',
-  'ルナのおうち',
-  'ルナと過ごす時間',
-  onTap: widget.onLunaHouse,
-),
-
-
-
-                  ],
-                ),
               ],
             ),
           ),
