@@ -4962,143 +4962,97 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
     final percent = mood.emotionPercents[emotionKey] ?? 0;
     return baseSize + (percent * 0.45);
   }
-
   Widget gardenEmotion({
-    required EmotionInfo emotion,
-    required double left,
-    required double top,
-    required double baseSize,
-  }) {
-    final selected = selectedEmotionId == emotion.id;
-    final size = getEmotionSize(emotion.key, baseSize);
+  required EmotionInfo emotion,
+  required double left,
+  required double top,
+  required double baseSize,
+}) {
+  final selected = selectedEmotionId == emotion.id;
+  final size = getEmotionSize(emotion.key, baseSize);
 
-    return Positioned(
-      left: left,
-      top: top,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedEmotionId = emotion.id;
-            guideMessage = emotion.guideText;
-          });
-        },
-        child: AnimatedScale(
-          scale: selected ? 1.12 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          child: Column(
-            children: [
-              Image.asset(
+  return Positioned(
+    left: left,
+    top: top,
+    child: GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedEmotionId = emotion.id;
+          guideMessage = emotion.guideText;
+        });
+      },
+      child: AnimatedScale(
+        scale: selected ? 1.12 : 1.0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutBack,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: selected
+                        ? const Color(0xFFA78BFA).withOpacity(0.28)
+                        : Colors.black.withOpacity(0.10),
+                    blurRadius: selected ? 20 : 10,
+                    spreadRadius: selected ? 2 : 0,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Image.asset(
                 emotion.imagePath,
                 height: size,
                 width: size,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(height: 4),
-              Text(
-                emotion.name,
-                style: TextStyle(
-                  fontSize: selected ? 13 : 12,
-                  fontWeight: FontWeight.bold,
-                  color: selected
-                      ? const Color(0xFF5D8A6D)
-                      : const Color(0xFF5F566B),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-Widget areaCard(
-  String emoji,
-  String title,
-  String subtitle, {
-  VoidCallback? onTap,
-}) {
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.92),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: const Color(0xFFE8DFEE),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF4ECFA),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  emoji,
-                  style: const TextStyle(fontSize: 26),
-                ),
-              ),
             ),
 
-            const SizedBox(width: 14),
+            const SizedBox(height: 5),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6F5B8E),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.4,
-                      color: Color(0xFF6D6478),
-                    ),
+            Text(
+              emotion.name,
+              style: TextStyle(
+                fontSize: selected ? 13 : 12,
+                fontWeight: FontWeight.bold,
+                color: selected
+                    ? const Color(0xFF6F5B8E)
+                    : const Color(0xFF5F566B),
+                shadows: const [
+                  Shadow(
+                    color: Colors.white,
+                    blurRadius: 5,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(width: 10),
-
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 26,
-              color: Color(0xFF9A8AAC),
-            ),
+            if (selected) ...[
+              const SizedBox(height: 3),
+              const Text(
+                'いま近くにいるよ',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF7C5CFC),
+                  shadows: [
+                    Shadow(
+                      color: Colors.white,
+                      blurRadius: 5,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     ),
   );
 }
-Widget actionButton({
+  Widget actionButton({
   required String label,
   required IconData icon,
   required Color color,
@@ -5118,7 +5072,11 @@ Widget actionButton({
           ),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 22),
+              Icon(
+                icon,
+                color: color,
+                size: 22,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,
@@ -5136,6 +5094,82 @@ Widget actionButton({
   );
 }
 
+Widget areaCard({
+  required String imagePath,
+  required String title,
+  required String subtitle,
+  VoidCallback? onTap,
+}) {
+  return Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.94),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFFE8DFEE),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.asset(
+                imagePath,
+                width: 105,
+                height: 82,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6F5B8E),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Color(0xFF6D6478),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 26,
+              color: Color(0xFF9A8AAC),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -5332,39 +5366,38 @@ const SizedBox(height: 24),
 
 Column(
   children: [
-    areaCard(
-      '🌲',
-      '深呼吸の森',
-      '3分でリセット',
-      onTap: widget.onBreathing,
-    ),
-
+  areaCard(
+  imagePath: 'assets/images/forest_card.png',
+  title: '深呼吸の森',
+  subtitle: '3分でリセット',
+  onTap: widget.onBreathing,
+),
     const SizedBox(height: 12),
 
-    areaCard(
-      '☕',
-      'ひとやすみカフェ',
-      'やさしい言葉で一息',
-      onTap: widget.onCafe,
-    ),
+areaCard(
+  imagePath: 'assets/images/cafe_card.png',
+  title: 'ひとやすみカフェ',
+  subtitle: 'やさしい言葉で一息',
+  onTap: widget.onCafe,
+),
 
-    const SizedBox(height: 12),
+const SizedBox(height: 12),
 
-    areaCard(
-      '🌙',
-      '夜の避難所',
-      '眠れない夜の安心',
-      onTap: widget.onNightShelter,
-    ),
+areaCard(
+  imagePath: 'assets/images/night_card.png',
+  title: '夜の避難所',
+  subtitle: '眠れない夜の安心',
+  onTap: widget.onNightShelter,
+),
 
-    const SizedBox(height: 12),
+const SizedBox(height: 12),
 
-    areaCard(
-      '🏠',
-      'ルナのおうち',
-      'ルナと過ごす時間',
-      onTap: widget.onLunaHouse,
-    ),
+areaCard(
+  imagePath: 'assets/images/luna_house_card.png',
+  title: 'ルナのおうち',
+  subtitle: 'ルナと過ごす時間',
+  onTap: widget.onLunaHouse,
+),
   ],
 ),
 
