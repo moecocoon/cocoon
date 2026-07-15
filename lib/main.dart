@@ -17,8 +17,45 @@ void main() {
   runApp(const CocoonApp());
 }
 
-class CocoonApp extends StatelessWidget {
+class CocoonApp extends StatefulWidget {
   const CocoonApp({super.key});
+
+  @override
+  State<CocoonApp> createState() => _CocoonAppState();
+}
+
+class _CocoonAppState extends State<CocoonApp> {
+  bool isLoading = true;
+  bool hasSeenOnboarding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadOnboardingStatus();
+  }
+
+  Future<void> loadOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
+    setState(() {
+      hasSeenOnboarding =
+          prefs.getBool('hasSeenOnboarding') ?? false;
+      isLoading = false;
+    });
+  }
+
+  Future<void> completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenOnboarding', true);
+
+    if (!mounted) return;
+
+    setState(() {
+      hasSeenOnboarding = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +63,230 @@ class CocoonApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'COCOON',
       theme: ThemeData(useMaterial3: true),
-      home: const MainScreen(),
+      home: isLoading
+          ? const Scaffold(
+              backgroundColor: Color(0xFFF8F3FA),
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF8E7BBE),
+                ),
+              ),
+            )
+          : hasSeenOnboarding
+              ? const MainScreen()
+              : OnboardingScreen(
+                  onComplete: completeOnboarding,
+                ),
+    );
+  }
+}
+
+class OnboardingScreen extends StatefulWidget {
+  final VoidCallback onComplete;
+
+  const OnboardingScreen({
+    super.key,
+    required this.onComplete,
+  });
+
+  @override
+  State<OnboardingScreen> createState() =>
+      _OnboardingScreenState();
+}
+
+class _OnboardingScreenState
+    extends State<OnboardingScreen> {
+  final PageController pageController = PageController();
+  int currentPage = 0;
+
+  final List<Map<String, String>> pages = [
+    {
+      'image': 'assets/images/luna.png',
+      'title': 'COCOONへようこそ',
+      'description':
+          'ここは、誰にも言えない気持ちを\nゆっくり話せる場所です。',
+    },
+    {
+      'image': 'assets/images/luna.png',
+      'title': 'ルナがそばにいるよ',
+      'description':
+          'うれしい日も、しんどい日も。\nルナがあなたの気持ちを聞きます。',
+    },
+    {
+      'image': 'assets/images/luna.png',
+      'title': '気持ちを少しずつ記録',
+      'description':
+          '気分記録やわたし年表を通して、\nあなたの歩みを一緒に振り返ります。',
+    },
+    {
+      'image': 'assets/images/luna.png',
+      'title': 'ひとりで抱え込まなくて大丈夫',
+      'description':
+          'ここでは急がなくて大丈夫。\nあなたのペースで始めよう。',
+    },
+  ];
+
+  void goNext() {
+    if (currentPage == pages.length - 1) {
+      widget.onComplete();
+      return;
+    }
+
+    pageController.nextPage(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final page = pages[currentPage];
+    final isLastPage = currentPage == pages.length - 1;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: widget.onComplete,
+                child: const Text(
+                  'スキップ',
+                  style: TextStyle(
+                    color: Color(0xFF8E7BBE),
+                  ),
+                ),
+              ),
+            ),
+
+            Expanded(
+              child: PageView.builder(
+                controller: pageController,
+                itemCount: pages.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentPage = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final item = pages[index];
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 220,
+                          height: 220,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            item['image']!,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+
+                        const SizedBox(height: 38),
+
+                        Text(
+                          item['title']!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6F5B8E),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Text(
+                          item['description']!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            height: 1.7,
+                            color: Color(0xFF6D6478),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                pages.length,
+                (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: currentPage == index ? 24 : 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: currentPage == index
+                        ? const Color(0xFF8E7BBE)
+                        : const Color(0xFFDCD3E8),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: goNext,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFF8E7BBE),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  child: Text(
+                    isLastPage ? 'COCOONをはじめる' : '次へ',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
