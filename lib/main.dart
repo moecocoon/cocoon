@@ -99,32 +99,44 @@ class _OnboardingScreenState
   final PageController pageController = PageController();
   int currentPage = 0;
 
-  final List<Map<String, String>> pages = [
-    {
-      'image': 'assets/images/luna.png',
-      'title': 'COCOONへようこそ',
-      'description':
-          'ここは、誰にも言えない気持ちを\nゆっくり話せる場所です。',
-    },
-    {
-      'image': 'assets/images/luna.png',
-      'title': 'ルナがそばにいるよ',
-      'description':
-          'うれしい日も、しんどい日も。\nルナがあなたの気持ちを聞きます。',
-    },
-    {
-      'image': 'assets/images/luna.png',
-      'title': '気持ちを少しずつ記録',
-      'description':
-          '気分記録やわたし年表を通して、\nあなたの歩みを一緒に振り返ります。',
-    },
-    {
-      'image': 'assets/images/luna.png',
-      'title': 'ひとりで抱え込まなくて大丈夫',
-      'description':
-          'ここでは急がなくて大丈夫。\nあなたのペースで始めよう。',
-    },
-  ];
+final List<Map<String, String>> pages = [
+  {
+    'image': 'assets/images/luna.png',
+    'title': 'COCOONへようこそ',
+    'description':
+        'ここは、誰にも言えない気持ちを\n自分のペースで話せる場所です。',
+  },
+  {
+    'image': 'assets/images/luna.png',
+    'title': 'ルナと話そう',
+    'description':
+        'うれしいことも、しんどいことも。\nルナがあなたの気持ちを聞いて、一緒に整理します。',
+  },
+  {
+    'image': 'assets/images/emotion_peace.png',
+    'title': '今日の気分を記録',
+    'description':
+        '心の天気や感情の大きさを記録できます。\n振り返ることで、自分の変化に気づけます。',
+  },
+  {
+    'image': 'assets/images/kokoro_bg.png',
+    'title': '心の広場でひと休み',
+    'description':
+        '深呼吸の森、ひとやすみカフェ、夜の避難所など、\n今の心に合う場所でゆっくり休めます。',
+  },
+  {
+    'image': 'assets/images/luna.png',
+    'title': 'わたし年表をつくろう',
+    'description':
+        'これまでの出来事や、生きてきた時代を記録します。\nルナがあなたの歩みを知り、会話にも活かします。',
+  },
+  {
+    'image': 'assets/images/luna.png',
+    'title': 'ひとりで抱え込まなくて大丈夫',
+    'description':
+        'COCOONは、あなたを急がせません。\nここから少しずつ始めよう。',
+  },
+];
 
   void goNext() {
     if (currentPage == pages.length - 1) {
@@ -201,10 +213,17 @@ class _OnboardingScreenState
                               ),
                             ],
                           ),
-                          child: Image.asset(
-                            item['image']!,
-                            fit: BoxFit.contain,
-                          ),
+                         child: ClipRRect(
+  borderRadius: BorderRadius.circular(999),
+  child: Image.asset(
+    item['image']!,
+    width: double.infinity,
+    height: double.infinity,
+    fit: item['image'] == 'assets/images/kokoro_bg.png'
+        ? BoxFit.cover
+        : BoxFit.contain,
+  ),
+),
                         ),
 
                         const SizedBox(height: 38),
