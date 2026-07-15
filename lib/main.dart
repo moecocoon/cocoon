@@ -1855,6 +1855,74 @@ if ((text.contains('全部私が') ||
       'いつ頃から「自分が頑張らなきゃ」と感じるようになった？';
 }
 
+// 学生時代・子どもの頃の社会背景を思い出す
+if (birthday != null && japanEvents.isNotEmpty) {
+  int? minAge;
+  int? maxAge;
+  String? lifeStage;
+
+  if (text.contains('子どもの頃') ||
+      text.contains('子供の頃') ||
+      text.contains('幼い頃') ||
+      text.contains('幼少期')) {
+    minAge = 0;
+    maxAge = 6;
+    lifeStage = '幼い頃';
+  } else if (text.contains('小学生') ||
+      text.contains('小学校')) {
+    minAge = 6;
+    maxAge = 12;
+    lifeStage = '小学生の頃';
+  } else if (text.contains('中学生') ||
+      text.contains('中学校')) {
+    minAge = 12;
+    maxAge = 15;
+    lifeStage = '中学生の頃';
+  } else if (text.contains('高校生') ||
+      text.contains('高校')) {
+    minAge = 15;
+    maxAge = 18;
+    lifeStage = '高校生の頃';
+  } else if (text.contains('大学生') ||
+      text.contains('大学')) {
+    minAge = 18;
+    maxAge = 23;
+    lifeStage = '大学生の頃';
+  } else if (text.contains('学生時代')) {
+    minAge = 6;
+    maxAge = 23;
+    lifeStage = '学生時代';
+  }
+
+  if (minAge != null && maxAge != null) {
+    final matchedEvents = japanEvents.where((event) {
+      final ageAtEvent = event.year - birthday!.year;
+
+      return event.year >= birthday!.year &&
+          event.year <= DateTime.now().year &&
+          ageAtEvent >= minAge! &&
+          ageAtEvent <= maxAge!;
+    }).toList()
+      ..sort((a, b) => b.year.compareTo(a.year));
+
+    if (matchedEvents.isNotEmpty) {
+      final pickedEvents = matchedEvents.take(2).toList();
+
+      final eventText = pickedEvents.map((event) {
+        final ageAtEvent = event.year - birthday!.year;
+        return '・$ageAtEvent歳頃の${event.year}年「${event.title}」';
+      }).join('\n');
+
+      return '🐶\n\n'
+          '$lifeStageのことを思い出しているんだね。\n\n'
+          'あなたがその頃に生きていた時代には、こんな出来事もあったよ。\n\n'
+          '$eventText\n\n'
+          '社会の出来事が必ず今の気持ちに影響しているとは限らないけれど、'
+          'その頃の空気や生活の変化も含めて、どんな毎日だったか聞かせてほしいな。';
+    }
+  }
+}
+
 if (birthday != null && japanEvents.isNotEmpty) {
   final matchedJapanEvents = japanEvents.where((event) {
     final isBornAlready =
@@ -6762,13 +6830,95 @@ class MyTimelineScreen extends StatefulWidget {
 }
 
 class _MyTimelineScreenState extends State<MyTimelineScreen> {
-final List<TimelineEvent> events = [];
+  final List<TimelineEvent> events = [];
 
+  DateTime? birthday;
+  List<JapanEvent> japanEvents = [];
 
   @override
-void initState() {
-  super.initState();
-  loadTimelineEvents();
+  void initState() {
+    super.initState();
+
+    loadTimelineEvents();
+    loadBirthdayForTimeline();
+    loadJapanEventsForTimeline();
+  }
+
+  Future<void> loadBirthdayForTimeline() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedBirthday = prefs.getString('birthday');
+
+    if (savedBirthday == null) return;
+
+    setState(() {
+      birthday = DateTime.parse(savedBirthday);
+    });
+  }
+
+  Future<void> loadJapanEventsForTimeline() async {
+    final jsonString = await rootBundle.loadString(
+      'assets/data/japan_timeline.json',
+    );
+
+    final List decoded = jsonDecode(jsonString);
+
+    setState(() {
+      japanEvents = decoded
+          .map((item) => JapanEvent.fromJson(item))
+          .toList();
+    });
+  }
+
+  List<JapanEvent> get relevantJapanEvents {
+  if (birthday == null || japanEvents.isEmpty) {
+    return [];
+  }
+
+  final filtered = japanEvents.where((event) {
+    return event.year >= birthday!.year &&
+        event.year <= DateTime.now().year;
+  }).toList();
+
+  filtered.sort(
+    (a, b) => a.year.compareTo(b.year),
+  );
+
+  return filtered;
+}
+
+String getTimelineInsight() {
+  if (events.length < 2) {
+    return 'まだ出来事は少ないけれど、ここから少しずつ歩みが見えてきそうだね🐶';
+  }
+
+  final sortedEvents = [...events]
+    ..sort((a, b) => a.year.compareTo(b.year));
+
+  final categoryCounts = <String, int>{};
+
+  for (final event in sortedEvents) {
+    categoryCounts[event.category] =
+        (categoryCounts[event.category] ?? 0) + 1;
+  }
+
+  final mostCommonCategory = categoryCounts.entries.reduce(
+    (a, b) => a.value >= b.value ? a : b,
+  );
+
+  final recentEvents =
+      sortedEvents.reversed.take(3).toList().reversed.toList();
+
+  final recentText = recentEvents
+      .map((event) => '${event.year}年「${event.title}」')
+      .join('、');
+
+  if (mostCommonCategory.value >= 2) {
+    return '年表を見ていると、「${mostCommonCategory.key}」に関する出来事が何度か出てきているね。\n'
+        '$recentTextなど、いくつもの経験を重ねてきたんだね🐶';
+  }
+
+  return '最近の年表を見ると、$recentTextという流れがあるね。\n'
+      'それぞれは別の出来事でも、今のあなたにつながる大切な足あとだと思うよ🐶';
 }
 
 Future<void> saveTimelineEvents() async {
@@ -7043,7 +7193,124 @@ String getCategoryEmoji(String category) {
             ),
             const SizedBox(height: 24),
 
+  CocoonCard(
+  padding: const EdgeInsets.all(20),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Image.asset(
+        'assets/images/luna.png',
+        width: 58,
+        height: 58,
+      ),
+
+      const SizedBox(width: 14),
+
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '🐶 ルナの気づき',
+              style: AppTextStyles.heading.copyWith(
+                fontSize: 18,
+                color: AppColors.accent,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              getTimelineInsight(),
+              style: AppTextStyles.body.copyWith(
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
+
+const SizedBox(height: 24),          
+
+if (birthday != null && relevantJapanEvents.isNotEmpty) ...[
+  CocoonCard(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '🌏 あなたが生きてきた時代',
+         style: AppTextStyles.heading.copyWith(
+  color: AppColors.accent,
+  fontSize: 20,
+),
+        ),
+
+        const SizedBox(height: 16),
+
+        ...relevantJapanEvents.take(8).map((event) {
+          final age = event.year - birthday!.year;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 60,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1E8F8),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    '$age歳',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${event.year}年　${event.title}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        event.description,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6D6478),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    ),
+  ),
+
+  const SizedBox(height: 24),
+],            
+
             if (events.isEmpty)
+
   CocoonCard(
     padding: const EdgeInsets.all(24),
     child: Column(
