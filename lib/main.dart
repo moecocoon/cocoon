@@ -46,16 +46,20 @@ class _CocoonAppState extends State<CocoonApp> {
     });
   }
 
-  Future<void> completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('hasSeenOnboarding', true);
+Future<void> completeOnboarding() async {
+  final prefs = await SharedPreferences.getInstance();
 
-    if (!mounted) return;
+  await prefs.setBool('hasSeenOnboarding', true);
 
-    setState(() {
-      hasSeenOnboarding = true;
-    });
-  }
+  // 👇初回ホームで歓迎メッセージを表示
+  await prefs.setBool('showFirstHomeWelcome', true);
+
+  if (!mounted) return;
+
+  setState(() {
+    hasSeenOnboarding = true;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -138,17 +142,24 @@ final List<Map<String, String>> pages = [
   },
 ];
 
-  void goNext() {
-    if (currentPage == pages.length - 1) {
-      widget.onComplete();
-      return;
-    }
-
-    pageController.nextPage(
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
+void goNext() {
+  if (currentPage == pages.length - 1) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LunaFirstMeetingScreen(
+          onStart: widget.onComplete,
+        ),
+      ),
     );
+    return;
   }
+
+  pageController.nextPage(
+    duration: const Duration(milliseconds: 350),
+    curve: Curves.easeInOut,
+  );
+}
 
   @override
   void dispose() {
@@ -301,6 +312,253 @@ final List<Map<String, String>> pages = [
                     ),
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class LunaFirstMeetingScreen extends StatefulWidget {
+  final VoidCallback onStart;
+
+  const LunaFirstMeetingScreen({
+    super.key,
+    required this.onStart,
+  });
+
+  @override
+  State<LunaFirstMeetingScreen> createState() =>
+      _LunaFirstMeetingScreenState();
+}
+
+class _LunaFirstMeetingScreenState
+    extends State<LunaFirstMeetingScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController animationController;
+  late final Animation<double> fadeAnimation;
+  late final Animation<double> scaleAnimation;
+
+  int messageStep = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    fadeAnimation = CurvedAnimation(
+      parent: animationController,
+      curve: Curves.easeIn,
+    );
+
+    scaleAnimation = Tween<double>(
+      begin: 0.85,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: animationController,
+        curve: Curves.easeOutBack,
+      ),
+    );
+
+    animationController.forward();
+    showMessages();
+  }
+
+  Future<void> showMessages() async {
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    if (!mounted) return;
+    setState(() {
+      messageStep = 1;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    if (!mounted) return;
+    setState(() {
+      messageStep = 2;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    if (!mounted) return;
+    setState(() {
+      messageStep = 3;
+    });
+  }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FA),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 70,
+              left: -50,
+              child: Container(
+                width: 170,
+                height: 170,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9D5FF).withOpacity(0.35),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            Positioned(
+              bottom: 100,
+              right: -60,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE4EE).withOpacity(0.45),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 30, 28, 28),
+              child: Column(
+                children: [
+                  const Spacer(),
+
+                  FadeTransition(
+                    opacity: fadeAnimation,
+                    child: ScaleTransition(
+                      scale: scaleAnimation,
+                      child: Container(
+                        width: 240,
+                        height: 240,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.92),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF8E7BBE)
+                                  .withOpacity(0.16),
+                              blurRadius: 30,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/images/luna.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 34),
+
+                  AnimatedOpacity(
+                    opacity: messageStep >= 1 ? 1 : 0,
+                    duration: const Duration(milliseconds: 500),
+                    child: const Text(
+                      'はじめまして。',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6F5B8E),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  AnimatedOpacity(
+                    opacity: messageStep >= 2 ? 1 : 0,
+                    duration: const Duration(milliseconds: 500),
+                    child: const Text(
+                      'ぼくは、ルナ。',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF7D7087),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  AnimatedOpacity(
+                    opacity: messageStep >= 3 ? 1 : 0,
+                    duration: const Duration(milliseconds: 650),
+                    child: const Text(
+                      'うれしい日も、しんどい日も。\n'
+                      'これから、あなたのそばで\n'
+                      '一緒に歩いていくよ🌱',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.7,
+                        color: Color(0xFF6D6478),
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  AnimatedOpacity(
+                    opacity: messageStep >= 3 ? 1 : 0,
+                    duration: const Duration(milliseconds: 700),
+                    child: IgnorePointer(
+                      ignoring: messageStep < 3,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () {
+  widget.onStart();
+
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(
+      builder: (_) => const MainScreen(),
+    ),
+    (route) => false,
+  );
+},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF8E7BBE),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                          ),
+                          child: const Text(
+                            '🐾 ルナと歩きはじめる',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -474,6 +732,7 @@ String? petImagePath;
 int lunaBond = 0;
 int streakDays = 1;
 DateTime? lastMoodDate;
+bool showFirstHomeWelcome = false;
 
 @override
 void initState() {
@@ -485,8 +744,35 @@ void initState() {
   loadLunaBond();
   loadStreak();
   loadLunaMemories();
+  loadFirstHomeWelcome();
 }
 
+Future<void> loadFirstHomeWelcome() async {
+  final prefs = await SharedPreferences.getInstance();
+  final shouldShow =
+      prefs.getBool('showFirstHomeWelcome') ?? false;
+
+  if (!mounted) return;
+
+  setState(() {
+    showFirstHomeWelcome = shouldShow;
+  });
+}
+
+Future<void> closeFirstHomeWelcome() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setBool(
+    'showFirstHomeWelcome',
+    false,
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    showFirstHomeWelcome = false;
+  });
+}
 
 Future<void> loadPetImage() async {
   final prefs = await SharedPreferences.getInstance();
@@ -943,46 +1229,148 @@ LunaHouseScreen(onBack: goToKokoroHiroba),
 
 
 
-    return Scaffold(
-      body: pages[selectedIndex],
-     bottomNavigationBar: selectedIndex >= 5
+   return Scaffold(
+  body: Stack(
+    children: [
+      pages[selectedIndex],
 
-          ? null
-          : BottomNavigationBar(
-              currentIndex: selectedIndex,
-              onTap: (index) {
-                setState(() {
-                  selectedIndex = index;
-                });
-              },
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: const Color(0xFF8E7BBE),
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'ホーム',
+      if (showFirstHomeWelcome && selectedIndex == 0)
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withOpacity(0.35),
+            child: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(
+                      maxWidth: 420,
+                    ),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDFBFF),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.14),
+                          blurRadius: 28,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/luna.png',
+                          height: 150,
+                          fit: BoxFit.contain,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        const Text(
+                          'おかえり。',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6F5B8E),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        const Text(
+                          '今日からここが、\n'
+                          'あなたの帰ってこられる場所に\n'
+                          'なれたらうれしいな🌱\n\n'
+                          '無理をしなくても大丈夫。\n'
+                          'ぼくはいつでもここにいるよ。',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.65,
+                            color: Color(0xFF6D6478),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: closeFirstHomeWelcome,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(0xFF8E7BBE),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(28),
+                              ),
+                            ),
+                            child: const Text(
+                              '🌱 はじめよう',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.spa),
-                  label: '気分記録',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.chat),
-                  label: 'COCOON',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.park),
-                  label: '心の広場',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'マイページ',
-                ),
-              ],
+              ),
             ),
-    );
+          ),
+        ),
+    ],
+  ),
+
+  bottomNavigationBar: selectedIndex >= 5
+      ? null
+      : BottomNavigationBar(
+          currentIndex: selectedIndex,
+          onTap: (index) {
+            setState(() {
+              selectedIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: const Color(0xFF8E7BBE),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'ホーム',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.spa),
+              label: '気分記録',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat),
+              label: 'COCOON',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.park),
+              label: '心の広場',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'マイページ',
+            ),
+          ],
+        ),
+);
   }
 }
+
 class HomeScreen extends StatefulWidget {
   final MoodRecord? latestMood;
   final String? petImagePath;
