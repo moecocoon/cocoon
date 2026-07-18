@@ -3699,7 +3699,8 @@ if (text.contains('友達') ||
       text.contains('ご飯') ||
       text.contains('旅行') ||
       text.contains('笑った') ||
-      text.contains('仲直り') ||
+      text.contains('仲直りできた') ||
+　　　　text.contains('仲直りした')||
       text.contains('会えた') ||
       text.contains('話せた') ||
       text.contains('親友');
