@@ -3648,6 +3648,10 @@ if (text.contains('彼氏') ||
       text.contains('うれしい') ||
       text.contains('幸せ') ||
       text.contains('楽しい') ||
+　　　　text.contains('楽しみ') ||
+      text.contains('ワクワク') || 
+      text.contains('わくわく') || 
+      text.contains('楽しみ！') ||
       text.contains('仲直り') ||
       text.contains('付き合えた') ||
       text.contains('デート') ||
