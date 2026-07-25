@@ -2206,6 +2206,34 @@ Slider(
   }
 }
 
+enum LunaEmotion {
+  happy,
+  anxious,
+  sad,
+  angry,
+  tired,
+  neutral,
+}
+
+enum LunaIntent {
+  wish,
+  success,
+  positiveReport,
+  problem,
+  question,
+  neutral,
+}
+
+enum LunaTopic {
+  love,
+  work,
+  school,
+  family,
+  friend,
+  health,
+  general,
+}
+
 class ChatScreen extends StatefulWidget {
   final List<ChatMessage> messages;
   final VoidCallback onMessagesChanged;
@@ -2239,11 +2267,15 @@ String currentStatus = '';
   bool isThinking = false;
   List<TimelineEvent> timelineEvents = [];
   String? currentTopic;
+  String? currentPerson;
+  String? currentQuestion;
 @override
 void initState() {
   super.initState();
 
   loadCurrentTopic();
+  loadCurrentPerson();
+  loadCurrentQuestion();
   loadTimelineEventsForChat();
   loadJapanEvents();
   loadProfileForChat();
@@ -2332,6 +2364,51 @@ Future<void> saveCurrentTopic(String topic) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('currentTopic', topic);
 }
+
+Future<void> loadCurrentPerson() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    currentPerson = prefs.getString('currentPerson');
+  });
+}
+
+Future<void> saveCurrentPerson(String person) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  currentPerson = person;
+  await prefs.setString('currentPerson', person);
+}
+
+Future<void> loadCurrentQuestion() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  setState(() {
+    currentQuestion = prefs.getString('currentQuestion');
+  });
+}
+
+Future<void> saveCurrentQuestion(String question) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  currentQuestion = question;
+  await prefs.setString('currentQuestion', question);
+}
+
+Future<void> clearCurrentQuestion() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  currentQuestion = null;
+  await prefs.remove('currentQuestion');
+}
+
+Future<void> clearCurrentPerson() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  currentPerson = null;
+  await prefs.remove('currentPerson');
+}
+
   final TextEditingController chatController = TextEditingController();
   final Random random = Random();
   final ScrollController scrollController = ScrollController();
@@ -2453,9 +2530,278 @@ Future<void> sendMessage() async {
   });
 }
 
+LunaEmotion detectLunaEmotion(String text) {
+  if (text.contains('楽しみ') ||
+      text.contains('嬉しい') ||
+      text.contains('うれしい') ||
+      text.contains('幸せ') ||
+      text.contains('ワクワク') ||
+      text.contains('わくわく')) {
+    return LunaEmotion.happy;
+  }
 
-String makeCocoonReply(String userText, List<ChatMessage> pastMessages) {
+  if (text.contains('不安') ||
+      text.contains('心配') ||
+      text.contains('怖い') ||
+      text.contains('こわい')) {
+    return LunaEmotion.anxious;
+  }
+
+  if (text.contains('悲しい') ||
+      text.contains('寂しい') ||
+      text.contains('さみしい') ||
+      text.contains('泣きたい')) {
+    return LunaEmotion.sad;
+  }
+
+  if (text.contains('イライラ') ||
+      text.contains('腹立つ') ||
+      text.contains('むかつく')) {
+    return LunaEmotion.angry;
+  }
+
+  if (text.contains('疲れた') ||
+      text.contains('しんどい') ||
+      text.contains('つらい')) {
+    return LunaEmotion.tired;
+  }
+
+  return LunaEmotion.neutral;
+}
+
+LunaIntent detectLunaIntent(String text) {
+  if (text.contains('できた') ||
+      text.contains('成功した') ||
+      text.contains('仲直りしたよ') ||
+      text.contains('仲直りできた')) {
+    return LunaIntent.success;
+  }
+
+  if (text.contains('したい') ||
+      text.contains('会いたい') ||
+      text.contains('仲直りしたい')) {
+    return LunaIntent.wish;
+  }
+
+  if (text.contains('できない') ||
+      text.contains('困ってる') ||
+      text.contains('困った')) {
+    return LunaIntent.problem;
+  }
+
+  if (text.contains('どうしたら') ||
+      text.contains('どうすれば') ||
+      text.contains('どう思う') ||
+      text.endsWith('？') ||
+      text.endsWith('?')) {
+    return LunaIntent.question;
+  }
+
+  if (text.contains('楽しみ') ||
+      text.contains('嬉しい') ||
+      text.contains('うれしい') ||
+      text.contains('幸せ') ||
+      text.contains('ワクワク')) {
+    return LunaIntent.positiveReport;
+  }
+
+  return LunaIntent.neutral;
+}
+
+LunaTopic detectLunaTopic(String text) {
+  if (text.contains('彼氏') ||
+      text.contains('彼女') ||
+      text.contains('好きな人') ||
+      text.contains('恋愛') ||
+      text.contains('デート') ||
+      text.contains('返信') ||
+      text.contains('既読') ||
+      text.contains('仲直り') ||
+      text.contains('別れ')) {
+    return LunaTopic.love;
+  }
+
+  if (text.contains('仕事') ||
+      text.contains('会社') ||
+      text.contains('職場')) {
+    return LunaTopic.work;
+  }
+
+  if (text.contains('学校') ||
+      text.contains('勉強') ||
+      text.contains('授業')) {
+    return LunaTopic.school;
+  }
+
+  if (text.contains('家族') ||
+      text.contains('お母さん') ||
+      text.contains('お父さん') ||
+      text.contains('親')) {
+    return LunaTopic.family;
+  }
+
+  if (text.contains('友達') ||
+      text.contains('親友')) {
+    return LunaTopic.friend;
+  }
+
+  if (text.contains('体調') ||
+      text.contains('病気') ||
+      text.contains('通院')) {
+    return LunaTopic.health;
+  }
+
+  return LunaTopic.general;
+}
+
+String topicToSavedText(LunaTopic topic) {
+  switch (topic) {
+    case LunaTopic.love:
+      return '恋愛';
+    case LunaTopic.work:
+      return '仕事';
+    case LunaTopic.school:
+      return '学校';
+    case LunaTopic.family:
+      return '家族';
+    case LunaTopic.friend:
+      return '友達';
+    case LunaTopic.health:
+      return '健康';
+    case LunaTopic.general:
+      return '';
+  }
+}
+
+String? detectLunaPerson(String text) {
+  if (text.contains('上司')) {
+    return '上司';
+  }
+
+  if (text.contains('店長')) {
+    return '店長';
+  }
+
+  if (text.contains('先輩')) {
+    return '先輩';
+  }
+
+  if (text.contains('同僚')) {
+    return '同僚';
+  }
+
+  if (text.contains('先生')) {
+    return '先生';
+  }
+
+  if (text.contains('彼氏')) {
+    return '彼氏';
+  }
+
+  if (text.contains('彼女')) {
+    return '彼女';
+  }
+
+  if (text.contains('好きな人')) {
+    return '好きな人';
+  }
+
+  if (text.contains('親友')) {
+    return '親友';
+  }
+
+  if (text.contains('友達')) {
+    return '友達';
+  }
+
+  if (text.contains('お母さん') || text.contains('母親')) {
+    return 'お母さん';
+  }
+
+  if (text.contains('お父さん') || text.contains('父親')) {
+    return 'お父さん';
+  }
+
+  return null;
+}
+
+LunaTopic savedTextToTopic(String? savedTopic) {
+  switch (savedTopic) {
+    case '恋愛':
+      return LunaTopic.love;
+    case '仕事':
+      return LunaTopic.work;
+    case '学校':
+      return LunaTopic.school;
+    case '家族':
+      return LunaTopic.family;
+    case '友達':
+      return LunaTopic.friend;
+    case '健康':
+      return LunaTopic.health;
+    default:
+      return LunaTopic.general;
+  }
+}
+
+String makeCocoonReply(
+  String userText,
+  List<ChatMessage> pastMessages,
+) {
   final text = userText.toLowerCase();
+
+final emotion = detectLunaEmotion(text);
+final intent = detectLunaIntent(text);
+
+final detectedTopic = detectLunaTopic(text);
+
+late LunaTopic topic;
+
+if (detectedTopic != LunaTopic.general) {
+  // 今回の文章に話題が書かれている場合
+  topic = detectedTopic;
+
+  final savedTopic = topicToSavedText(detectedTopic);
+
+  currentTopic = savedTopic;
+  saveCurrentTopic(savedTopic);
+} else {
+  // 今回の文章だけでは話題が分からない場合、
+  // 直前まで話していた話題を引き継ぐ
+  topic = savedTextToTopic(currentTopic);
+}
+
+final detectedPerson = detectLunaPerson(text);
+
+if (detectedPerson != null) {
+  currentPerson = detectedPerson;
+  saveCurrentPerson(detectedPerson);
+}
+
+// ルナの質問に対する回答を処理
+if (currentQuestion == 'work_scared_reason') {
+  saveCurrentQuestion('work_frequency');
+
+  final personText = currentPerson ?? 'その人';
+
+  return pick([
+    '$personTextにそんなふうにされると、怖くなるよね。\nそれはよくあることなの？',
+    '$personTextとのやり取りで傷ついているんだね。\n同じことは何度も起きているの？',
+    'それは心が緊張してしまうよね。\n毎日のように続いているのかな？',
+  ]);
+}
+
+if (currentQuestion == 'work_frequency') {
+  clearCurrentQuestion();
+
+  final personText = currentPerson ?? 'その人';
+
+  return pick([
+    'そんな状態が続いているなら、心が休まらないよね。\n今いちばんつらいのは、仕事へ行く前？それとも職場にいる時？',
+    '$personTextのことを考えるだけでも疲れてしまいそうだね。\n今日は少し休めそう？',
+    '何度も続いているなら、あなたが弱いからではないよ。\nここでは無理に平気なふりをしなくて大丈夫だよ🐶',
+  ]);
+}
 
   int? age;
 
@@ -2482,6 +2828,232 @@ if (birthday != null) {
       '👨‍👩‍👧‍👦 兄弟姉妹：${siblings.isEmpty ? '未設定' : siblings}\n'
       '🏠 家族との距離感：${familyStyle.isEmpty ? '未設定' : familyStyle}\n'
       '💼 現在の状況：${currentStatus.isEmpty ? '未設定' : currentStatus}';
+}
+
+// 恋愛＋仲直りしたい
+if (topic == LunaTopic.love &&
+    intent == LunaIntent.wish &&
+    text.contains('仲直り')) {
+  return pick([
+    '仲直りしたいって思えるくらい、その人のことが大切なんだね。\nどんなことがあったの？',
+    'このまま終わりたくない気持ちがあるんだね。\n相手に一番伝えたいことは何かな？',
+    '仲直りしたい気持ちがあるんだね。ルナも一緒に考えるよ🐶\n今は相手とどんな状態なの？',
+  ]);
+}
+
+// 恋愛＋仲直りできた
+if (topic == LunaTopic.love &&
+    intent == LunaIntent.success &&
+    text.contains('仲直り')) {
+  return pick([
+    '仲直りできたんだね！よかったね🐶💜',
+    'また話せるようになって、少しほっとしたかな？',
+    '勇気を出して向き合えたんだね。\nどんなふうに仲直りできたの？',
+  ]);
+}
+
+// 恋愛＋楽しい・嬉しい報告
+if (topic == LunaTopic.love &&
+    (intent == LunaIntent.positiveReport ||
+        emotion == LunaEmotion.happy)) {
+  return pick([
+    'わあ、それは楽しみだね🐶💜\nどこへ行く予定なの？',
+    'その話を聞いて、ルナまでワクワクしてきたよ✨',
+    '素敵な予定だね。\n帰ってきたら、どんな一日だったか聞かせてね🌱',
+    '楽しみにしている時間も幸せだよね😊',
+  ]);
+}
+
+// 恋愛＋不安
+if (topic == LunaTopic.love &&
+    emotion == LunaEmotion.anxious) {
+  return pick([
+    '大切な人のことだから、不安になっているんだね。\n今いちばん心配なのはどんなこと？',
+    '相手の気持ちが見えない時間って、長く感じるよね。\n何があったのか聞かせてね。',
+    '不安な気持ちを一人で抱えなくて大丈夫だよ。\n実際に起きたことから一緒に整理してみよう。',
+  ]);
+}
+
+// 仕事＋嬉しい報告
+if (topic == LunaTopic.work &&
+    (intent == LunaIntent.success ||
+        intent == LunaIntent.positiveReport ||
+        emotion == LunaEmotion.happy)) {
+  return pick([
+    'それは嬉しいね🐶✨\n頑張ってきたことが実ったのかな？',
+    'よかったね！\nその時どんな気持ちになった？',
+    'ルナまで嬉しくなってきたよ🌱\n詳しく聞かせて！',
+  ]);
+}
+
+// 仕事＋不安
+if (topic == LunaTopic.work &&
+    emotion == LunaEmotion.anxious) {
+
+  // ルナが質問モードに入る
+  saveCurrentQuestion('work_scared_reason');
+
+  if (currentPerson != null) {
+    return pick([
+      '$currentPersonとのことで不安なんだね。\nどんな時に一番怖いと感じるの？',
+      '$currentPersonとの間で何が起きているの？',
+      '$currentPersonに何をされる時が一番つらい？',
+    ]);
+  }
+
+  return pick([
+    '仕事のどんな場面が一番つらいの？',
+    '何が起きる時に不安になるの？',
+    '一番しんどい出来事を教えてほしいな🐶',
+  ]);
+}
+
+// 仕事＋疲れ
+if (topic == LunaTopic.work &&
+    emotion == LunaEmotion.tired) {
+  return pick([
+    '今日も本当にお疲れさま。\nここでは頑張らなくて大丈夫だよ。',
+    '仕事だけでも大変なのに、ちゃんと来てくれたんだね🐶',
+    '今は少し休む時間にしてもいいんじゃないかな🌙',
+  ]);
+}
+
+// 学校＋嬉しい報告
+if (topic == LunaTopic.school &&
+    (intent == LunaIntent.success ||
+        intent == LunaIntent.positiveReport ||
+        emotion == LunaEmotion.happy)) {
+  return pick([
+    'それは嬉しいね🐶✨\n頑張ったことが形になったのかな？',
+    'よかったね！\nどんなことがあったの？',
+    'ルナまで嬉しくなったよ🌱\n詳しく聞かせて！',
+  ]);
+}
+
+// 学校＋不安
+if (topic == LunaTopic.school &&
+    emotion == LunaEmotion.anxious) {
+  return pick([
+    '学校のことが不安なんだね。\n一番心配なのは何かな？',
+    '明日のことを考えると、気持ちが重くなるのかな。',
+    'ルナと一緒に、何が不安なのか少しずつ整理しよう🐶',
+  ]);
+}
+
+// 学校＋疲れ
+if (topic == LunaTopic.school &&
+    emotion == LunaEmotion.tired) {
+  return pick([
+    '学校でたくさん頑張ってきたんだね。\nここでは少し力を抜いていいよ。',
+    '今日もしんどい中で過ごしてきたんだね🐶',
+    '今は休む時間にしても大丈夫だよ🌙',
+  ]);
+}
+
+// 家族＋嬉しい報告
+if (topic == LunaTopic.family &&
+    (intent == LunaIntent.success ||
+        intent == LunaIntent.positiveReport ||
+        emotion == LunaEmotion.happy)) {
+  return pick([
+    'それは嬉しいね🐶✨\n家族との間でどんなことがあったの？',
+    '少し安心できる出来事だったのかな？',
+    'その嬉しい気持ち、もう少し聞かせてほしいな🌱',
+  ]);
+}
+
+// 家族＋不安
+if (topic == LunaTopic.family &&
+    emotion == LunaEmotion.anxious) {
+  return pick([
+    '家族のことだからこそ、気持ちが大きく揺れるよね。\n何が一番心配なの？',
+    '近い存在ほど、どう接したらいいか分からなくなることもあるよね。',
+    'ルナと一緒に、今起きていることを少しずつ整理しよう🐶',
+  ]);
+}
+
+// 家族＋悲しい・寂しい
+if (topic == LunaTopic.family &&
+    emotion == LunaEmotion.sad) {
+  return pick([
+    '家族とのことで寂しい気持ちになっているんだね。',
+    '本当は分かってほしかった気持ちもあるのかな。',
+    '無理に平気にならなくて大丈夫だよ。何があったの？',
+  ]);
+}
+
+// 家族＋怒り
+if (topic == LunaTopic.family &&
+    emotion == LunaEmotion.angry) {
+  return pick([
+    'それは腹が立つよね。\n本当はどうしてほしかった？',
+    '怒りの奥に、傷ついた気持ちもあるのかな。',
+    'ここではそのまま話して大丈夫だよ🐶',
+  ]);
+}
+
+// 友達＋嬉しい報告
+if (topic == LunaTopic.friend &&
+    (intent == LunaIntent.success ||
+        intent == LunaIntent.positiveReport ||
+        emotion == LunaEmotion.happy)) {
+  return pick([
+    'それは嬉しいね🐶✨\n友達とどんなことがあったの？',
+    '楽しい時間を過ごせたんだね。\nルナにも聞かせてほしいな🌱',
+    'その嬉しい気持ち、大切にしたいね😊',
+  ]);
+}
+
+// 友達＋不安
+if (topic == LunaTopic.friend &&
+    emotion == LunaEmotion.anxious) {
+  return pick([
+    '友達とのことが気になっているんだね。\n何が一番不安なの？',
+    '相手にどう思われているか、考え続けてしまうのかな。',
+    'ルナと一緒に、起きたことを少しずつ整理しよう🐶',
+  ]);
+}
+
+// 友達＋悲しい・寂しい
+if (topic == LunaTopic.friend &&
+    emotion == LunaEmotion.sad) {
+  return pick([
+    '友達とのことで寂しい気持ちになっているんだね。',
+    '大切な友達だからこそ、傷つく気持ちも大きいよね。',
+    '本当はどうしてほしかったのか、聞かせてほしいな。',
+  ]);
+}
+
+// 友達＋怒り
+if (topic == LunaTopic.friend &&
+    emotion == LunaEmotion.angry) {
+  return pick([
+    'それは腹が立つよね。\nどんなことをされたの？',
+    '怒っている気持ちの奥に、悲しさもあるのかな。',
+    'ここでは遠慮せず、そのまま話して大丈夫だよ🐶',
+  ]);
+}
+
+// 友達＋仲直りしたい
+if (topic == LunaTopic.friend &&
+    intent == LunaIntent.wish &&
+    text.contains('仲直り')) {
+  return pick([
+    '仲直りしたいと思えるくらい、大切な友達なんだね。\n何があったの？',
+    'このまま離れたくない気持ちがあるんだね。',
+    '相手に一番伝えたいことを、一緒に考えてみよう🐶',
+  ]);
+}
+
+// 友達＋仲直りできた
+if (topic == LunaTopic.friend &&
+    intent == LunaIntent.success &&
+    text.contains('仲直り')) {
+  return pick([
+    '仲直りできたんだね！よかった🐶💜',
+    'また話せるようになって、少し安心したかな？',
+    '勇気を出して向き合えたんだね。どうやって仲直りしたの？',
+  ]);
 }
 
 if ((text.contains('家族') ||
