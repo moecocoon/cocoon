@@ -2803,6 +2803,34 @@ if (currentQuestion == 'work_frequency') {
   ]);
 }
 
+// =============================
+// 恋愛の質問への回答
+// =============================
+
+if (currentQuestion == 'love_reason') {
+  saveCurrentQuestion('love_frequency');
+
+  final personText = currentPerson ?? 'その人';
+
+  return pick([
+    '$personTextと何があったの？\nもう少し詳しく教えてくれる？',
+    '$personTextとの出来事が心に残っているんだね。\nそれは何度もあることなの？',
+    'それはつらかったね。\n今回が初めて？それとも前から続いているの？',
+  ]);
+}
+
+if (currentQuestion == 'love_frequency') {
+  clearCurrentQuestion();
+
+  final personText = currentPerson ?? 'その人';
+
+  return pick([
+    '何度も続いているなら、不安になってしまうのも自然なことだよ。\n今、一番つらいことは何かな？',
+    '$personTextのことを考えるだけでも苦しくなっちゃうよね。\n今日は少し休めそう？',
+    'ここでは無理に強がらなくて大丈夫だよ🐶',
+  ]);
+}
+
   int? age;
 
 if (birthday != null) {
@@ -2867,10 +2895,21 @@ if (topic == LunaTopic.love &&
 // 恋愛＋不安
 if (topic == LunaTopic.love &&
     emotion == LunaEmotion.anxious) {
+
+  saveCurrentQuestion('love_reason');
+
+  if (currentPerson != null) {
+    return pick([
+      '$currentPersonとのことで不安なんだね。\n何があったの？',
+      '$currentPersonとの間で、どんなことが一番つらかったの？',
+      '$currentPersonのことで心が落ち着かないんだね。\nきっかけを聞かせてくれる？',
+    ]);
+  }
+
   return pick([
-    '大切な人のことだから、不安になっているんだね。\n今いちばん心配なのはどんなこと？',
-    '相手の気持ちが見えない時間って、長く感じるよね。\n何があったのか聞かせてね。',
-    '不安な気持ちを一人で抱えなくて大丈夫だよ。\n実際に起きたことから一緒に整理してみよう。',
+    '恋愛のことで不安なんだね。\n何があったの？',
+    'どんな出来事が心に引っかかっているの？',
+    '話せる範囲で、きっかけを教えてほしいな🐶',
   ]);
 }
 
