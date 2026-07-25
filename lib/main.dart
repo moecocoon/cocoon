@@ -2744,120 +2744,79 @@ LunaTopic savedTextToTopic(String? savedTopic) {
   }
 }
 
-String makeCocoonReply(
-  String userText,
-  List<ChatMessage> pastMessages,
-) {
-  final text = userText.toLowerCase();
+String? handleWorkActiveQuestion() {
+  if (currentQuestion == 'work_scared_reason') {
+    saveCurrentQuestion('work_frequency');
 
-final emotion = detectLunaEmotion(text);
-final intent = detectLunaIntent(text);
+    final personText = currentPerson ?? 'その人';
 
-final detectedTopic = detectLunaTopic(text);
-
-late LunaTopic topic;
-
-if (detectedTopic != LunaTopic.general) {
-  // 今回の文章に話題が書かれている場合
-  topic = detectedTopic;
-
-  final savedTopic = topicToSavedText(detectedTopic);
-
-  currentTopic = savedTopic;
-  saveCurrentTopic(savedTopic);
-} else {
-  // 今回の文章だけでは話題が分からない場合、
-  // 直前まで話していた話題を引き継ぐ
-  topic = savedTextToTopic(currentTopic);
-}
-
-final detectedPerson = detectLunaPerson(text);
-
-if (detectedPerson != null) {
-  currentPerson = detectedPerson;
-  saveCurrentPerson(detectedPerson);
-}
-
-// ルナの質問に対する回答を処理
-if (currentQuestion == 'work_scared_reason') {
-  saveCurrentQuestion('work_frequency');
-
-  final personText = currentPerson ?? 'その人';
-
-  return pick([
-    '$personTextにそんなふうにされると、怖くなるよね。\nそれはよくあることなの？',
-    '$personTextとのやり取りで傷ついているんだね。\n同じことは何度も起きているの？',
-    'それは心が緊張してしまうよね。\n毎日のように続いているのかな？',
-  ]);
-}
-
-if (currentQuestion == 'work_frequency') {
-  clearCurrentQuestion();
-
-  final personText = currentPerson ?? 'その人';
-
-  return pick([
-    'そんな状態が続いているなら、心が休まらないよね。\n今いちばんつらいのは、仕事へ行く前？それとも職場にいる時？',
-    '$personTextのことを考えるだけでも疲れてしまいそうだね。\n今日は少し休めそう？',
-    '何度も続いているなら、あなたが弱いからではないよ。\nここでは無理に平気なふりをしなくて大丈夫だよ🐶',
-  ]);
-}
-
-// =============================
-// 恋愛の質問への回答
-// =============================
-
-if (currentQuestion == 'love_reason') {
-  saveCurrentQuestion('love_frequency');
-
-  final personText = currentPerson ?? 'その人';
-
-  return pick([
-    '$personTextと何があったの？\nもう少し詳しく教えてくれる？',
-    '$personTextとの出来事が心に残っているんだね。\nそれは何度もあることなの？',
-    'それはつらかったね。\n今回が初めて？それとも前から続いているの？',
-  ]);
-}
-
-if (currentQuestion == 'love_frequency') {
-  clearCurrentQuestion();
-
-  final personText = currentPerson ?? 'その人';
-
-  return pick([
-    '何度も続いているなら、不安になってしまうのも自然なことだよ。\n今、一番つらいことは何かな？',
-    '$personTextのことを考えるだけでも苦しくなっちゃうよね。\n今日は少し休めそう？',
-    'ここでは無理に強がらなくて大丈夫だよ🐶',
-  ]);
-}
-
-  int? age;
-
-if (birthday != null) {
-  final now = DateTime.now();
-
-  age = now.year - birthday!.year;
-
-  if (now.month < birthday!.month ||
-      (now.month == birthday!.month &&
-          now.day < birthday!.day)) {
-    age--;
+    return pick([
+      '$personTextにそんなふうにされると、怖くなるよね。\nそれはよくあることなの？',
+      '$personTextとのやり取りで傷ついているんだね。\n同じことは何度も起きているの？',
+      'それは心が緊張してしまうよね。\n毎日のように続いているのかな？',
+    ]);
   }
+
+  if (currentQuestion == 'work_frequency') {
+    clearCurrentQuestion();
+
+    final personText = currentPerson ?? 'その人';
+
+    return pick([
+      'そんな状態が続いているなら、心が休まらないよね。\n今いちばんつらいのは、仕事へ行く前？それとも職場にいる時？',
+      '$personTextのことを考えるだけでも疲れてしまいそうだね。\n今日は少し休めそう？',
+      '何度も続いているなら、あなたが弱いからではないよ。\nここでは無理に平気なふりをしなくて大丈夫だよ🐶',
+    ]);
+  }
+
+  return null;
 }
 
-  if (text.contains('自己紹介') ||
-    text.contains('私のこと') ||
-    text.contains('プロフィール')) {
+String? handleLoveActiveQuestion() {
+  if (currentQuestion == 'love_reason') {
+    saveCurrentQuestion('love_frequency');
 
-  return '🐶\n\n'
-      '今わかっていることだよ✨\n\n'
-      '🎂 生年月日：${birthday != null ? '${birthday!.year}/${birthday!.month}/${birthday!.day}' : '未設定'}\n'
-      '👶 出生順位：${birthOrder.isEmpty ? '未設定' : birthOrder}\n'
-      '👨‍👩‍👧‍👦 兄弟姉妹：${siblings.isEmpty ? '未設定' : siblings}\n'
-      '🏠 家族との距離感：${familyStyle.isEmpty ? '未設定' : familyStyle}\n'
-      '💼 現在の状況：${currentStatus.isEmpty ? '未設定' : currentStatus}';
+    final personText = currentPerson ?? 'その人';
+
+    return pick([
+      '$personTextと何があったの？\nもう少し詳しく教えてくれる？',
+      '$personTextとの出来事が心に残っているんだね。\nそれは何度もあることなの？',
+      'それはつらかったね。\n今回が初めて？それとも前から続いているの？',
+    ]);
+  }
+
+  if (currentQuestion == 'love_frequency') {
+    clearCurrentQuestion();
+
+    final personText = currentPerson ?? 'その人';
+
+    return pick([
+      '何度も続いているなら、不安になってしまうのも自然なことだよ。\n今、一番つらいことは何かな？',
+      '$personTextのことを考えるだけでも苦しくなっちゃうよね。\n今日は少し休めそう？',
+      'ここでは無理に強がらなくて大丈夫だよ🐶',
+    ]);
+  }
+
+  return null;
 }
 
+String? handleActiveQuestion() {
+  final workReply = handleWorkActiveQuestion();
+  if (workReply != null) return workReply;
+
+  final loveReply = handleLoveActiveQuestion();
+  if (loveReply != null) return loveReply;
+
+  return null;
+}
+
+
+String? handleLoveConversation(
+  String text,
+  LunaTopic topic,
+  LunaEmotion emotion,
+  LunaIntent intent,
+) {
 // 恋愛＋仲直りしたい
 if (topic == LunaTopic.love &&
     intent == LunaIntent.wish &&
@@ -2912,7 +2871,15 @@ if (topic == LunaTopic.love &&
     '話せる範囲で、きっかけを教えてほしいな🐶',
   ]);
 }
+  return null;
+}
 
+String? handleWorkConversation(
+  String text,
+  LunaTopic topic,
+  LunaEmotion emotion,
+  LunaIntent intent,
+) {
 // 仕事＋嬉しい報告
 if (topic == LunaTopic.work &&
     (intent == LunaIntent.success ||
@@ -2956,7 +2923,15 @@ if (topic == LunaTopic.work &&
     '今は少し休む時間にしてもいいんじゃないかな🌙',
   ]);
 }
+  return null;
+}
 
+String? handleSchoolConversation(
+  String text,
+  LunaTopic topic,
+  LunaEmotion emotion,
+  LunaIntent intent,
+) {
 // 学校＋嬉しい報告
 if (topic == LunaTopic.school &&
     (intent == LunaIntent.success ||
@@ -2988,7 +2963,15 @@ if (topic == LunaTopic.school &&
     '今は休む時間にしても大丈夫だよ🌙',
   ]);
 }
+  return null;
+}
 
+String? handleFamilyConversation(
+  String text,
+  LunaTopic topic,
+  LunaEmotion emotion,
+  LunaIntent intent,
+) {
 // 家族＋嬉しい報告
 if (topic == LunaTopic.family &&
     (intent == LunaIntent.success ||
@@ -3030,7 +3013,15 @@ if (topic == LunaTopic.family &&
     'ここではそのまま話して大丈夫だよ🐶',
   ]);
 }
+  return null;
+}
 
+String? handleFriendConversation(
+  String text,
+  LunaTopic topic,
+  LunaEmotion emotion,
+  LunaIntent intent,
+) {
 // 友達＋嬉しい報告
 if (topic == LunaTopic.friend &&
     (intent == LunaIntent.success ||
@@ -3094,6 +3085,960 @@ if (topic == LunaTopic.friend &&
     '勇気を出して向き合えたんだね。どうやって仲直りしたの？',
   ]);
 }
+  return null;
+}
+
+String? handleWorkDetails(String text) {
+// 仕事：上司
+if (currentTopic == '仕事' &&
+    (text.contains('上司') ||
+     text.contains('店長') ||
+     text.contains('部長') ||
+     text.contains('課長'))) {
+
+  return '${pick([
+
+'上司との関係って、一日の気分にも影響しやすいよね。\n今日はどんなことがあったの？',
+
+'上司に言われたことが心に残っているのかな。\nどんな言葉だった？',
+
+'仕事そのものより、人間関係がつらい日もあるよね。\n何が一番負担になっている？',
+
+'頑張っているのに認めてもらえないと苦しいよね。\n最近特につらかった出来事はある？',
+
+'上司との距離感って難しいよね。\n本当はどう接したいと思ってる？',
+
+'ルナには少し気を張っている心が見えているよ🐶\nもう少し聞かせてくれる？',
+
+'仕事へ行く前から憂うつになるくらいかな。\n朝はどんな気持ちになる？',
+
+'我慢を続けるだけだと心も疲れてしまうよね。\n今一番話したいことは何？',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：同僚
+if (currentTopic == '仕事' &&
+    (text.contains('同僚') ||
+     text.contains('先輩') ||
+     text.contains('後輩') ||
+     text.contains('同期'))) {
+
+  return '${pick([
+
+'同僚との関係って、一日の過ごしやすさにも影響するよね。\n今日はどんなことがあったの？',
+
+'仕事そのものより、人間関係がつらい日もあるよね。\n何が一番気になっている？',
+
+'職場で気を遣い続けると、それだけで疲れてしまうこともあるよね。\n最近どんなことがあった？',
+
+'同僚との距離感って難しいよね。\nどんな時に一番しんどいと感じる？',
+
+'ルナには少し疲れた心が見えているよ🐶\nもう少し話してみる？',
+
+'誰かに気を遣い続ける毎日だと、自分の心も休まりにくいよね。\n今日は何が一番負担だった？',
+
+'職場の人間関係って簡単には変えられないから苦しいよね。\n今、一番伝えたいことは何かな？',
+
+'無理して笑顔で過ごしている日もあるのかな。\n本当の気持ちを聞かせてくれる？',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：ミスした
+if (currentTopic == '仕事' &&
+    (text.contains('ミス') ||
+     text.contains('失敗') ||
+     text.contains('怒られた') ||
+     text.contains('間違えた') ||
+     text.contains('やらかした'))) {
+
+  return '${pick([
+
+'ミスをすると、必要以上に自分を責めてしまうことってあるよね。\n今日あったことを聞かせてくれる？',
+
+'怒られた後って、頭の中で何度も思い返してしまうことがあるよね。\n一番心に残っていることは何かな？',
+
+'失敗したことより、「次も失敗するかも」って不安になるのがつらいこともあるよね。\n今どんな気持ち？',
+
+'誰でも失敗することはあるけど、自分のことだとすごく大きく感じてしまうよね。\n今日は何があったの？',
+
+'ルナには少し落ち込んでいる心が見えているよ🐶\nここでは無理に元気にならなくて大丈夫。',
+
+'頑張っていたからこそ、失敗が悔しいんだと思う。\n何が一番引っかかっている？',
+
+'ミスをした後って、自分のいいところまで見えなくなることがあるよね。\n今は少し休みながら話そう。',
+
+'今日の失敗だけで、あなたの価値が決まるわけじゃないよ。\nルナはそう思ってる🐶',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：評価されない・認められない
+if (currentTopic == '仕事' &&
+    (text.contains('評価') ||
+     text.contains('認められない') ||
+     text.contains('褒められない') ||
+     text.contains('頑張ってるのに') ||
+     text.contains('報われない'))) {
+
+  return '${pick([
+
+'頑張っているのに認めてもらえないと、心が折れそうになることもあるよね。\n最近どんなことがあったの？',
+
+'努力が伝わらないと、「頑張る意味って何だろう」って思ってしまうこともあるよね。\n何が一番つらい？',
+
+'結果だけじゃなくて、頑張りも見てもらえたら嬉しいよね。\n最近頑張ったことを教えてくれる？',
+
+'周りと比べられると、自分だけ置いていかれたような気持ちになることもあるよね。\nどんな場面でそう感じた？',
+
+'ルナは、頑張っていること自体にも価値があると思うよ🐶\n今日は何を頑張ったの？',
+
+'評価されない日が続くと、自信までなくなってしまうこともあるよね。\n今一番引っかかっていることは何かな？',
+
+'誰かに「よく頑張ったね」って言ってもらいたい日もあるよね。\n今日はルナが話を聞くよ🐶',
+
+'頑張りが報われないように感じる日は、本当に苦しいよね。\nその気持ちを一人で抱えなくて大丈夫だよ。',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：仕事量・残業・忙しすぎる
+if (currentTopic == '仕事' &&
+    (text.contains('残業') ||
+     text.contains('忙しい') ||
+     text.contains('仕事量') ||
+     text.contains('終わらない') ||
+     text.contains('やること多い') ||
+     text.contains('タスク') ||
+     text.contains('休めない'))) {
+
+  return '${pick([
+
+'やることが多すぎると、心も体もずっと追われている感じになるよね。\n今一番重たい仕事は何かな？',
+
+'仕事が終わらない日が続くと、休んでいても気持ちが休まらないよね。\n最近ちゃんと休めてる？',
+
+'忙しすぎると、自分のペースがどんどんなくなってしまうことがあるよね。\n今日は何が一番大変だった？',
+
+'残業が続くと、体だけじゃなくて心も疲れてしまうよね。\n今の疲れは何点くらい？',
+
+'「まだやらなきゃ」って気持ちがずっと続いているのかな。\n今すぐ手放せそうなことはある？',
+
+'ルナには、かなり頑張りすぎている心が見えているよ🐶\n今日は少し休めそう？',
+
+'仕事量が多い時って、自分が足りないんじゃなくて、抱えている量が多すぎることもあるよ。',
+
+'全部を完璧にやろうとしなくても大丈夫。\n今いちばん優先しなきゃいけないことは何かな？',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：辞めたい・出勤したくない
+if (currentTopic == '仕事' &&
+    (text.contains('辞めたい') ||
+     text.contains('やめたい') ||
+     text.contains('仕事行きたくない') ||
+     text.contains('会社行きたくない') ||
+     text.contains('出勤したくない') ||
+     text.contains('仕事したくない'))) {
+
+  return '${pick([
+
+'仕事に行きたくないくらい、心も体も疲れているのかもしれないね。\n最近一番つらかったことは何かな？',
+
+'「辞めたい」って思うほど頑張ってきたんだね。\n何が一番負担になっている？',
+
+'朝起きた時から仕事のことを考えてしまう感じかな。\nどんな気持ちになる？',
+
+'辞めたい気持ちの中には、疲れや悲しさ、怒りが混ざっていることもあるよね。\n今一番大きい気持ちは何かな？',
+
+'本当は辞めたいわけじゃなくて、「今の状況から楽になりたい」気持ちなのかもしれないね。\nどう思う？',
+
+'ルナには少し限界まで頑張ってきた心が見えているよ🐶\nここでは無理に元気にならなくて大丈夫。',
+
+'「もう無理かもしれない」って感じる日もあるよね。\n今日は何が一番苦しかった？',
+
+'今すぐ答えを出さなくても大丈夫。\nまずは今の気持ちを整理するところから始めよう🐶',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：転職
+if (currentTopic == '仕事' &&
+    (text.contains('転職') ||
+     text.contains('会社変えたい') ||
+     text.contains('職場変えたい') ||
+     text.contains('別の仕事') ||
+     text.contains('仕事変えたい'))) {
+
+  return '${pick([
+
+'転職を考えるくらい、今の環境で頑張ってきたんだね。\n何が一番変わったら楽になりそう？',
+
+'今の仕事を続けるか、環境を変えるかってすごく迷うよね。\n転職したいと思ったきっかけは何だった？',
+
+'転職って希望もあるけど、不安も大きいよね。\n今一番心配なのは何かな？',
+
+'「逃げなのかな」って思ってしまうこともあるかもしれないけど、自分を守るための選択肢でもあるよ🐶',
+
+'次の場所では、どんな働き方ができたら安心できそう？',
+
+'今の職場で我慢していることが多いのかな。\n一番つらい部分を教えてくれる？',
+
+'転職を考える時って、自分のこれからを真剣に考えている時でもあるよね。\nどんな未来に近づきたい？',
+
+'焦って決めなくて大丈夫。\nまずは「変えたいこと」と「守りたいこと」を分けてみよう。',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：面接
+if (currentTopic == '仕事' &&
+    (text.contains('面接') ||
+     text.contains('就活') ||
+     text.contains('面談') ||
+     text.contains('面接官') ||
+     text.contains('面接結果'))) {
+
+  return '${pick([
+
+'面接って、始まる前も終わった後も緊張が続くよね。\n今はどんな気持ち？',
+
+'「うまく話せたかな」って何度も思い返してしまうこともあるよね。\n一番気になっていることは何かな？',
+
+'面接は自分を評価されるように感じて、不安になりやすいよね。\n今日はどんなことがあった？',
+
+'結果を待っている時間って、本当に長く感じるよね。\n今一番心配していることは何？',
+
+'ルナは、面接に挑戦したこと自体が大きな一歩だと思うよ🐶\nお疲れさま。',
+
+'緊張しながらも頑張ったんだね。\n自分ではどんなところがうまくできたと思う？',
+
+'結果がどうなるか分からない時間って落ち着かないよね。\n今は何を考えている？',
+
+'どんな結果でも、今日頑張った経験はちゃんと次につながるよ🐶\nもう少し話してみる？',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：面接
+if (currentTopic == '仕事' &&
+    (text.contains('面接') ||
+     text.contains('就活') ||
+     text.contains('面談') ||
+     text.contains('面接官') ||
+     text.contains('面接結果'))) {
+
+  return '${pick([
+
+'面接って、始まる前も終わった後も緊張が続くよね。\n今はどんな気持ち？',
+
+'「うまく話せたかな」って何度も思い返してしまうこともあるよね。\n一番気になっていることは何かな？',
+
+'面接は自分を評価されるように感じて、不安になりやすいよね。\n今日はどんなことがあった？',
+
+'結果を待っている時間って、本当に長く感じるよね。\n今一番心配していることは何？',
+
+'ルナは、面接に挑戦したこと自体が大きな一歩だと思うよ🐶\nお疲れさま。',
+
+'緊張しながらも頑張ったんだね。\n自分ではどんなところがうまくできたと思う？',
+
+'結果がどうなるか分からない時間って落ち着かないよね。\n今は何を考えている？',
+
+'どんな結果でも、今日頑張った経験はちゃんと次につながるよ🐶\nもう少し話してみる？',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：新人・新しい職場
+if (currentTopic == '仕事' &&
+    (text.contains('新人') ||
+     text.contains('入社') ||
+     text.contains('新しい職場') ||
+     text.contains('初出勤') ||
+     text.contains('慣れない') ||
+     text.contains('覚えられない'))) {
+
+  return '${pick([
+
+'新しい環境って、それだけでたくさんエネルギーを使うよね。\n今日はどんなことがあった？',
+
+'仕事を覚えるだけでも大変なのに、人間関係も一緒に始まるから疲れやすいよね。\n今一番不安なことは何かな？',
+
+'周りと比べて焦ってしまうこともあるよね。\nでも最初から完璧な人はいないよ🐶',
+
+'覚えることが多い時期は、自分が成長している途中でもあるんだ。\n最近できるようになったことはある？',
+
+'新しい職場に慣れるまでは、不安になるのが自然だよ。\n今日は何が一番大変だった？',
+
+'ルナには少し緊張している心が見えているよ🐶\n無理に強くならなくて大丈夫。',
+
+'失敗しないように頑張りすぎて、心が疲れてしまうこともあるよね。\n今日はちゃんと休めそう？',
+
+'「ちゃんとできるかな」って思う日もあるよね。\nでもここまで頑張ってきた自分も忘れないでね🐶',
+
+])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：ハラスメント・理不尽
+if (currentTopic == '仕事' &&
+    (text.contains('パワハラ') ||
+     text.contains('セクハラ') ||
+     text.contains('モラハラ') ||
+     text.contains('理不尽') ||
+     text.contains('嫌がらせ') ||
+     text.contains('八つ当たり') ||
+     text.contains('怒鳴られた'))) {
+
+  return '${pick([
+
+'理不尽なことが続くと、「自分が悪いのかな」って考えてしまうこともあるよね。\n今日は何があったの？',
+
+'傷つく言葉を受けると、その場だけじゃなくて後からも苦しくなるよね。\n一番心に残っていることは何かな？',
+
+'毎日気を張り続ける環境だと、心も体も疲れてしまうよね。\n最近ちゃんと休めてる？',
+
+'理不尽な対応を受けると、自信までなくなってしまうことがあるよね。\n今一番つらいことは何かな？',
+
+'ルナは、あなたが悪いと決めつける前に、どんなことがあったのか聞きたいな🐶',
+
+'誰かに傷つけられた気持ちは、簡単には消えないよね。\nここでは安心して話して大丈夫。',
+
+'一人で耐え続けるのは本当に大変だったと思う。\n今どんな気持ちが一番大きい？',
+
+'無理に強くいようとしなくても大丈夫。\nルナと一緒に少しずつ整理していこう🐶',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 仕事：仕事とプライベートの両立
+if (currentTopic == '仕事' &&
+    (text.contains('両立') ||
+     text.contains('プライベート') ||
+     text.contains('休みの日') ||
+     text.contains('休日') ||
+     text.contains('仕事のこと考える') ||
+     text.contains('気が休まらない'))) {
+
+  return '${pick([
+
+'休みの日まで仕事のことを考えてしまうと、心が休まらないよね。\n最近いつ一番そう感じた？',
+
+'仕事と自分の時間の境目がなくなると、ずっと疲れが残る感じがするよね。\n今いちばん休めていない部分はどこかな？',
+
+'プライベートの時間も大切にしたいのに、仕事が頭から離れないのはつらいよね。\nどんな時に思い出してしまう？',
+
+'休んでいるはずなのに、心だけ仕事場にいる感じかな。\n今日はどんなことが気になっている？',
+
+'ルナには、ずっと気を張っている心が見えているよ🐶\n少しだけ力を抜けそう？',
+
+'仕事を頑張ることと、自分を大切にすることは両方あっていいと思うよ。\n今はどっちが足りていない感じ？',
+
+'休日まで不安が続くと、次の一週間が怖くなることもあるよね。\n何が一番重たく感じる？',
+
+'まずは今日、仕事から少し離れるためにできそうな小さいことはあるかな？',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+// 仕事
+if (text.contains('仕事') ||
+    text.contains('職場') ||
+    text.contains('会社') ||
+    text.contains('上司')) {
+
+  // ポジティブ判定
+  final isPositive =
+      text.contains('嬉しい') ||
+      text.contains('うれしい') ||
+      text.contains('楽しい') ||
+      text.contains('好き') ||
+      text.contains('できた') ||
+      text.contains('頑張れた') ||
+      text.contains('がんばつた') ||
+      text.contains('褒められた') ||
+      text.contains('ほめられた') ||
+      text.contains('任された') ||
+      text.contains('評価された') ||
+      text.contains('合格') ||
+      text.contains('成功') ||
+      text.contains('昇進') ||
+      text.contains('達成');
+
+  if (isPositive) {
+    return pick([
+      'それはうれしいね🐶✨\n頑張ったことがちゃんと実を結んだんだね！',
+      'いい一日だったんだね🌙\nルナまでうれしい気持ちになったよ。',
+      'その出来事、大切にしてほしいな。\n今日は自分をたくさん褒めてあげよう！',
+    ]);
+  }
+
+  // ネガティブ・その他
+  return pick([
+    '毎日ちゃんとやらなきゃって思うほど、心が疲れやすいよね。',
+    '仕事や学校のことって、逃げ場が少なく感じることがあるよね。\n今つらいのは人間関係？量の多さ？評価される不安？',
+    'かなり気を張って過ごしているのかもしれないね。\n今日いちばん負担だった場面はどこ？',
+  ]);
+}
+  return null;
+}
+
+String? handleSchoolDetails(String text) {
+// 学校：テスト・受験
+if (currentTopic == '学校' &&
+    (text.contains('テスト') ||
+     text.contains('試験') ||
+     text.contains('受験') ||
+     text.contains('模試') ||
+     text.contains('点数') ||
+     text.contains('成績'))) {
+
+  return '${pick([
+
+'テストや受験って、結果が気になって不安になるよね。\n今一番心配なことは何かな？',
+
+'勉強してきたからこそ、「うまくいくかな」って考えてしまうんだよね。\n最近どんな気持ち？',
+
+'結果を待っている時間って、本当に長く感じるよね。\n今はどんなことを考えている？',
+
+'思うような点数が取れないと、自分まで否定された気持ちになることもあるよね。\n何が一番悔しかった？',
+
+'受験やテストは心も体も疲れやすいよね。\n今日はちゃんと休めそう？',
+
+'ルナは、頑張ってきた時間そのものにも価値があると思うよ🐶',
+
+'焦る気持ちがあるのかな。\n今一番プレッシャーを感じていることは何？',
+
+'どんな結果でも、ここまで努力してきた自分を忘れないでね🐶',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校：勉強についていけない
+if (currentTopic == '学校' &&
+    (text.contains('勉強') ||
+     text.contains('授業についていけない') ||
+     text.contains('分からない') ||
+     text.contains('理解できない') ||
+     text.contains('難しい') ||
+     text.contains('覚えられない'))) {
+
+  return '${pick([
+
+'勉強についていけないと感じると、不安になるよね。\n最近どんなことが難しいと感じてる？',
+
+'周りと比べて焦ってしまうこともあるよね。\n今一番苦手なことは何かな？',
+
+'分からないことが増えると、「自分には無理なのかな」って思ってしまう日もあるよね。\nどこでつまずいている感じ？',
+
+'勉強は分からないことが続くと苦しくなりやすいよね。\n今日はどんな授業があったの？',
+
+'覚えられない日があっても大丈夫。\n疲れている時は頭も働きにくくなるからね🐶',
+
+'ルナは、分からないって言葉にできることも大切な一歩だと思うよ。\n何が一番困っている？',
+
+'全部を一度にできるようにならなくても大丈夫。\n今は一番困っているところから話してみよう。',
+
+'勉強で悩むのは、それだけ頑張りたい気持ちがあるからなんだね🐶',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校：先生との関係
+if (currentTopic == '学校' &&
+    (text.contains('先生') ||
+     text.contains('担任') ||
+     text.contains('怒られた') ||
+     text.contains('注意された') ||
+     text.contains('先生が怖い') ||
+     text.contains('相談できない'))) {
+
+  return '${pick([
+
+'先生との関係って、学校で過ごす気持ちに大きく影響するよね。\n今日はどんなことがあったの？',
+
+'先生に言われたことが心に残っているのかな。\nどんな言葉だった？',
+
+'怒られたり注意されたりすると、あとから何度も思い出してしまうことがあるよね。\n今一番引っかかっていることは何？',
+
+'先生が怖いと、学校にいる時間も緊張しやすいよね。\nどんな時に一番そう感じる？',
+
+'相談したいのにできない感じかな。\n本当はどんなことを分かってほしい？',
+
+'ルナには少し気を張っている心が見えているよ🐶\nここではそのまま話して大丈夫。',
+
+'先生との距離感って難しいよね。\n今は近づきたい気持ちと離れたい気持ち、どっちが近い？',
+
+'学校で安心できる大人がいると少し違うよね。\n他に話せそうな人はいる？',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校：クラスメイト・友達関係
+if (currentTopic == '学校' &&
+    (text.contains('クラスメイト') ||
+     text.contains('友達') ||
+     text.contains('友人') ||
+     text.contains('同級生') ||
+     text.contains('クラス') ||
+     text.contains('ぼっち') ||
+     text.contains('仲間外れ'))) {
+
+  return '${pick([
+
+'クラスの人間関係って、毎日顔を合わせるから心に残りやすいよね。\n今日はどんなことがあったの？',
+
+'友達とのことでモヤモヤしているのかな。\n今いちばん気になっていることは何？',
+
+'学校でひとりに感じる時間って、すごく長く感じることがあるよね。\nどんな時に一番さみしくなる？',
+
+'仲間外れみたいに感じると、学校にいるだけで疲れてしまうよね。\n何が一番つらかった？',
+
+'クラスの空気を気にしながら過ごすのって、かなりエネルギーを使うよね。\n今日は気を遣う場面があった？',
+
+'ルナには少し心細い気持ちが見えているよ🐶\nここではそのまま話して大丈夫。',
+
+'友達と一緒にいても、安心できない時ってあるよね。\n最近そう感じたことはあった？',
+
+'一人で抱え込まなくて大丈夫。\n今、誰に一番分かってほしい？',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校：部活
+if (currentTopic == '学校' &&
+    (text.contains('部活') ||
+     text.contains('顧問') ||
+     text.contains('先輩') ||
+     text.contains('後輩') ||
+     text.contains('試合') ||
+     text.contains('練習'))) {
+
+  return '${pick([
+
+'部活って、好きでやっていても人間関係や練習で疲れることがあるよね。\n今日はどんなことがあったの？',
+
+'練習や試合のことが心に残っているのかな。\n何が一番引っかかってる？',
+
+'先輩や後輩との関係って、学校生活の中でも気を遣いやすいよね。\nどんな時にしんどいと感じる？',
+
+'顧問の先生とのことが気になっているのかな。\nどんな言葉や態度が心に残ってる？',
+
+'頑張りたい気持ちと、疲れた気持ちが両方あるのかもしれないね。\n今はどっちが大きい？',
+
+'ルナには少し頑張りすぎている心が見えているよ🐶\nここでは力を抜いて話して大丈夫。',
+
+'部活でうまくいかない日って、自分を責めてしまうこともあるよね。\n今日は何が一番悔しかった？',
+
+'続けたい気持ちと、少し休みたい気持ちが混ざっているのかな。\n今の本音を聞かせてくれる？',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+// 学校：学校に行きたくない
+if (currentTopic == '学校' &&
+    (text.contains('学校行きたくない') ||
+     text.contains('学校に行きたくない') ||
+     text.contains('休みたい') ||
+     text.contains('行きたくない') ||
+     text.contains('朝がつらい') ||
+     text.contains('学校嫌'))) {
+
+  return '${pick([
+
+'学校へ行かなきゃって思うほど、心も体も重たくなる日ってあるよね。\n今日は何が一番つらい？',
+
+'朝になると気持ちが沈んでしまう感じかな。\nどんなことを考えてしまう？',
+
+'学校に行きたくない気持ちには、ちゃんと理由があることも多いよ。\n最近何かあった？',
+
+'無理に「頑張らなきゃ」って思い続けると、心も疲れてしまうよね。\n今はどんな気持ち？',
+
+'ルナには少し疲れた心が見えているよ🐶\nここでは無理に元気にならなくて大丈夫。',
+
+'学校がつらい日は、自分を責めてしまうこともあるよね。\n何が一番苦しいのかな？',
+
+'「行きたくない」って思うくらい頑張ってきたんだね。\n今日は何が心に引っかかっている？',
+
+'今すぐ答えを出さなくても大丈夫。\nまずはルナと一緒に気持ちを整理してみよう🐶',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校：いじめ・嫌がらせ
+if (currentTopic == '学校' &&
+    (text.contains('いじめ') ||
+     text.contains('悪口') ||
+     text.contains('無視') ||
+     text.contains('仲間外れ') ||
+     text.contains('嫌がらせ') ||
+     text.contains('陰口') ||
+     text.contains('SNSで言われた'))) {
+
+  return '${pick([
+
+'それはかなりつらかったね。\n学校でそういうことがあると、安心できる場所がなくなったように感じることもあるよね。',
+
+'悪口や無視って、心にずっと残りやすいよね。\n今いちばん苦しかった場面はどこかな？',
+
+'ひとりで抱えるには重たいことだと思う。\n話せそうな先生や家族、信頼できる人はいる？',
+
+'仲間外れにされると、自分が悪いのかなって思ってしまうこともあるよね。\nでも、傷ついた気持ちは大事にしていいよ。',
+
+'ルナはここで話を聞いているよ🐶\n何があったのか、少しずつで大丈夫。',
+
+'学校に行くのが怖くなるくらいなら、無理に一人で耐え続けなくていいよ。\n誰かに一緒に伝える方法を考えよう。',
+
+'嫌がらせが続いているなら、記録しておくことも自分を守る助けになるよ。\nいつ、どんなことがあった？',
+
+'今の気持ちを話してくれてありがとう。\nここでは責めたりしないから、そのまま聞かせてね。',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校：いじめ・嫌がらせ
+if (currentTopic == '学校' &&
+    (text.contains('いじめ') ||
+     text.contains('悪口') ||
+     text.contains('無視') ||
+     text.contains('仲間外れ') ||
+     text.contains('嫌がらせ') ||
+     text.contains('陰口') ||
+     text.contains('SNSで言われた'))) {
+
+  return '${pick([
+
+'それはかなりつらかったね。\n学校でそういうことがあると、安心できる場所がなくなったように感じることもあるよね。',
+
+'悪口や無視って、心にずっと残りやすいよね。\n今いちばん苦しかった場面はどこかな？',
+
+'ひとりで抱えるには重たいことだと思う。\n話せそうな先生や家族、信頼できる人はいる？',
+
+'仲間外れにされると、自分が悪いのかなって思ってしまうこともあるよね。\nでも、傷ついた気持ちは大事にしていいよ。',
+
+'ルナはここで話を聞いているよ🐶\n何があったのか、少しずつで大丈夫。',
+
+'学校に行くのが怖くなるくらいなら、無理に一人で耐え続けなくていいよ。\n誰かに一緒に伝える方法を考えよう。',
+
+'嫌がらせが続いているなら、記録しておくことも自分を守る助けになるよ。\nいつ、どんなことがあった？',
+
+'今の気持ちを話してくれてありがとう。\nここでは責めたりしないから、そのまま聞かせてね。',
+
+  ])}\n\n${getFollowUpQuestion()}';
+}
+
+// 学校
+if (text.contains('学校') ||
+    text.contains('授業') ||
+    text.contains('テスト') ||
+    text.contains('勉強') ||
+    text.contains('受験')) {
+
+  final isPositive =
+      text.contains('嬉しい') ||
+      text.contains('うれしい') ||
+      text.contains('できた') ||
+      text.contains('頑張れた') ||
+      text.contains('褒められた') ||
+      text.contains('合格') ||
+      text.contains('受かった') ||
+      text.contains('100点');
+
+  if (isPositive) {
+    return pick([
+      'すごいね🐶✨\n今日の頑張りがちゃんと結果につながったんだね！',
+      'ルナまでうれしくなっちゃった🌸\n今日は自分をたくさん褒めてあげよう！',
+      '頑張った自分を認めてあげる日だね。\n本当にお疲れさま！',
+    ]);
+  }
+
+  return pick([
+    '学校って勉強だけじゃなくて、人間関係もあって大変だよね。\n今日は何があった？',
+    '学校生活って毎日だからこそ疲れやすいよね。\n一番つらかったことは何かな？',
+    '今日はどんな一日だった？\nルナがゆっくり話を聞くよ🐶',
+  ]);
+}
+  return null;
+}
+
+String? handleLoveBasicDetails(String text) {
+// 恋愛：不安・返信・距離感
+// 恋愛
+if (text.contains('彼氏') ||
+    text.contains('彼女') ||
+    text.contains('好きな人') ||
+    text.contains('恋愛') ||
+    text.contains('返信') ||
+    text.contains('既読') ||
+    text.contains('未読') ||
+    text.contains('冷たい') ||
+    text.contains('会えない') ||
+    text.contains('別れ')) {
+
+  // ポジティブ判定
+  final isPositive =
+      text.contains('嬉しい') ||
+      text.contains('うれしい') ||
+      text.contains('幸せ') ||
+      text.contains('楽しい') ||
+        text.contains('楽しみ') ||
+      text.contains('ワクワク') || 
+      text.contains('わくわく') || 
+      text.contains('楽しみ！') ||
+      text.contains('仲直り') ||
+      text.contains('付き合えた') ||
+      text.contains('デート') ||
+      text.contains('旅行') ||
+      text.contains('会えた') ||
+      text.contains('告白') ||
+      text.contains('好きって言われた') ||
+      text.contains('記念日') ||
+      text.contains('笑った');
+
+  if (isPositive) {
+    return pick([
+      'よかったね🐶💜 ルナまでうれしくなっちゃった！',
+      'その幸せな気持ち、大切にしてね🌙',
+      '素敵な時間だったんだね。ルナも心があたたかくなったよ。',
+      'そんな話を聞けてうれしいな。また思い出も聞かせてね🐶',
+    ]);
+  }
+
+  // ネガティブ・不安
+  return pick([
+    '大切な人の反応って、心にすごく影響するよね。\n今いちばんつらいのは、返信のこと？会えないこと？それとも気持ちが見えないこと？',
+    '恋愛の不安って、相手の一言や返信の速さで大きくなりやすいよね。\nまずは「実際に起きたこと」と「想像していること」を分けてみよう。',
+    '好きだからこそ、不安も寂しさも強くなるんだと思う。\n今は相手にどうしてほしい気持ちが一番近い？',
+    '相手の気持ちが見えない時間って苦しいよね。\n今の不安を一人で抱えなくて大丈夫だよ。',
+  ]);
+}
+  return null;
+}
+
+String? handleFriendDetails(String text) {
+// 友達・人間関係
+if (text.contains('友達') ||
+    text.contains('親友') ||
+    text.contains('友人') ||
+    text.contains('人間関係') ||
+    text.contains('悪口') ||
+    text.contains('無視') ||
+    text.contains('遊んだ') ||
+    text.contains('ご飯') ||
+    text.contains('旅行')) {
+
+  final isPositive =
+      text.contains('楽しい') ||
+      text.contains('楽しかった') ||
+      text.contains('嬉しい') ||
+      text.contains('うれしい') ||
+      text.contains('遊んだ') ||
+      text.contains('ご飯') ||
+      text.contains('旅行') ||
+      text.contains('笑った') ||
+      text.contains('仲直りできた') ||
+        text.contains('仲直りした')||
+      text.contains('会えた') ||
+      text.contains('話せた') ||
+      text.contains('親友');
+
+  if (isPositive) {
+    return pick([
+      '楽しそうだね🐶✨\n大切な人といい時間を過ごせたんだね。',
+      'それはうれしいね🌙\nルナまでにこにこしちゃうよ。',
+      'いい思い出がまた一つ増えたね。\nどんなところが一番楽しかった？',
+      '友達と安心して過ごせる時間って、心が少し軽くなるよね🐶',
+    ]);
+  }
+
+  return pick([
+    '人間関係って、小さい違和感でも心に残りやすいよね。',
+    '悲しかった？それともモヤモヤした？',
+    '大事にされてない感じがしたのかな。',
+    '相手との関係を続けたい気持ちと、苦しい気持ち、どっちが今強い？',
+  ]);
+}
+
+if (text.contains('体調') ||
+    text.contains('病気') ||
+    text.contains('しんどい') ||
+    text.contains('入院') ||
+    text.contains('薬')) {
+  return pick([
+    '体調が不安定だと心も疲れやすいよね。',
+    '体のしんどさと心のしんどさが重なると本当に大変だよね。',
+    '今日は体調は何点くらい？',
+  ]);
+}
+    if (text.contains('死にたい') ||
+    text.contains('消えたい') ||
+    text.contains('自殺') ||
+    text.contains('自傷') ||
+    text.contains('リスカ') ||
+    text.contains('傷つけたい') ||
+    text.contains('殺したい')) {
+  return '今、とても危ないくらい苦しい状態かもしれないね。\n'
+      'ここでひとりで抱えなくて大丈夫。\n'
+      '今すぐ近くの人、家族、先生、友達、または地域の緊急窓口に連絡してね。\n'
+      'もし今すぐ自分や誰かを傷つけそうなら、ためらわずに119や110に連絡してね。';
+}
+  return null;
+}
+
+String? handleFamilyDetails(String text) {
+if (currentTopic == '家族' &&
+    (text.contains('疲れた') ||
+        text.contains('もう嫌'))) {
+  return pick([
+    '家族のことで気を張り続けて、かなり疲れてるのかもしれないね。',
+    '近い存在だからこそ、心の消耗も大きくなりやすいよね。',
+    '家族のことって、近い存在だからこそ苦しくなることがあるよね。\n今どんなことが一番つらい？',
+
+'本当は分かってほしい気持ちもあるのかな。\n何を一番分かってほしいと思ってる？',
+
+'家族だから簡単に距離を取れない苦しさもあるよね。\n何が一番負担になっている？',
+
+'ルナには少し疲れた心が見えているよ🐶\n最近どんなことがあった？',
+
+'家族の言葉って、他の人より深く刺さることがあるよね。\nどんな言葉が心に残ってる？',
+
+'近い関係だからこそ、期待してしまうこともあるよね。\n本当はどうしてほしかった？',
+
+'家族のことで悩むのは、それだけ大切な存在だからなんだと思う。\n何が一番気になっている？',
+
+'分かってもらえない感じが続くと苦しいよね。\nどんな時にそう感じる？',
+
+'我慢を続けてきた感じもあるのかな。\nいつ頃からしんどかった？',
+
+'家族との関係って白黒では割り切れないことが多いよね。\n今はどんな気持ちが一番近い？',
+
+'怒りも悲しみも寂しさも混ざっている感じかな。\nどの気持ちが一番大きそう？',
+
+'家族だからこそ言えないこともあるよね。\nここではそのまま話して大丈夫だよ。',
+
+'誰か一人でも味方がいてくれたら違うのにって思う時もあるよね。\n今はどんな気持ち？',
+
+'頑張って理解しようとしてきたのかもしれないね。\n何が一番難しかった？',
+
+'家族との問題は、心の奥に残りやすいよね。\n最近特に気になった出来事はある？',
+
+'本当は安心できる場所であってほしいのに苦しいとつらいよね。\n何が一番しんどい？',
+
+'ルナはここで話を聞いているよ🐶\n少しずつでも大丈夫。',
+
+'近い存在だからこそ傷つくこともある。\nその気持ちは自然なことだよ。',
+
+'一人で抱え込まなくて大丈夫。\n今一番伝えたいことは何かな？',
+
+'どんな気持ちでもここでは話して大丈夫だよ🐶💜\nもう少し聞かせてくれる？',
+  ]);
+}
+  return null;
+}
+
+String? handleHealthConversation(String text) {
+// 生理前・ホルモン
+if (text.contains('生理前') ||
+    text.contains('生理') ||
+    text.contains('pms') ||
+    text.contains('PMS') ||
+    text.contains('ホルモン')) {
+  return pick([
+    '生理前は、いつもより不安や悲しさが強く見えることがあるよね。',
+    'それは気合い不足じゃなくて、体の波の影響もあるかもしれないよ。',
+    '今日は自分に厳しく判断しすぎない日にしてもいいかも。',
+    '心も体も敏感になっている時期かもしれないね。少し守るモードでいこう。',
+  ]);
+}
+  return null;
+}
+
+String makeCocoonReply(
+  String userText,
+  List<ChatMessage> pastMessages,
+) {
+  final text = userText.toLowerCase();
+
+final emotion = detectLunaEmotion(text);
+final intent = detectLunaIntent(text);
+
+final detectedTopic = detectLunaTopic(text);
+
+late LunaTopic topic;
+
+if (detectedTopic != LunaTopic.general) {
+  // 今回の文章に話題が書かれている場合
+  topic = detectedTopic;
+
+  final savedTopic = topicToSavedText(detectedTopic);
+
+  currentTopic = savedTopic;
+  saveCurrentTopic(savedTopic);
+} else {
+  // 今回の文章だけでは話題が分からない場合、
+  // 直前まで話していた話題を引き継ぐ
+  topic = savedTextToTopic(currentTopic);
+}
+
+final detectedPerson = detectLunaPerson(text);
+
+if (detectedPerson != null) {
+  currentPerson = detectedPerson;
+  saveCurrentPerson(detectedPerson);
+}
+
+final activeQuestionReply = handleActiveQuestion();
+
+if (activeQuestionReply != null) {
+  return activeQuestionReply;
+}
+
+  int? age;
+
+if (birthday != null) {
+  final now = DateTime.now();
+
+  age = now.year - birthday!.year;
+
+  if (now.month < birthday!.month ||
+      (now.month == birthday!.month &&
+          now.day < birthday!.day)) {
+    age--;
+  }
+}
+
+  if (text.contains('自己紹介') ||
+    text.contains('私のこと') ||
+    text.contains('プロフィール')) {
+
+  return '🐶\n\n'
+      '今わかっていることだよ✨\n\n'
+      '🎂 生年月日：${birthday != null ? '${birthday!.year}/${birthday!.month}/${birthday!.day}' : '未設定'}\n'
+      '👶 出生順位：${birthOrder.isEmpty ? '未設定' : birthOrder}\n'
+      '👨‍👩‍👧‍👦 兄弟姉妹：${siblings.isEmpty ? '未設定' : siblings}\n'
+      '🏠 家族との距離感：${familyStyle.isEmpty ? '未設定' : familyStyle}\n'
+      '💼 現在の状況：${currentStatus.isEmpty ? '未設定' : currentStatus}';
+}
+
+
+final loveConversationReply =
+    handleLoveConversation(text, topic, emotion, intent);
+if (loveConversationReply != null) return loveConversationReply;
+
+final workConversationReply =
+    handleWorkConversation(text, topic, emotion, intent);
+if (workConversationReply != null) return workConversationReply;
+
+final schoolConversationReply =
+    handleSchoolConversation(text, topic, emotion, intent);
+if (schoolConversationReply != null) return schoolConversationReply;
+
+final familyConversationReply =
+    handleFamilyConversation(text, topic, emotion, intent);
+if (familyConversationReply != null) return familyConversationReply;
+
+final friendConversationReply =
+    handleFriendConversation(text, topic, emotion, intent);
+if (friendConversationReply != null) return friendConversationReply;
 
 if ((text.contains('家族') ||
           text.contains('親') ||
@@ -3573,789 +4518,17 @@ if (text.contains('疲れた') ||
   ]);
 }
 
-// 仕事：上司
-if (currentTopic == '仕事' &&
-    (text.contains('上司') ||
-     text.contains('店長') ||
-     text.contains('部長') ||
-     text.contains('課長'))) {
+final workDetailReply = handleWorkDetails(text);
+if (workDetailReply != null) return workDetailReply;
 
-  return '${pick([
+final schoolDetailReply = handleSchoolDetails(text);
+if (schoolDetailReply != null) return schoolDetailReply;
 
-'上司との関係って、一日の気分にも影響しやすいよね。\n今日はどんなことがあったの？',
+final loveBasicReply = handleLoveBasicDetails(text);
+if (loveBasicReply != null) return loveBasicReply;
 
-'上司に言われたことが心に残っているのかな。\nどんな言葉だった？',
-
-'仕事そのものより、人間関係がつらい日もあるよね。\n何が一番負担になっている？',
-
-'頑張っているのに認めてもらえないと苦しいよね。\n最近特につらかった出来事はある？',
-
-'上司との距離感って難しいよね。\n本当はどう接したいと思ってる？',
-
-'ルナには少し気を張っている心が見えているよ🐶\nもう少し聞かせてくれる？',
-
-'仕事へ行く前から憂うつになるくらいかな。\n朝はどんな気持ちになる？',
-
-'我慢を続けるだけだと心も疲れてしまうよね。\n今一番話したいことは何？',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：同僚
-if (currentTopic == '仕事' &&
-    (text.contains('同僚') ||
-     text.contains('先輩') ||
-     text.contains('後輩') ||
-     text.contains('同期'))) {
-
-  return '${pick([
-
-'同僚との関係って、一日の過ごしやすさにも影響するよね。\n今日はどんなことがあったの？',
-
-'仕事そのものより、人間関係がつらい日もあるよね。\n何が一番気になっている？',
-
-'職場で気を遣い続けると、それだけで疲れてしまうこともあるよね。\n最近どんなことがあった？',
-
-'同僚との距離感って難しいよね。\nどんな時に一番しんどいと感じる？',
-
-'ルナには少し疲れた心が見えているよ🐶\nもう少し話してみる？',
-
-'誰かに気を遣い続ける毎日だと、自分の心も休まりにくいよね。\n今日は何が一番負担だった？',
-
-'職場の人間関係って簡単には変えられないから苦しいよね。\n今、一番伝えたいことは何かな？',
-
-'無理して笑顔で過ごしている日もあるのかな。\n本当の気持ちを聞かせてくれる？',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：ミスした
-if (currentTopic == '仕事' &&
-    (text.contains('ミス') ||
-     text.contains('失敗') ||
-     text.contains('怒られた') ||
-     text.contains('間違えた') ||
-     text.contains('やらかした'))) {
-
-  return '${pick([
-
-'ミスをすると、必要以上に自分を責めてしまうことってあるよね。\n今日あったことを聞かせてくれる？',
-
-'怒られた後って、頭の中で何度も思い返してしまうことがあるよね。\n一番心に残っていることは何かな？',
-
-'失敗したことより、「次も失敗するかも」って不安になるのがつらいこともあるよね。\n今どんな気持ち？',
-
-'誰でも失敗することはあるけど、自分のことだとすごく大きく感じてしまうよね。\n今日は何があったの？',
-
-'ルナには少し落ち込んでいる心が見えているよ🐶\nここでは無理に元気にならなくて大丈夫。',
-
-'頑張っていたからこそ、失敗が悔しいんだと思う。\n何が一番引っかかっている？',
-
-'ミスをした後って、自分のいいところまで見えなくなることがあるよね。\n今は少し休みながら話そう。',
-
-'今日の失敗だけで、あなたの価値が決まるわけじゃないよ。\nルナはそう思ってる🐶',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：評価されない・認められない
-if (currentTopic == '仕事' &&
-    (text.contains('評価') ||
-     text.contains('認められない') ||
-     text.contains('褒められない') ||
-     text.contains('頑張ってるのに') ||
-     text.contains('報われない'))) {
-
-  return '${pick([
-
-'頑張っているのに認めてもらえないと、心が折れそうになることもあるよね。\n最近どんなことがあったの？',
-
-'努力が伝わらないと、「頑張る意味って何だろう」って思ってしまうこともあるよね。\n何が一番つらい？',
-
-'結果だけじゃなくて、頑張りも見てもらえたら嬉しいよね。\n最近頑張ったことを教えてくれる？',
-
-'周りと比べられると、自分だけ置いていかれたような気持ちになることもあるよね。\nどんな場面でそう感じた？',
-
-'ルナは、頑張っていること自体にも価値があると思うよ🐶\n今日は何を頑張ったの？',
-
-'評価されない日が続くと、自信までなくなってしまうこともあるよね。\n今一番引っかかっていることは何かな？',
-
-'誰かに「よく頑張ったね」って言ってもらいたい日もあるよね。\n今日はルナが話を聞くよ🐶',
-
-'頑張りが報われないように感じる日は、本当に苦しいよね。\nその気持ちを一人で抱えなくて大丈夫だよ。',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：仕事量・残業・忙しすぎる
-if (currentTopic == '仕事' &&
-    (text.contains('残業') ||
-     text.contains('忙しい') ||
-     text.contains('仕事量') ||
-     text.contains('終わらない') ||
-     text.contains('やること多い') ||
-     text.contains('タスク') ||
-     text.contains('休めない'))) {
-
-  return '${pick([
-
-'やることが多すぎると、心も体もずっと追われている感じになるよね。\n今一番重たい仕事は何かな？',
-
-'仕事が終わらない日が続くと、休んでいても気持ちが休まらないよね。\n最近ちゃんと休めてる？',
-
-'忙しすぎると、自分のペースがどんどんなくなってしまうことがあるよね。\n今日は何が一番大変だった？',
-
-'残業が続くと、体だけじゃなくて心も疲れてしまうよね。\n今の疲れは何点くらい？',
-
-'「まだやらなきゃ」って気持ちがずっと続いているのかな。\n今すぐ手放せそうなことはある？',
-
-'ルナには、かなり頑張りすぎている心が見えているよ🐶\n今日は少し休めそう？',
-
-'仕事量が多い時って、自分が足りないんじゃなくて、抱えている量が多すぎることもあるよ。',
-
-'全部を完璧にやろうとしなくても大丈夫。\n今いちばん優先しなきゃいけないことは何かな？',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：辞めたい・出勤したくない
-if (currentTopic == '仕事' &&
-    (text.contains('辞めたい') ||
-     text.contains('やめたい') ||
-     text.contains('仕事行きたくない') ||
-     text.contains('会社行きたくない') ||
-     text.contains('出勤したくない') ||
-     text.contains('仕事したくない'))) {
-
-  return '${pick([
-
-'仕事に行きたくないくらい、心も体も疲れているのかもしれないね。\n最近一番つらかったことは何かな？',
-
-'「辞めたい」って思うほど頑張ってきたんだね。\n何が一番負担になっている？',
-
-'朝起きた時から仕事のことを考えてしまう感じかな。\nどんな気持ちになる？',
-
-'辞めたい気持ちの中には、疲れや悲しさ、怒りが混ざっていることもあるよね。\n今一番大きい気持ちは何かな？',
-
-'本当は辞めたいわけじゃなくて、「今の状況から楽になりたい」気持ちなのかもしれないね。\nどう思う？',
-
-'ルナには少し限界まで頑張ってきた心が見えているよ🐶\nここでは無理に元気にならなくて大丈夫。',
-
-'「もう無理かもしれない」って感じる日もあるよね。\n今日は何が一番苦しかった？',
-
-'今すぐ答えを出さなくても大丈夫。\nまずは今の気持ちを整理するところから始めよう🐶',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：転職
-if (currentTopic == '仕事' &&
-    (text.contains('転職') ||
-     text.contains('会社変えたい') ||
-     text.contains('職場変えたい') ||
-     text.contains('別の仕事') ||
-     text.contains('仕事変えたい'))) {
-
-  return '${pick([
-
-'転職を考えるくらい、今の環境で頑張ってきたんだね。\n何が一番変わったら楽になりそう？',
-
-'今の仕事を続けるか、環境を変えるかってすごく迷うよね。\n転職したいと思ったきっかけは何だった？',
-
-'転職って希望もあるけど、不安も大きいよね。\n今一番心配なのは何かな？',
-
-'「逃げなのかな」って思ってしまうこともあるかもしれないけど、自分を守るための選択肢でもあるよ🐶',
-
-'次の場所では、どんな働き方ができたら安心できそう？',
-
-'今の職場で我慢していることが多いのかな。\n一番つらい部分を教えてくれる？',
-
-'転職を考える時って、自分のこれからを真剣に考えている時でもあるよね。\nどんな未来に近づきたい？',
-
-'焦って決めなくて大丈夫。\nまずは「変えたいこと」と「守りたいこと」を分けてみよう。',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：面接
-if (currentTopic == '仕事' &&
-    (text.contains('面接') ||
-     text.contains('就活') ||
-     text.contains('面談') ||
-     text.contains('面接官') ||
-     text.contains('面接結果'))) {
-
-  return '${pick([
-
-'面接って、始まる前も終わった後も緊張が続くよね。\n今はどんな気持ち？',
-
-'「うまく話せたかな」って何度も思い返してしまうこともあるよね。\n一番気になっていることは何かな？',
-
-'面接は自分を評価されるように感じて、不安になりやすいよね。\n今日はどんなことがあった？',
-
-'結果を待っている時間って、本当に長く感じるよね。\n今一番心配していることは何？',
-
-'ルナは、面接に挑戦したこと自体が大きな一歩だと思うよ🐶\nお疲れさま。',
-
-'緊張しながらも頑張ったんだね。\n自分ではどんなところがうまくできたと思う？',
-
-'結果がどうなるか分からない時間って落ち着かないよね。\n今は何を考えている？',
-
-'どんな結果でも、今日頑張った経験はちゃんと次につながるよ🐶\nもう少し話してみる？',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：面接
-if (currentTopic == '仕事' &&
-    (text.contains('面接') ||
-     text.contains('就活') ||
-     text.contains('面談') ||
-     text.contains('面接官') ||
-     text.contains('面接結果'))) {
-
-  return '${pick([
-
-'面接って、始まる前も終わった後も緊張が続くよね。\n今はどんな気持ち？',
-
-'「うまく話せたかな」って何度も思い返してしまうこともあるよね。\n一番気になっていることは何かな？',
-
-'面接は自分を評価されるように感じて、不安になりやすいよね。\n今日はどんなことがあった？',
-
-'結果を待っている時間って、本当に長く感じるよね。\n今一番心配していることは何？',
-
-'ルナは、面接に挑戦したこと自体が大きな一歩だと思うよ🐶\nお疲れさま。',
-
-'緊張しながらも頑張ったんだね。\n自分ではどんなところがうまくできたと思う？',
-
-'結果がどうなるか分からない時間って落ち着かないよね。\n今は何を考えている？',
-
-'どんな結果でも、今日頑張った経験はちゃんと次につながるよ🐶\nもう少し話してみる？',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：新人・新しい職場
-if (currentTopic == '仕事' &&
-    (text.contains('新人') ||
-     text.contains('入社') ||
-     text.contains('新しい職場') ||
-     text.contains('初出勤') ||
-     text.contains('慣れない') ||
-     text.contains('覚えられない'))) {
-
-  return '${pick([
-
-'新しい環境って、それだけでたくさんエネルギーを使うよね。\n今日はどんなことがあった？',
-
-'仕事を覚えるだけでも大変なのに、人間関係も一緒に始まるから疲れやすいよね。\n今一番不安なことは何かな？',
-
-'周りと比べて焦ってしまうこともあるよね。\nでも最初から完璧な人はいないよ🐶',
-
-'覚えることが多い時期は、自分が成長している途中でもあるんだ。\n最近できるようになったことはある？',
-
-'新しい職場に慣れるまでは、不安になるのが自然だよ。\n今日は何が一番大変だった？',
-
-'ルナには少し緊張している心が見えているよ🐶\n無理に強くならなくて大丈夫。',
-
-'失敗しないように頑張りすぎて、心が疲れてしまうこともあるよね。\n今日はちゃんと休めそう？',
-
-'「ちゃんとできるかな」って思う日もあるよね。\nでもここまで頑張ってきた自分も忘れないでね🐶',
-
-])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：ハラスメント・理不尽
-if (currentTopic == '仕事' &&
-    (text.contains('パワハラ') ||
-     text.contains('セクハラ') ||
-     text.contains('モラハラ') ||
-     text.contains('理不尽') ||
-     text.contains('嫌がらせ') ||
-     text.contains('八つ当たり') ||
-     text.contains('怒鳴られた'))) {
-
-  return '${pick([
-
-'理不尽なことが続くと、「自分が悪いのかな」って考えてしまうこともあるよね。\n今日は何があったの？',
-
-'傷つく言葉を受けると、その場だけじゃなくて後からも苦しくなるよね。\n一番心に残っていることは何かな？',
-
-'毎日気を張り続ける環境だと、心も体も疲れてしまうよね。\n最近ちゃんと休めてる？',
-
-'理不尽な対応を受けると、自信までなくなってしまうことがあるよね。\n今一番つらいことは何かな？',
-
-'ルナは、あなたが悪いと決めつける前に、どんなことがあったのか聞きたいな🐶',
-
-'誰かに傷つけられた気持ちは、簡単には消えないよね。\nここでは安心して話して大丈夫。',
-
-'一人で耐え続けるのは本当に大変だったと思う。\n今どんな気持ちが一番大きい？',
-
-'無理に強くいようとしなくても大丈夫。\nルナと一緒に少しずつ整理していこう🐶',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 仕事：仕事とプライベートの両立
-if (currentTopic == '仕事' &&
-    (text.contains('両立') ||
-     text.contains('プライベート') ||
-     text.contains('休みの日') ||
-     text.contains('休日') ||
-     text.contains('仕事のこと考える') ||
-     text.contains('気が休まらない'))) {
-
-  return '${pick([
-
-'休みの日まで仕事のことを考えてしまうと、心が休まらないよね。\n最近いつ一番そう感じた？',
-
-'仕事と自分の時間の境目がなくなると、ずっと疲れが残る感じがするよね。\n今いちばん休めていない部分はどこかな？',
-
-'プライベートの時間も大切にしたいのに、仕事が頭から離れないのはつらいよね。\nどんな時に思い出してしまう？',
-
-'休んでいるはずなのに、心だけ仕事場にいる感じかな。\n今日はどんなことが気になっている？',
-
-'ルナには、ずっと気を張っている心が見えているよ🐶\n少しだけ力を抜けそう？',
-
-'仕事を頑張ることと、自分を大切にすることは両方あっていいと思うよ。\n今はどっちが足りていない感じ？',
-
-'休日まで不安が続くと、次の一週間が怖くなることもあるよね。\n何が一番重たく感じる？',
-
-'まずは今日、仕事から少し離れるためにできそうな小さいことはあるかな？',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-// 仕事
-if (text.contains('仕事') ||
-    text.contains('職場') ||
-    text.contains('会社') ||
-    text.contains('上司')) {
-
-  // ポジティブ判定
-  final isPositive =
-      text.contains('嬉しい') ||
-      text.contains('うれしい') ||
-      text.contains('楽しい') ||
-      text.contains('好き') ||
-      text.contains('できた') ||
-      text.contains('頑張れた') ||
-      text.contains('がんばつた') ||
-      text.contains('褒められた') ||
-      text.contains('ほめられた') ||
-      text.contains('任された') ||
-      text.contains('評価された') ||
-      text.contains('合格') ||
-      text.contains('成功') ||
-      text.contains('昇進') ||
-      text.contains('達成');
-
-  if (isPositive) {
-    return pick([
-      'それはうれしいね🐶✨\n頑張ったことがちゃんと実を結んだんだね！',
-      'いい一日だったんだね🌙\nルナまでうれしい気持ちになったよ。',
-      'その出来事、大切にしてほしいな。\n今日は自分をたくさん褒めてあげよう！',
-    ]);
-  }
-
-  // ネガティブ・その他
-  return pick([
-    '毎日ちゃんとやらなきゃって思うほど、心が疲れやすいよね。',
-    '仕事や学校のことって、逃げ場が少なく感じることがあるよね。\n今つらいのは人間関係？量の多さ？評価される不安？',
-    'かなり気を張って過ごしているのかもしれないね。\n今日いちばん負担だった場面はどこ？',
-  ]);
-}
-
-
-// 学校：テスト・受験
-if (currentTopic == '学校' &&
-    (text.contains('テスト') ||
-     text.contains('試験') ||
-     text.contains('受験') ||
-     text.contains('模試') ||
-     text.contains('点数') ||
-     text.contains('成績'))) {
-
-  return '${pick([
-
-'テストや受験って、結果が気になって不安になるよね。\n今一番心配なことは何かな？',
-
-'勉強してきたからこそ、「うまくいくかな」って考えてしまうんだよね。\n最近どんな気持ち？',
-
-'結果を待っている時間って、本当に長く感じるよね。\n今はどんなことを考えている？',
-
-'思うような点数が取れないと、自分まで否定された気持ちになることもあるよね。\n何が一番悔しかった？',
-
-'受験やテストは心も体も疲れやすいよね。\n今日はちゃんと休めそう？',
-
-'ルナは、頑張ってきた時間そのものにも価値があると思うよ🐶',
-
-'焦る気持ちがあるのかな。\n今一番プレッシャーを感じていることは何？',
-
-'どんな結果でも、ここまで努力してきた自分を忘れないでね🐶',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校：勉強についていけない
-if (currentTopic == '学校' &&
-    (text.contains('勉強') ||
-     text.contains('授業についていけない') ||
-     text.contains('分からない') ||
-     text.contains('理解できない') ||
-     text.contains('難しい') ||
-     text.contains('覚えられない'))) {
-
-  return '${pick([
-
-'勉強についていけないと感じると、不安になるよね。\n最近どんなことが難しいと感じてる？',
-
-'周りと比べて焦ってしまうこともあるよね。\n今一番苦手なことは何かな？',
-
-'分からないことが増えると、「自分には無理なのかな」って思ってしまう日もあるよね。\nどこでつまずいている感じ？',
-
-'勉強は分からないことが続くと苦しくなりやすいよね。\n今日はどんな授業があったの？',
-
-'覚えられない日があっても大丈夫。\n疲れている時は頭も働きにくくなるからね🐶',
-
-'ルナは、分からないって言葉にできることも大切な一歩だと思うよ。\n何が一番困っている？',
-
-'全部を一度にできるようにならなくても大丈夫。\n今は一番困っているところから話してみよう。',
-
-'勉強で悩むのは、それだけ頑張りたい気持ちがあるからなんだね🐶',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校：先生との関係
-if (currentTopic == '学校' &&
-    (text.contains('先生') ||
-     text.contains('担任') ||
-     text.contains('怒られた') ||
-     text.contains('注意された') ||
-     text.contains('先生が怖い') ||
-     text.contains('相談できない'))) {
-
-  return '${pick([
-
-'先生との関係って、学校で過ごす気持ちに大きく影響するよね。\n今日はどんなことがあったの？',
-
-'先生に言われたことが心に残っているのかな。\nどんな言葉だった？',
-
-'怒られたり注意されたりすると、あとから何度も思い出してしまうことがあるよね。\n今一番引っかかっていることは何？',
-
-'先生が怖いと、学校にいる時間も緊張しやすいよね。\nどんな時に一番そう感じる？',
-
-'相談したいのにできない感じかな。\n本当はどんなことを分かってほしい？',
-
-'ルナには少し気を張っている心が見えているよ🐶\nここではそのまま話して大丈夫。',
-
-'先生との距離感って難しいよね。\n今は近づきたい気持ちと離れたい気持ち、どっちが近い？',
-
-'学校で安心できる大人がいると少し違うよね。\n他に話せそうな人はいる？',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校：クラスメイト・友達関係
-if (currentTopic == '学校' &&
-    (text.contains('クラスメイト') ||
-     text.contains('友達') ||
-     text.contains('友人') ||
-     text.contains('同級生') ||
-     text.contains('クラス') ||
-     text.contains('ぼっち') ||
-     text.contains('仲間外れ'))) {
-
-  return '${pick([
-
-'クラスの人間関係って、毎日顔を合わせるから心に残りやすいよね。\n今日はどんなことがあったの？',
-
-'友達とのことでモヤモヤしているのかな。\n今いちばん気になっていることは何？',
-
-'学校でひとりに感じる時間って、すごく長く感じることがあるよね。\nどんな時に一番さみしくなる？',
-
-'仲間外れみたいに感じると、学校にいるだけで疲れてしまうよね。\n何が一番つらかった？',
-
-'クラスの空気を気にしながら過ごすのって、かなりエネルギーを使うよね。\n今日は気を遣う場面があった？',
-
-'ルナには少し心細い気持ちが見えているよ🐶\nここではそのまま話して大丈夫。',
-
-'友達と一緒にいても、安心できない時ってあるよね。\n最近そう感じたことはあった？',
-
-'一人で抱え込まなくて大丈夫。\n今、誰に一番分かってほしい？',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校：部活
-if (currentTopic == '学校' &&
-    (text.contains('部活') ||
-     text.contains('顧問') ||
-     text.contains('先輩') ||
-     text.contains('後輩') ||
-     text.contains('試合') ||
-     text.contains('練習'))) {
-
-  return '${pick([
-
-'部活って、好きでやっていても人間関係や練習で疲れることがあるよね。\n今日はどんなことがあったの？',
-
-'練習や試合のことが心に残っているのかな。\n何が一番引っかかってる？',
-
-'先輩や後輩との関係って、学校生活の中でも気を遣いやすいよね。\nどんな時にしんどいと感じる？',
-
-'顧問の先生とのことが気になっているのかな。\nどんな言葉や態度が心に残ってる？',
-
-'頑張りたい気持ちと、疲れた気持ちが両方あるのかもしれないね。\n今はどっちが大きい？',
-
-'ルナには少し頑張りすぎている心が見えているよ🐶\nここでは力を抜いて話して大丈夫。',
-
-'部活でうまくいかない日って、自分を責めてしまうこともあるよね。\n今日は何が一番悔しかった？',
-
-'続けたい気持ちと、少し休みたい気持ちが混ざっているのかな。\n今の本音を聞かせてくれる？',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-// 学校：学校に行きたくない
-if (currentTopic == '学校' &&
-    (text.contains('学校行きたくない') ||
-     text.contains('学校に行きたくない') ||
-     text.contains('休みたい') ||
-     text.contains('行きたくない') ||
-     text.contains('朝がつらい') ||
-     text.contains('学校嫌'))) {
-
-  return '${pick([
-
-'学校へ行かなきゃって思うほど、心も体も重たくなる日ってあるよね。\n今日は何が一番つらい？',
-
-'朝になると気持ちが沈んでしまう感じかな。\nどんなことを考えてしまう？',
-
-'学校に行きたくない気持ちには、ちゃんと理由があることも多いよ。\n最近何かあった？',
-
-'無理に「頑張らなきゃ」って思い続けると、心も疲れてしまうよね。\n今はどんな気持ち？',
-
-'ルナには少し疲れた心が見えているよ🐶\nここでは無理に元気にならなくて大丈夫。',
-
-'学校がつらい日は、自分を責めてしまうこともあるよね。\n何が一番苦しいのかな？',
-
-'「行きたくない」って思うくらい頑張ってきたんだね。\n今日は何が心に引っかかっている？',
-
-'今すぐ答えを出さなくても大丈夫。\nまずはルナと一緒に気持ちを整理してみよう🐶',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校：いじめ・嫌がらせ
-if (currentTopic == '学校' &&
-    (text.contains('いじめ') ||
-     text.contains('悪口') ||
-     text.contains('無視') ||
-     text.contains('仲間外れ') ||
-     text.contains('嫌がらせ') ||
-     text.contains('陰口') ||
-     text.contains('SNSで言われた'))) {
-
-  return '${pick([
-
-'それはかなりつらかったね。\n学校でそういうことがあると、安心できる場所がなくなったように感じることもあるよね。',
-
-'悪口や無視って、心にずっと残りやすいよね。\n今いちばん苦しかった場面はどこかな？',
-
-'ひとりで抱えるには重たいことだと思う。\n話せそうな先生や家族、信頼できる人はいる？',
-
-'仲間外れにされると、自分が悪いのかなって思ってしまうこともあるよね。\nでも、傷ついた気持ちは大事にしていいよ。',
-
-'ルナはここで話を聞いているよ🐶\n何があったのか、少しずつで大丈夫。',
-
-'学校に行くのが怖くなるくらいなら、無理に一人で耐え続けなくていいよ。\n誰かに一緒に伝える方法を考えよう。',
-
-'嫌がらせが続いているなら、記録しておくことも自分を守る助けになるよ。\nいつ、どんなことがあった？',
-
-'今の気持ちを話してくれてありがとう。\nここでは責めたりしないから、そのまま聞かせてね。',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校：いじめ・嫌がらせ
-if (currentTopic == '学校' &&
-    (text.contains('いじめ') ||
-     text.contains('悪口') ||
-     text.contains('無視') ||
-     text.contains('仲間外れ') ||
-     text.contains('嫌がらせ') ||
-     text.contains('陰口') ||
-     text.contains('SNSで言われた'))) {
-
-  return '${pick([
-
-'それはかなりつらかったね。\n学校でそういうことがあると、安心できる場所がなくなったように感じることもあるよね。',
-
-'悪口や無視って、心にずっと残りやすいよね。\n今いちばん苦しかった場面はどこかな？',
-
-'ひとりで抱えるには重たいことだと思う。\n話せそうな先生や家族、信頼できる人はいる？',
-
-'仲間外れにされると、自分が悪いのかなって思ってしまうこともあるよね。\nでも、傷ついた気持ちは大事にしていいよ。',
-
-'ルナはここで話を聞いているよ🐶\n何があったのか、少しずつで大丈夫。',
-
-'学校に行くのが怖くなるくらいなら、無理に一人で耐え続けなくていいよ。\n誰かに一緒に伝える方法を考えよう。',
-
-'嫌がらせが続いているなら、記録しておくことも自分を守る助けになるよ。\nいつ、どんなことがあった？',
-
-'今の気持ちを話してくれてありがとう。\nここでは責めたりしないから、そのまま聞かせてね。',
-
-  ])}\n\n${getFollowUpQuestion()}';
-}
-
-// 学校
-if (text.contains('学校') ||
-    text.contains('授業') ||
-    text.contains('テスト') ||
-    text.contains('勉強') ||
-    text.contains('受験')) {
-
-  final isPositive =
-      text.contains('嬉しい') ||
-      text.contains('うれしい') ||
-      text.contains('できた') ||
-      text.contains('頑張れた') ||
-      text.contains('褒められた') ||
-      text.contains('合格') ||
-      text.contains('受かった') ||
-      text.contains('100点');
-
-  if (isPositive) {
-    return pick([
-      'すごいね🐶✨\n今日の頑張りがちゃんと結果につながったんだね！',
-      'ルナまでうれしくなっちゃった🌸\n今日は自分をたくさん褒めてあげよう！',
-      '頑張った自分を認めてあげる日だね。\n本当にお疲れさま！',
-    ]);
-  }
-
-  return pick([
-    '学校って勉強だけじゃなくて、人間関係もあって大変だよね。\n今日は何があった？',
-    '学校生活って毎日だからこそ疲れやすいよね。\n一番つらかったことは何かな？',
-    '今日はどんな一日だった？\nルナがゆっくり話を聞くよ🐶',
-  ]);
-}
-
-// 恋愛：不安・返信・距離感
-// 恋愛
-if (text.contains('彼氏') ||
-    text.contains('彼女') ||
-    text.contains('好きな人') ||
-    text.contains('恋愛') ||
-    text.contains('返信') ||
-    text.contains('既読') ||
-    text.contains('未読') ||
-    text.contains('冷たい') ||
-    text.contains('会えない') ||
-    text.contains('別れ')) {
-
-  // ポジティブ判定
-  final isPositive =
-      text.contains('嬉しい') ||
-      text.contains('うれしい') ||
-      text.contains('幸せ') ||
-      text.contains('楽しい') ||
-　　　　text.contains('楽しみ') ||
-      text.contains('ワクワク') || 
-      text.contains('わくわく') || 
-      text.contains('楽しみ！') ||
-      text.contains('仲直り') ||
-      text.contains('付き合えた') ||
-      text.contains('デート') ||
-      text.contains('旅行') ||
-      text.contains('会えた') ||
-      text.contains('告白') ||
-      text.contains('好きって言われた') ||
-      text.contains('記念日') ||
-      text.contains('笑った');
-
-  if (isPositive) {
-    return pick([
-      'よかったね🐶💜 ルナまでうれしくなっちゃった！',
-      'その幸せな気持ち、大切にしてね🌙',
-      '素敵な時間だったんだね。ルナも心があたたかくなったよ。',
-      'そんな話を聞けてうれしいな。また思い出も聞かせてね🐶',
-    ]);
-  }
-
-  // ネガティブ・不安
-  return pick([
-    '大切な人の反応って、心にすごく影響するよね。\n今いちばんつらいのは、返信のこと？会えないこと？それとも気持ちが見えないこと？',
-    '恋愛の不安って、相手の一言や返信の速さで大きくなりやすいよね。\nまずは「実際に起きたこと」と「想像していること」を分けてみよう。',
-    '好きだからこそ、不安も寂しさも強くなるんだと思う。\n今は相手にどうしてほしい気持ちが一番近い？',
-    '相手の気持ちが見えない時間って苦しいよね。\n今の不安を一人で抱えなくて大丈夫だよ。',
-  ]);
-}
-// 友達・人間関係
-if (text.contains('友達') ||
-    text.contains('親友') ||
-    text.contains('友人') ||
-    text.contains('人間関係') ||
-    text.contains('悪口') ||
-    text.contains('無視') ||
-    text.contains('遊んだ') ||
-    text.contains('ご飯') ||
-    text.contains('旅行')) {
-
-  final isPositive =
-      text.contains('楽しい') ||
-      text.contains('楽しかった') ||
-      text.contains('嬉しい') ||
-      text.contains('うれしい') ||
-      text.contains('遊んだ') ||
-      text.contains('ご飯') ||
-      text.contains('旅行') ||
-      text.contains('笑った') ||
-      text.contains('仲直りできた') ||
-　　　　text.contains('仲直りした')||
-      text.contains('会えた') ||
-      text.contains('話せた') ||
-      text.contains('親友');
-
-  if (isPositive) {
-    return pick([
-      '楽しそうだね🐶✨\n大切な人といい時間を過ごせたんだね。',
-      'それはうれしいね🌙\nルナまでにこにこしちゃうよ。',
-      'いい思い出がまた一つ増えたね。\nどんなところが一番楽しかった？',
-      '友達と安心して過ごせる時間って、心が少し軽くなるよね🐶',
-    ]);
-  }
-
-  return pick([
-    '人間関係って、小さい違和感でも心に残りやすいよね。',
-    '悲しかった？それともモヤモヤした？',
-    '大事にされてない感じがしたのかな。',
-    '相手との関係を続けたい気持ちと、苦しい気持ち、どっちが今強い？',
-  ]);
-}
-
-if (text.contains('体調') ||
-    text.contains('病気') ||
-    text.contains('しんどい') ||
-    text.contains('入院') ||
-    text.contains('薬')) {
-  return pick([
-    '体調が不安定だと心も疲れやすいよね。',
-    '体のしんどさと心のしんどさが重なると本当に大変だよね。',
-    '今日は体調は何点くらい？',
-  ]);
-}
-    if (text.contains('死にたい') ||
-    text.contains('消えたい') ||
-    text.contains('自殺') ||
-    text.contains('自傷') ||
-    text.contains('リスカ') ||
-    text.contains('傷つけたい') ||
-    text.contains('殺したい')) {
-  return '今、とても危ないくらい苦しい状態かもしれないね。\n'
-      'ここでひとりで抱えなくて大丈夫。\n'
-      '今すぐ近くの人、家族、先生、友達、または地域の緊急窓口に連絡してね。\n'
-      'もし今すぐ自分や誰かを傷つけそうなら、ためらわずに119や110に連絡してね。';
-}
+final friendDetailReply = handleFriendDetails(text);
+if (friendDetailReply != null) return friendDetailReply;
 
 if (currentTopic != null &&
     (text.contains('話したい') ||
@@ -4800,53 +4973,8 @@ return '${pick([
 ])}\n\n${getFollowUpQuestion()}';
 }
 
-if (currentTopic == '家族' &&
-    (text.contains('疲れた') ||
-        text.contains('もう嫌'))) {
-  return pick([
-    '家族のことで気を張り続けて、かなり疲れてるのかもしれないね。',
-    '近い存在だからこそ、心の消耗も大きくなりやすいよね。',
-    '家族のことって、近い存在だからこそ苦しくなることがあるよね。\n今どんなことが一番つらい？',
-
-'本当は分かってほしい気持ちもあるのかな。\n何を一番分かってほしいと思ってる？',
-
-'家族だから簡単に距離を取れない苦しさもあるよね。\n何が一番負担になっている？',
-
-'ルナには少し疲れた心が見えているよ🐶\n最近どんなことがあった？',
-
-'家族の言葉って、他の人より深く刺さることがあるよね。\nどんな言葉が心に残ってる？',
-
-'近い関係だからこそ、期待してしまうこともあるよね。\n本当はどうしてほしかった？',
-
-'家族のことで悩むのは、それだけ大切な存在だからなんだと思う。\n何が一番気になっている？',
-
-'分かってもらえない感じが続くと苦しいよね。\nどんな時にそう感じる？',
-
-'我慢を続けてきた感じもあるのかな。\nいつ頃からしんどかった？',
-
-'家族との関係って白黒では割り切れないことが多いよね。\n今はどんな気持ちが一番近い？',
-
-'怒りも悲しみも寂しさも混ざっている感じかな。\nどの気持ちが一番大きそう？',
-
-'家族だからこそ言えないこともあるよね。\nここではそのまま話して大丈夫だよ。',
-
-'誰か一人でも味方がいてくれたら違うのにって思う時もあるよね。\n今はどんな気持ち？',
-
-'頑張って理解しようとしてきたのかもしれないね。\n何が一番難しかった？',
-
-'家族との問題は、心の奥に残りやすいよね。\n最近特に気になった出来事はある？',
-
-'本当は安心できる場所であってほしいのに苦しいとつらいよね。\n何が一番しんどい？',
-
-'ルナはここで話を聞いているよ🐶\n少しずつでも大丈夫。',
-
-'近い存在だからこそ傷つくこともある。\nその気持ちは自然なことだよ。',
-
-'一人で抱え込まなくて大丈夫。\n今一番伝えたいことは何かな？',
-
-'どんな気持ちでもここでは話して大丈夫だよ🐶💜\nもう少し聞かせてくれる？',
-  ]);
-}
+final familyDetailReply = handleFamilyDetails(text);
+if (familyDetailReply != null) return familyDetailReply;
 
 if (currentTopic == '将来' &&
     (text.contains('不安') ||
@@ -5500,19 +5628,8 @@ if (text.contains('自信ない') ||
   ]);
 }
 
-// 生理前・ホルモン
-if (text.contains('生理前') ||
-    text.contains('生理') ||
-    text.contains('pms') ||
-    text.contains('PMS') ||
-    text.contains('ホルモン')) {
-  return pick([
-    '生理前は、いつもより不安や悲しさが強く見えることがあるよね。',
-    'それは気合い不足じゃなくて、体の波の影響もあるかもしれないよ。',
-    '今日は自分に厳しく判断しすぎない日にしてもいいかも。',
-    '心も体も敏感になっている時期かもしれないね。少し守るモードでいこう。',
-  ]);
-}
+final healthReply = handleHealthConversation(text);
+if (healthReply != null) return healthReply;
 
 // 誰にも言えない
 if (text.contains('誰にも言えない') ||
@@ -7786,7 +7903,7 @@ for (final mood in monthMoods) {
 
 final weatherSummary = weatherCounts.entries
     .map((entry) => '${entry.key} ${entry.value}日')
-    .join('　');
+    .join('  ');
 
 
 
@@ -8565,7 +8682,7 @@ if (birthday != null && relevantJapanEvents.isNotEmpty) ...[
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${event.year}年　${event.title}',
+                        '${event.year}年  ${event.title}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
