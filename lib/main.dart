@@ -120,7 +120,7 @@ const List<EmotionInfo> emotionInfos = [
   ),
   EmotionInfo(
     id: 'peace',
-    key: '🌿 安心',
+    key: '😌 安心',
     name: '安心さん',
     imagePath: 'assets/images/emotion_peace.png',
     guideText: '安心さんが今日はふわっと見守ってくれてるみたい。',
