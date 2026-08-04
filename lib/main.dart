@@ -1,3 +1,4 @@
+import 'services/weather_service.dart';
 import 'screens/chat_screen.dart';
 import 'screens/mood_record_screen.dart';
 import 'screens/home_screen.dart';
@@ -23,6 +24,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/services.dart';
 
+const String openWeatherApiKey = String.fromEnvironment(
+  'OPENWEATHER_API_KEY',
+);
 
 
 void main() {
@@ -808,7 +812,6 @@ return Scaffold(
   }
 }
 
-
 class KokoroHirobaScreen extends StatefulWidget {
   final MoodRecord? latestMood;
   final Function(EmotionInfo) onListen;
@@ -827,16 +830,18 @@ class KokoroHirobaScreen extends StatefulWidget {
     required this.onLunaHouse,
   });
 
-
-
-
   @override
-  State<KokoroHirobaScreen> createState() => _KokoroHirobaScreenState();
+  State<KokoroHirobaScreen> createState() =>
+      _KokoroHirobaScreenState();
 }
 
-class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
+class _KokoroHirobaScreenState
+    extends State<KokoroHirobaScreen> {
+  WeatherData? weatherData;
+  bool isWeatherLoading = true;
+  String? weatherError;
   String selectedEmotionId = 'anxiety';
-  String guideMessage = 'おかえり。今日はどんな気分？';
+  String? customMessage;
 
   EmotionInfo get selectedEmotion {
     return emotionInfos.firstWhere(
@@ -845,276 +850,410 @@ class _KokoroHirobaScreenState extends State<KokoroHirobaScreen> {
     );
   }
 
-EmotionInfo get mainEmotion {
-  final mood = widget.latestMood;
-
-  if (mood == null || mood.emotionPercents.isEmpty) {
-    return selectedEmotion;
+  @override
+  void initState() {
+    super.initState();
+    _selectEmotionFromLatestMood();
+    _loadWeather();
   }
 
-  final strongestMood = mood.emotionPercents.entries.reduce(
-    (a, b) => a.value >= b.value ? a : b,
-  );
+  Future<void> _loadWeather() async {
+  if (openWeatherApiKey.isEmpty) {
+    setState(() {
+      isWeatherLoading = false;
+      weatherError = 'APIキーが設定されていません';
+    });
+    return;
+  }
 
-  final key = strongestMood.key;
-
-  if (key.contains('不安')) {
-    return emotionInfos.firstWhere(
-      (emotion) => emotion.id == 'anxiety',
+  try {
+    final service = WeatherService(
+      apiKey: openWeatherApiKey,
     );
-  }
 
-  if (key.contains('安心') || key.contains('うれしい')) {
-    return emotionInfos.firstWhere(
-      (emotion) => emotion.id == 'peace',
-    );
-  }
+    final result = await service.getCurrentWeather();
 
-  if (key.contains('さみしい') || key.contains('悲しい')) {
-    return emotionInfos.firstWhere(
-      (emotion) => emotion.id == 'lonely',
-    );
-  }
+    if (!mounted) return;
 
-  if (key.contains('疲れ') || key.contains('がんばった')) {
-    return emotionInfos.firstWhere(
-      (emotion) => emotion.id == 'tired',
-    );
-  }
+    setState(() {
+      weatherData = result;
+      isWeatherLoading = false;
+      weatherError = null;
+    });
+  } catch (e) {
+    if (!mounted) return;
 
-  if (key.contains('イライラ')) {
-    return emotionInfos.firstWhere(
-      (emotion) => emotion.id == 'angry',
-    );
+    setState(() {
+      isWeatherLoading = false;
+      weatherError = e.toString();
+    });
   }
-
-  return selectedEmotion;
 }
 
-  double getEmotionSize(String emotionKey, double baseSize) {
+  void _selectEmotionFromLatestMood() {
     final mood = widget.latestMood;
-    if (mood == null) return baseSize;
 
-    final percent = mood.emotionPercents[emotionKey] ?? 0;
-    return baseSize + (percent * 0.45);
+    if (mood == null || mood.emotionPercents.isEmpty) {
+      return;
+    }
+
+    EmotionInfo strongestEmotion = emotionInfos.first;
+    double highestPercent = -1;
+
+    for (final emotion in emotionInfos) {
+      final percent = mood.emotionPercents[emotion.key] ?? 0;
+
+      if (percent > highestPercent) {
+        highestPercent = percent;
+        strongestEmotion = emotion;
+      }
+    }
+
+    selectedEmotionId = strongestEmotion.id;
   }
-  Widget gardenEmotion({
-  required EmotionInfo emotion,
-  required double left,
-  required double top,
-  required double baseSize,
-}) {
-  final selected = selectedEmotionId == emotion.id;
-  final size = getEmotionSize(emotion.key, baseSize);
 
-  return Positioned(
-    left: left,
-    top: top,
-    child: GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedEmotionId = emotion.id;
-          guideMessage = emotion.guideText;
-        });
-      },
-      child: AnimatedScale(
-        scale: selected ? 1.12 : 1.0,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutBack,
+  String get greeting {
+    final hour = DateTime.now().hour;
+
+    if (hour >= 5 && hour < 11) {
+      return 'おはよう。\n今日もあなたのペースで大丈夫だよ。';
+    }
+
+    if (hour >= 11 && hour < 17) {
+      return 'おかえり。\nここで少し、ほっとしよう。';
+    }
+
+    if (hour >= 17 && hour < 22) {
+      return '今日もここまで、よく頑張ったね。\nゆっくりしていこう。';
+    }
+
+    return '眠れない夜も、ルナがそばにいるよ。\nここで一緒に休もう。';
+  }
+
+  String get lunaMessage {
+    if (customMessage != null) {
+      return customMessage!;
+    }
+
+    switch (selectedEmotion.id) {
+      case 'anxiety':
+        return '今日は不安さんが少し近くにいるみたい。\n'
+            '無理に追い払わなくても大丈夫だよ。';
+
+      case 'peace':
+        return '今日は安心さんがそばにいるね。\n'
+            'この穏やかな気持ちを大切にしよう。';
+
+      case 'tired':
+        return 'おつかれさんが、ひと休みしたそうだよ。\n'
+            '今日はゆっくり進もうね。';
+
+      case 'angry':
+        return 'イライラさんが何かを伝えたそうにしているね。\n'
+            'まずは、ゆっくり息を吐いてみよう。';
+
+      case 'lonely':
+        return 'さみしいさんが、誰かのそばにいたいみたい。\n'
+            'ここでは一人で頑張らなくていいよ。';
+
+      default:
+        return selectedEmotion.guideText;
+    }
+  }
+
+  String get recommendedTitle {
+    switch (selectedEmotion.id) {
+      case 'tired':
+        return 'ひとやすみカフェ';
+
+      case 'lonely':
+      case 'peace':
+        return 'ルナのおうち';
+
+      case 'anxiety':
+      case 'angry':
+      default:
+        return '深呼吸の森';
+    }
+  }
+
+  String get recommendedSubtitle {
+    switch (selectedEmotion.id) {
+      case 'anxiety':
+        return '3分だけ呼吸に集中して、心の波を整えよう';
+
+      case 'angry':
+        return 'ゆっくり息を吐いて、気持ちをほどこう';
+
+      case 'tired':
+        return 'やさしい言葉と一緒に、ひと休みしよう';
+
+      case 'lonely':
+        return 'ルナのそばで、安心できる時間を過ごそう';
+
+      case 'peace':
+        return '穏やかな気持ちを、ルナと味わおう';
+
+      default:
+        return '今の心に合う場所で、ゆっくり休もう';
+    }
+  }
+
+  String get recommendedImagePath {
+    switch (selectedEmotion.id) {
+      case 'tired':
+        return 'assets/images/cafe_card.png';
+
+      case 'lonely':
+      case 'peace':
+        return 'assets/images/luna_house_card.png';
+
+      case 'anxiety':
+      case 'angry':
+      default:
+        return 'assets/images/forest_card.png';
+    }
+  }
+
+  VoidCallback get recommendedOnTap {
+    switch (selectedEmotion.id) {
+      case 'tired':
+        return widget.onCafe;
+
+      case 'lonely':
+      case 'peace':
+        return widget.onLunaHouse;
+
+      case 'anxiety':
+      case 'angry':
+      default:
+        return widget.onBreathing;
+    }
+  }
+
+  void selectEmotion(EmotionInfo emotion) {
+    setState(() {
+      selectedEmotionId = emotion.id;
+      customMessage = null;
+    });
+  }
+
+  Widget emotionButton(EmotionInfo emotion) {
+    final selected = selectedEmotionId == emotion.id;
+
+    return GestureDetector(
+      onTap: () => selectEmotion(emotion),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 230),
+        curve: Curves.easeOut,
+        width: 82,
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.fromLTRB(8, 10, 8, 9),
+        decoration: BoxDecoration(
+          color: selected
+              ? const Color(0xFFF0E8FA)
+              : Colors.white.withOpacity(0.88),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: selected
+                ? const Color(0xFFAE8ED8)
+                : const Color(0xFFE8DFEE),
+            width: selected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: selected
+                  ? const Color(0xFF8A6CAF).withOpacity(0.20)
+                  : Colors.black.withOpacity(0.04),
+              blurRadius: selected ? 15 : 8,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: selected
-                        ? const Color(0xFFA78BFA).withOpacity(0.28)
-                        : Colors.black.withOpacity(0.10),
-                    blurRadius: selected ? 20 : 10,
-                    spreadRadius: selected ? 2 : 0,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
+            AnimatedScale(
+              scale: selected ? 1.1 : 1,
+              duration: const Duration(milliseconds: 230),
+              curve: Curves.easeOutBack,
               child: Image.asset(
                 emotion.imagePath,
-                height: size,
-                width: size,
+                width: 56,
+                height: 56,
                 fit: BoxFit.contain,
               ),
             ),
-
             const SizedBox(height: 5),
-
             Text(
               emotion.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: selected ? 13 : 12,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: selected
-                    ? const Color(0xFF6F5B8E)
-                    : const Color(0xFF5F566B),
-                shadows: const [
-                  Shadow(
-                    color: Colors.white,
-                    blurRadius: 5,
+                    ? const Color(0xFF6F538E)
+                    : const Color(0xFF706779),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget smallActionButton({
+    required String label,
+    required IconData icon,
+    required Color foregroundColor,
+    required Color backgroundColor,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 19,
+                  color: foregroundColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: foregroundColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget placeCard({
+    required String imagePath,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(25),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.93),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: const Color(0xFFE8DFEE),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      imagePath,
+                      width: 104,
+                      height: 88,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    left: 7,
+                    bottom: 7,
+                    child: Container(
+                      width: 31,
+                      height: 31,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.93),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 17,
+                        color: accentColor,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-
-            if (selected) ...[
-              const SizedBox(height: 3),
-              const Text(
-                'いま近くにいるよ',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF7C5CFC),
-                  shadows: [
-                    Shadow(
-                      color: Colors.white,
-                      blurRadius: 5,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF655572),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.45,
+                        color: Color(0xFF786F7F),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ],
-        ),
-      ),
-    ),
-  );
-}
-  Widget actionButton({
-  required String label,
-  required IconData icon,
-  required Color color,
-  required VoidCallback onTap,
-}) {
-  return Expanded(
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.18),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: 22,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.13),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: accentColor,
                 ),
               ),
             ],
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget areaCard({
-  required String imagePath,
-  required String title,
-  required String subtitle,
-  VoidCallback? onTap,
-}) {
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.94),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: const Color(0xFFE8DFEE),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Image.asset(
-                imagePath,
-                width: 105,
-                height: 82,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6F5B8E),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.4,
-                      color: Color(0xFF6D6478),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 26,
-              color: Color(0xFF9A8AAC),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final gardenWidth = width - 40;
-    final main = mainEmotion;
-
-    final lunaMessage =
-        widget.latestMood == null ? guideMessage : main.guideText;
-
     return Stack(
       children: [
         Positioned.fill(
@@ -1123,221 +1262,542 @@ Widget areaCard({
             fit: BoxFit.cover,
           ),
         ),
+        Positioned.fill(
+          child: Container(
+            color: const Color(0xFFF8F3FA).withOpacity(0.18),
+          ),
+        ),
         SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 36),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-               Container(
+                // ルナのお出迎え
+                // ルナのお出迎え
+Container(
   width: double.infinity,
-  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+  height: 230,
   decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.90),
-    borderRadius: BorderRadius.circular(26),
+    borderRadius: BorderRadius.circular(30),
     border: Border.all(
-      color: const Color(0xFFE8DFEE),
+      color: Colors.white.withOpacity(0.75),
     ),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.06),
-        blurRadius: 16,
-        offset: const Offset(0, 6),
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 18,
+        offset: const Offset(0, 7),
       ),
     ],
   ),
-  child: Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Container(
-        width: 52,
-        height: 52,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF1E8F8),
-          shape: BoxShape.circle,
-        ),
-        child: const Center(
-          child: Text(
-            '🌳',
-            style: TextStyle(fontSize: 26),
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(29),
+    child: Stack(
+      children: [
+        Positioned.fill(
+          child: Image.asset(
+            'assets/images/kokoro_bg.png',
+            fit: BoxFit.cover,
           ),
         ),
-      ),
-      const SizedBox(width: 14),
-      const Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '心の広場',
-              style: TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF6F5B8E),
+
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.88),
+                  Colors.white.withOpacity(0.55),
+                ],
               ),
             ),
-            SizedBox(height: 5),
-            Text(
-              '今日はどこで休んでいく？\nルナと一緒に、今の心に合う場所を探そう🐶',
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.45,
-                color: Color(0xFF6D6478),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    ],
+
+        Positioned(
+          top: 16,
+          left: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.86),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.75),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '☀️',
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(width: 6),
+                Text(
+  isWeatherLoading
+      ? '取得中...'
+      : weatherData == null
+          ? '天気なし'
+          : '${weatherData!.weatherEmoji} ${weatherData!.weatherLabel} ${weatherData!.temperatureText}',
+
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF665A70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 17,
+          right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 11,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.82),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child:Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 16,
+                  color: Color(0xFF8B73A5),
+                ),
+                SizedBox(width: 4),
+                Text(
+  weatherData?.cityName ?? '現在地',
+
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF756682),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        Positioned(
+          left: 18,
+          top: 65,
+          right: 135,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '心の広場',
+                style: TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6F5B8E),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.fromLTRB(
+                  15,
+                  12,
+                  15,
+                  12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.82),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.80),
+                  ),
+                ),
+                child: Text(
+                  greeting,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.55,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF62566F),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Positioned(
+          right: 10,
+          bottom: -2,
+          child: Image.asset(
+            'assets/images/luna.png',
+            width: 140,
+            height: 175,
+            fit: BoxFit.contain,
+          ),
+        ),
+
+        Positioned(
+          right: 105,
+          bottom: 22,
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1E8F8),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white,
+                width: 2,
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                '🐾',
+                style: TextStyle(fontSize: 13),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
   ),
 ),
 
-const SizedBox(height: 18),
+                const SizedBox(height: 16),
 
-                SizedBox(
-                  height: 530,
-                  child: Stack(
+                // 感情選択
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 17, 16, 15),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.90),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: const Color(0xFFE8DFEE),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      gardenEmotion(
-                        emotion: emotionInfos[0],
-                        left: gardenWidth * 0.02,
-                        top: 35,
-                        baseSize: 90,
+                      const Text(
+                        '今の気持ちは？',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6F5B8E),
+                        ),
                       ),
-                      gardenEmotion(
-                        emotion: emotionInfos[1],
-                        left: gardenWidth * 0.42,
-                        top: 80,
-                        baseSize: 95,
+                      const SizedBox(height: 4),
+                      const Text(
+                        'いちばん近い気持ちを、そっと選んでね',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF91869A),
+                        ),
                       ),
-                      gardenEmotion(
-                        emotion: emotionInfos[2],
-                        left: gardenWidth * 0.04,
-                        top: 270,
-                        baseSize: 105,
-                      ),
-                      gardenEmotion(
-                        emotion: emotionInfos[3],
-                        left: gardenWidth * 0.52,
-                        top: 300,
-                        baseSize: 100,
-                      ),
-                      gardenEmotion(
-                        emotion: emotionInfos[4],
-                        left: gardenWidth * 0.70,
-                        top: 135,
-                        baseSize: 95,
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 108,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: emotionInfos.length,
+                          itemBuilder: (context, index) {
+                            return emotionButton(
+                              emotionInfos[index],
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-           Center(
-  child: Image.asset(
-    'assets/images/luna.png',
-    height: 190,
-  ),
-),
+                const SizedBox(height: 16),
 
+                // ルナのひとこと
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  child: Container(
+                    key: ValueKey(
+                      '$selectedEmotionId-$customMessage',
+                    ),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFFFF8FC),
+                          Color(0xFFF2EAF9),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: const Color(0xFFE4D6ED),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF72598E)
+                              .withOpacity(0.10),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 62,
+                              height: 62,
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF1E8F8),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Image.asset(
+                                'assets/images/luna.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            const SizedBox(width: 13),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'ルナのひとこと',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF8A72A3),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 7),
+                                  Text(
+                                    lunaMessage,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      height: 1.6,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF5F536A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            smallActionButton(
+                              label: '話を聞く',
+                              icon: Icons
+                                  .chat_bubble_outline_rounded,
+                              foregroundColor:
+                                  const Color(0xFF725DB0),
+                              backgroundColor:
+                                  const Color(0xFFEDE6FA),
+                              onTap: () => widget.onListen(
+                                selectedEmotion,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            smallActionButton(
+                              label: 'なでる',
+                              icon: Icons.favorite_border_rounded,
+                              foregroundColor:
+                                  const Color(0xFFD15F92),
+                              backgroundColor:
+                                  const Color(0xFFFCE8F1),
+                              onTap: () {
+                                setState(() {
+                                  customMessage =
+                                      '${selectedEmotion.name}をそっとなでたよ。\n'
+                                      '少し安心したみたい。';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
+                const SizedBox(height: 24),
+
+                const Text(
+                  '今日のおすすめ',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6F5B8E),
+                  ),
+                ),
                 const SizedBox(height: 10),
 
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'ルナからの案内',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF6F5F8F),
+                // おすすめ
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: recommendedOnTap,
+                    borderRadius: BorderRadius.circular(29),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.94),
+                        borderRadius: BorderRadius.circular(29),
+                        border: Border.all(
+                          color: const Color(0xFFE2D6EB),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        lunaMessage,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          actionButton(
-                            label: '話を聞く',
-                            icon: Icons.chat_bubble_outline,
-                            color: const Color(0xFF6F5FBA),
-                            onTap: () => widget.onListen(main),
-                          ),
-                          const SizedBox(width: 10),
-                          actionButton(
-                            label: 'なでる',
-                            icon: Icons.favorite_border,
-                            color: const Color(0xFFD7649A),
-                            onTap: () {
-                              setState(() {
-                                guideMessage =
-                                    '${selectedEmotion.name}をそっとなでたよ。少し安心したみたい。';
-                              });
-                            },
-                          ),
-                          const SizedBox(width: 10),
-                          actionButton(
-                            label: '深呼吸',
-                            icon: Icons.spa_outlined,
-                            color: const Color(0xFF3C946F),
-                            onTap: widget.onBreathing,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6F5B8E)
+                                .withOpacity(0.12),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                    ],
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius:
+                                const BorderRadius.vertical(
+                              top: Radius.circular(28),
+                            ),
+                            child: Image.asset(
+                              recommendedImagePath,
+                              width: double.infinity,
+                              height: 170,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(17),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        recommendedTitle,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight:
+                                              FontWeight.bold,
+                                          color:
+                                              Color(0xFF635176),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        recommendedSubtitle,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          height: 1.5,
+                                          color:
+                                              Color(0xFF766D7D),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEDE6FA),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: Color(0xFF745AA5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 
-const SizedBox(height: 24),
+                const SizedBox(height: 26),
 
-Column(
-  children: [
-  areaCard(
-  imagePath: 'assets/images/forest_card.png',
-  title: '深呼吸の森',
-  subtitle: '3分でリセット',
-  onTap: widget.onBreathing,
-),
-    const SizedBox(height: 12),
+                const Text(
+                  '好きな場所へ',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6F5B8E),
+                  ),
+                ),
+                const SizedBox(height: 10),
 
-areaCard(
-  imagePath: 'assets/images/cafe_card.png',
-  title: 'ひとやすみカフェ',
-  subtitle: 'やさしい言葉で一息',
-  onTap: widget.onCafe,
-),
+                placeCard(
+                  imagePath: 'assets/images/forest_card.png',
+                  title: '深呼吸の森',
+                  subtitle: '呼吸を整えて、気持ちをゆるめる場所',
+                  icon: Icons.spa_outlined,
+                  accentColor: const Color(0xFF5E9B79),
+                  onTap: widget.onBreathing,
+                ),
+                const SizedBox(height: 12),
 
-const SizedBox(height: 12),
+                placeCard(
+                  imagePath: 'assets/images/cafe_card.png',
+                  title: 'ひとやすみカフェ',
+                  subtitle: 'やさしい言葉と一緒に、ひと休み',
+                  icon: Icons.local_cafe_outlined,
+                  accentColor: const Color(0xFFC58B67),
+                  onTap: widget.onCafe,
+                ),
+                const SizedBox(height: 12),
 
-areaCard(
-  imagePath: 'assets/images/night_card.png',
-  title: '夜の避難所',
-  subtitle: '眠れない夜の安心',
-  onTap: widget.onNightShelter,
-),
+                placeCard(
+                  imagePath: 'assets/images/night_card.png',
+                  title: '夜の避難所',
+                  subtitle: '眠れない夜に、安心できる場所',
+                  icon: Icons.nights_stay_outlined,
+                  accentColor: const Color(0xFF6B72A7),
+                  onTap: widget.onNightShelter,
+                ),
+                const SizedBox(height: 12),
 
-const SizedBox(height: 12),
-
-areaCard(
-  imagePath: 'assets/images/luna_house_card.png',
-  title: 'ルナのおうち',
-  subtitle: 'ルナと過ごす時間',
-  onTap: widget.onLunaHouse,
-),
-  ],
-),
-
-
+                placeCard(
+                  imagePath:
+                      'assets/images/luna_house_card.png',
+                  title: 'ルナのおうち',
+                  subtitle: 'ルナとゆっくり過ごす場所',
+                  icon: Icons.home_outlined,
+                  accentColor: const Color(0xFFD27A9E),
+                  onTap: widget.onLunaHouse,
+                ),
               ],
             ),
           ),
