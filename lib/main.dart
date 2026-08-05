@@ -1,3 +1,4 @@
+import 'screens/kokoro_hiroba_screen_v5.dart';
 import 'services/weather_service.dart';
 import 'screens/chat_screen.dart';
 import 'screens/mood_record_screen.dart';
@@ -639,14 +640,11 @@ void goToLunaHouse() {
 ),
 
 
-KokoroHirobaScreen(
-  latestMood: latestMood,
-  onListen: goToChatWithEmotion,
+KokoroHirobaScreenV5(
   onBreathing: goToBreathingGuide,
   onCafe: goToCafe,
   onNightShelter: goToNightShelter,
   onLunaHouse: goToLunaHouse,
-
 ),
 
 
@@ -840,6 +838,7 @@ class _KokoroHirobaScreenState
   WeatherData? weatherData;
   bool isWeatherLoading = true;
   String? weatherError;
+  bool lunaEnteredGarden = false;
   String selectedEmotionId = 'anxiety';
   String? customMessage;
 
@@ -1438,16 +1437,16 @@ Container(
           ),
         ),
 
-        Positioned(
-          right: 10,
-          bottom: -2,
-          child: Image.asset(
-            'assets/images/luna.png',
-            width: 140,
-            height: 175,
-            fit: BoxFit.contain,
-          ),
-        ),
+       Positioned(
+  right: 10,
+  bottom: -2,
+  child: Image.asset(
+    'assets/images/luna.png',
+    width: 140,
+    height: 175,
+    fit: BoxFit.contain,
+  ),
+),
 
         Positioned(
           right: 105,
