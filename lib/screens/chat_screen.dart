@@ -1,3 +1,6 @@
+import '../services/insight_brain.dart';
+import '../services/cocoon_reply_engine.dart';
+import '../services/luna_brain.dart';
 import '../widgets/chat_widgets.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -62,6 +65,10 @@ const ChatScreen({
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  final LunaBrain lunaBrain = LunaBrain();
+  final CocoonReplyEngine cocoonReplyEngine =
+    const CocoonReplyEngine();
+  final InsightBrain insightBrain = InsightBrain();
   bool isLunaCardCollapsed = false;
 
   DateTime? birthday;
@@ -71,6 +78,8 @@ String familyStyle = '';
 String currentStatus = '';
   List<JapanEvent> japanEvents = [];
   bool isThinking = false;
+  bool showInsightButton = false;
+String latestInsight = "";
   List<TimelineEvent> timelineEvents = [];
   String? currentTopic;
   String? currentPerson;
@@ -313,17 +322,78 @@ Future<void> sendMessage() async {
 
   await Future.delayed(const Duration(milliseconds: 900));
 
-  setState(() {
-    isThinking = false;
-    widget.messages.add(
-      ChatMessage(
-        text: makeCocoonReply(text, widget.messages),
-        isUser: false,
-      ),
-    );
-  });
+final recentUserMessages = widget.messages
+    .where((message) => message.isUser)
+    .map((message) => message.text)
+    .toList();
+
+final recentLunaMessages = widget.messages
+    .where((message) => !message.isUser)
+    .map((message) => message.text)
+    .toList();
+
+final brainResult = lunaBrain.think(
+  text,
+  recentUserMessages: recentUserMessages,
+  recentLunaMessages: recentLunaMessages,
+  moodEmotionPercents:
+      widget.latestMood?.emotionPercents,
+);
+
+final legacyReply = makeCocoonReply(
+  text,
+  widget.messages,
+);
+
+final insightText = insightBrain.createInsight(
+  topic: brainResult.topic,
+  emotion: brainResult.emotion,
+  recentMessages: recentUserMessages,
+);
+
+// 普段の返事にはInsightを入れない
+final lunaReply = cocoonReplyEngine.compose(
+  brainResult: brainResult,
+  legacyReply: legacyReply,
+  userText: text,
+  recentUserMessages: recentUserMessages,
+);
+
+setState(() {
+  isThinking = false;
+
+  widget.messages.add(
+    ChatMessage(
+      text: lunaReply,
+      isUser: false,
+    ),
+  );
+
+  final userCount = widget.messages
+      .where((message) => message.isUser)
+      .length;
+
+  // 最新のInsightは裏で保存
+  latestInsight = insightText;
+
+  // ユーザーが5回以上話したらボタンを表示
+  if (userCount >= 5) {
+    showInsightButton = true;
+  }
+});
 
   widget.onMessagesChanged();
+
+  final userCount = widget.messages
+    .where((m) => m.isUser)
+    .length;
+
+if (userCount >= 5) {
+  setState(() {
+    showInsightButton = true;
+    latestInsight = insightText;
+  });
+}
 
   Future.delayed(const Duration(milliseconds: 100), () {
     if (scrollController.hasClients) {
@@ -1780,9 +1850,9 @@ if (detectedTopic != LunaTopic.general) {
   currentTopic = savedTopic;
   saveCurrentTopic(savedTopic);
 } else {
-  // 今回の文章だけでは話題が分からない場合、
-  // 直前まで話していた話題を引き継ぐ
-  topic = savedTextToTopic(currentTopic);
+  // 今回の文章だけでは話題が分からない場合は
+  // 過去の話題を勝手に引き継がない
+  topic = LunaTopic.general;
 }
 
 final detectedPerson = detectLunaPerson(text);
@@ -1792,11 +1862,11 @@ if (detectedPerson != null) {
   saveCurrentPerson(detectedPerson);
 }
 
-final activeQuestionReply = handleActiveQuestion();
+// final activeQuestionReply = handleActiveQuestion();
 
-if (activeQuestionReply != null) {
-  return activeQuestionReply;
-}
+// if (activeQuestionReply != null) {
+//   return activeQuestionReply;
+// }
 
   int? age;
 
@@ -3824,6 +3894,150 @@ Expanded(
 
       if (isThinking)
         const ThinkingBubble(),
+       if (showInsightButton)
+  Padding(
+    padding: const EdgeInsets.fromLTRB(
+      18,
+      4,
+      18,
+      12,
+    ),
+    child: Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return Dialog(
+                  backgroundColor: Colors.transparent,
+                  insetPadding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFFFFFBFF),
+                          Color(0xFFF3EAF8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: const Color(0xFFE4D6ED),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF72598E)
+                              .withOpacity(0.16),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Text(
+                              '🌱',
+                              style: TextStyle(fontSize: 22),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              '今日をふりかえる',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF665272),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          latestInsight,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            height: 1.65,
+                            color: Color(0xFF5F536A),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text(
+                              '閉じる',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF806A98),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 12,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF4ECFA),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFCDB8DC),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF72598E)
+                      .withOpacity(0.10),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.eco_outlined,
+                  size: 19,
+                  color: Color(0xFF7B6590),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  '今日をふりかえる',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF665272),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  ), 
     ],
   ),
 ),

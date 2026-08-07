@@ -10,6 +10,7 @@ const String openWeatherApiKey = String.fromEnvironment(
 );
 
 class KokoroHirobaScreenV5 extends StatefulWidget {
+  final ValueChanged<String> onListenEmotion;
   final VoidCallback onBreathing;
   final VoidCallback onCafe;
   final VoidCallback onNightShelter;
@@ -17,6 +18,7 @@ class KokoroHirobaScreenV5 extends StatefulWidget {
 
   const KokoroHirobaScreenV5({
     super.key,
+    required this.onListenEmotion,
     required this.onBreathing,
     required this.onCafe,
     required this.onNightShelter,
@@ -33,6 +35,9 @@ class _KokoroHirobaScreenV5State
   WeatherData? weatherData;
   bool isWeatherLoading = true;
   String lunaMessage = '今日もゆっくり歩こう。';
+
+  String? selectedEmotion;
+bool showTalkButton = false;
 
   @override
   void initState() {
@@ -295,18 +300,122 @@ Widget destinationImageCard({
 
               const SizedBox(height: 18),
 
-             GardenArea(
+     GardenArea(
+  onEmotionTap: (emotionId) {
+    setState(() {
+        selectedEmotion = emotionId;
+      showTalkButton = true;
+
+      switch (emotionId) {
+        case "anxiety":
+          lunaMessage =
+              "今日は不安さんが遊びに来ているね。何か心配なことがあったのかな？";
+          break;
+
+        case "peace":
+          lunaMessage =
+              "安心さんがいるね。今日は少し心が落ち着いているみたい。";
+          break;
+
+        case "lonely":
+          lunaMessage =
+              "さみしいさんが来ているね。ここでは一人で頑張らなくていいよ。";
+          break;
+
+        case "tired":
+          lunaMessage =
+              "おつかれさんも休みに来たみたい。一緒に少し休憩しよう。";
+          break;
+
+        case "angry":
+          lunaMessage =
+              "イライラさんが何か伝えたいことがあるみたい。ゆっくり話を聞いてみよう。";
+          break;
+      }
+    });
+  },
+
   luna: LunaWidget(
     size: 170,
     isWalking: false,
     onTap: () {
       setState(() {
-        lunaMessage =
-            '呼んだ？ルナはここにいるよ🐾';
+        lunaMessage = "呼んだ？ルナはここにいるよ🐾";
       });
     },
   ),
 ),
+
+if (selectedEmotion != null)
+  Padding(
+    padding: const EdgeInsets.only(
+      top: 14,
+      bottom: 10,
+    ),
+    child: Center(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: selectedEmotion == null
+              ? null
+              : () {
+                  widget.onListenEmotion(
+                    selectedEmotion!,
+                  );
+                },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 13,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.78),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(
+                color: const Color(0xFFB9A2CA),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF72598E)
+                      .withOpacity(0.14),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 19,
+                  color: Color(0xFF755D8D),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'この気持ちについて話す',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF604C6E),
+                  ),
+                ),
+                SizedBox(width: 7),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: Color(0xFF8F78A0),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  ),
+
               const SizedBox(height: 24),
 
               const Text(

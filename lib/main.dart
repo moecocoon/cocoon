@@ -641,6 +641,14 @@ void goToLunaHouse() {
 
 
 KokoroHirobaScreenV5(
+  onListenEmotion: (emotionId) {
+    final emotion = emotionInfos.firstWhere(
+      (item) => item.id == emotionId,
+      orElse: () => emotionInfos.first,
+    );
+
+    goToChatWithEmotion(emotion);
+  },
   onBreathing: goToBreathingGuide,
   onCafe: goToCafe,
   onNightShelter: goToNightShelter,
