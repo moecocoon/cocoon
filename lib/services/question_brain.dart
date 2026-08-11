@@ -224,6 +224,30 @@ if ((currentText == '前日の夜' ||
     '前日の夜が特につらいんだね。その時はどんなことを考えてる？',
   ]);
 }
+
+// 解決モード完了後に不安が戻ってきた
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('work_plan_memo_ready') &&
+    _containsAny(
+      currentText,
+      [
+        '明日怖い',
+        '明日が怖い',
+        'やっぱり怖い',
+        'でも怖い',
+        '不安',
+        'まだ不安',
+      ],
+    )) {
+
+  return 'うん。明日のことを考えると、やっぱり怖くなるよね。\n\n'
+      '上司にまた怒られるかもしれないって思うと、'
+      '「メモしてから話す」って決めても、'
+      '不安が全部なくなるわけじゃないよね。\n\n'
+      '明日は不安をゼロにしようとしなくて大丈夫。'
+      'まずは決めた通り、確認したいことを1〜2個メモしてから話す。'
+      'それだけを目標にしてみよう。';
+}
     
 
     if (conversationDepth >= 3) {
@@ -252,10 +276,43 @@ if ((currentText == '前日の夜' ||
       }
     }
 
+
     // -------------------------
     // 仕事
     // -------------------------
     if (topic == 'work') {
+      // -------------------------
+// 解決モード完了
+// -------------------------
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('work_plan_memo_ready') &&
+    !conversationContext.knows('work_plan_completed_message')) {
+
+  conversationContext.rememberFact(
+    'work_plan_completed_message',
+  );
+
+  return 'じゃあ明日は、まず確認したいことを1〜2個だけメモしてから'
+      '上司に話してみよう。\n\n'
+      '全部を完璧にやろうとしなくて大丈夫。'
+      '明日は「メモしてから話す」だけできたら十分だよ。';
+}
+
+      // -------------------------
+// 実行プラン：確認事項をメモする
+// -------------------------
+if (conversationContext.knows('work_action_prepare_memo')) {
+  conversationContext.lastQuestionType =
+      'workMemoPlan';
+
+  return 'じゃあ明日は、上司に話しかける前に'
+      '確認したいことを1〜2個だけメモしておこうか。\n\n'
+      'たとえば、'
+      '\n・確認したい内容'
+      '\n・自分がすでにやったこと'
+      '\nだけ書いておくと、話す時に少し整理しやすいよ。\n\n'
+      '明日メモしてから話してみる、でいけそう？';
+}
 
     // -------------------------
 // 仕事：もう少し話したい
@@ -269,15 +326,91 @@ if (conversationContext.knows('work_wants_to_talk_more')) {
 }
 
 // -------------------------
+// 解決モード：上司との関わりを減らしたい
+// -------------------------
+if (conversationContext.knows(
+    'work_solution_supervisor_contact')) {
+
+conversationContext.lastQuestionType = 'workActionChoice';
+
+  return 'じゃあ、上司との関わりの負担を少し減らす方向で考えてみよう。\n\n'
+      'たとえば、\n'
+      '・確認したいことを先にメモして、話す時間を短くする\n'
+      '・できる範囲で一対一になりにくいタイミングを選ぶ\n'
+      '・必要なことだけ簡潔に伝える\n\n'
+      'この中で、明日なら一番やりやすそうなのはどれかな？';
+}
+
+// -------------------------
+// 解決モード：誰かに相談したい
+// -------------------------
+if (conversationContext.knows(
+    'work_solution_consult')) {
+
+  return 'じゃあ、職場で一人で抱え込まない方法を考えてみよう。\n\n'
+      '相談できそうなのは、別の上司、先輩、同僚みたいな人かな。\n'
+      '「最近ちょっと上司とのやり取りがしんどくて」と、'
+      '全部説明せずに少しだけ話すところからでもいいよ。\n\n'
+      '職場で話しやすそうな人はいる？';
+}
+
+// -------------------------
+// 解決モード：怒られた後の気持ちを切り替えたい
+// -------------------------
+if (conversationContext.knows(
+    'work_solution_emotional_recovery')) {
+
+  return 'じゃあ、怒られた後に気持ちを引きずりすぎない方法を一緒に考えよう。\n\n'
+      'まずは「怒られたこと」と「自分自身の価値」を分けて考えるのが一つだよ。\n'
+      'その場を離れたあとに、短く深呼吸したり、'
+      '起きたことを一度メモに出したりするのもあり。\n\n'
+      '怒られた後って、どんなことを一番考え続けてしまう？';
+}
+
+// -------------------------
 // 仕事：一緒に考えたい
 // -------------------------
 if (conversationContext.knows('work_wants_to_solve_now')) {
-  return choose([
-    'じゃあ一緒に考えよう。まず、明日少しでも楽にするために変えられそうなことはあるかな？',
-    '一緒に整理してみよう。上司との関わり方、誰かへの相談、少し休むことの中だと、今いちばん考えたいのはどれかな？',
-    'じゃあ「明日を少し楽にする方法」から考えてみよう。今いちばん負担を減らしたいのはどこ？',
-  ]);
-}  
+
+  // 上司に怒られることがつらい場合
+  if (conversationContext.knows('work_supervisor_scolding')) {
+    conversationContext.lastQuestionType =
+        'workSolutionChoice';
+
+    return 'じゃあ、明日を少しでも楽にする方法を一緒に考えよう。\n\n'
+        'たとえば、\n'
+        '・上司と関わる時の負担を少し減らす\n'
+        '・職場で相談できる人を考える\n'
+        '・怒られた時に気持ちを引きずりすぎない方法を考える\n\n'
+        'この中だと、今いちばん一緒に考えたいのはどれかな？';
+  }
+
+  // その他の仕事の悩み
+  conversationContext.lastQuestionType =
+      'workSolutionChoice';
+
+  return 'じゃあ一緒に考えよう。\n\n'
+      '今の状況を少し楽にするために、'
+      '「仕事そのもの」「職場の人間関係」「休み方」の中だと、'
+      'どこから考えてみたい？';
+}
+
+// -------------------------
+// 人前で怒られた・恥ずかしかった
+// → まず質問せず受け止める
+// -------------------------
+if ((conversationContext.knows('work_supervisor_public_scolding') ||
+        conversationContext.knows('work_supervisor_scolding_embarrassing')) &&
+    !conversationContext.knows(
+        'work_supervisor_public_scolding_reflected')) {
+
+  conversationContext.rememberFact(
+    'work_supervisor_public_scolding_reflected',
+  );
+
+  return 'みんなの前で強く怒られたことが、かなり心に残ってるんだね。'
+      '\n\nその場で恥ずかしさもあって、しんどかったんだと思う。';
+}
 
       // 上司に怒られることがつらいと分かったら一度まとめる
 if (conversationContext.knows('work_supervisor_scolding')) {
@@ -508,6 +641,66 @@ if (state.knowsUserWantsSupport) {
     // 恋愛
     // -------------------------
     if (topic == 'love') {
+
+      // -------------------------
+// 恋愛：解決モード完了
+// -------------------------
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_plan_opening_ready') &&
+    !conversationContext.knows('love_plan_completed_message')) {
+
+  conversationContext.rememberFact(
+    'love_plan_completed_message',
+  );
+
+  return 'じゃあ、まずはその一言から送ってみよう。\n\n'
+      '最初から全部の気持ちを伝えなくても大丈夫。'
+      'まずは会話を始めることだけを目標にしてみよう。';
+}
+
+    // -------------------------
+// 恋愛：LINEの最初の一言を作る
+// -------------------------
+if (conversationContext.knows('love_line_action_opening')) {
+  conversationContext.lastQuestionType =
+      'loveOpeningPlan';
+
+  return 'じゃあ、最初の一言を一緒に作ろう。\n\n'
+      'たとえば、\n'
+      '「急にごめんね。少し話したくてLINEしたよ。」\n'
+      'くらいの短さでも大丈夫。\n\n'
+      'この感じなら送れそう？';
+}  
+
+      // -------------------------
+// 恋愛：LINEする方向を選んだ
+// -------------------------
+if (conversationContext.knows('love_solution_line')) {
+  conversationContext.lastQuestionType =
+      'loveLineActionChoice';
+
+  return 'じゃあ、LINEする方向で一緒に考えよう。\n\n'
+      'たとえば、\n'
+      '・送るタイミングを決める\n'
+      '・最初の一言を考える\n'
+      '・何を伝えるか整理する\n\n'
+      'この中だと、どれから考えたい？';
+}
+
+      // -------------------------
+// 恋愛：一緒に考えたい
+// -------------------------
+if (conversationContext.knows('love_wants_to_solve_now')) {
+  conversationContext.lastQuestionType =
+      'loveSolutionChoice';
+
+  return 'じゃあ、一緒に整理してみよう。\n\n'
+      'たとえば、\n'
+      '・今は少し待つ\n'
+      '・自分からLINEしてみる\n'
+      '・まず自分の気持ちを整理する\n\n'
+      'この中だと、今いちばん一緒に考えたいのはどれかな？';
+}
 
 
 

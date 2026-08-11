@@ -1,5 +1,9 @@
+import 'solution_flow.dart';
+
 class ConversationContext {
   String? topic;
+
+  final SolutionFlow solutionFlow = SolutionFlow();
 
   final Set<String> knownFacts = {};
 
@@ -42,6 +46,8 @@ bool hasReflected = false;
 
   void reset() {
     topic = null;
+
+    solutionFlow.reset();
 
     knownFacts.clear();
 
@@ -128,6 +134,26 @@ void forgetFact(String fact) {
       'ちがう',
       'いや',
     ].contains(normalized);
+
+    // 恋愛：ユーザーから解決を求めた
+// -------------------------
+if (topic == 'love' &&
+    (text.contains('どうしたらいい') ||
+        text.contains('どうすればいい') ||
+        text.contains('一緒に考えたい') ||
+        text.contains('考えてみたい') ||
+        text.contains('考えたい'))) {
+
+  wantsToSolve = true;
+  wantsSupport = false;
+
+  solutionFlow.start();
+
+  rememberFact('love_wants_to_solve_now');
+  forgetFact('love_wants_to_talk_more');
+
+  lastQuestionType = null;
+}
 
     // 恋愛：連絡状況への回答
 if (lastQuestionType == 'loveContactStatus') {
@@ -269,6 +295,166 @@ if (lastQuestionType == 'loveLineStyle') {
   lastQuestionType = null;
 }
 
+  // -------------------------
+// 恋愛：解決モードで何を一緒に考えたいか
+// -------------------------
+if (lastQuestionType == 'loveSolutionChoice') {
+
+  // 少し待つ
+  if (text.contains('待つ') ||
+      text.contains('少し待つ') ||
+      text.contains('今は待つ')) {
+
+    rememberFact('love_solution_wait');
+
+    forgetFact('love_solution_line');
+    forgetFact('love_solution_sort_feelings');
+  }
+
+  // 自分からLINEする
+  else if (text.contains('LINE') ||
+      text.contains('ライン') ||
+      text.contains('連絡する') ||
+      text.contains('自分から連絡')) {
+
+    rememberFact('love_solution_line');
+
+    forgetFact('love_solution_wait');
+    forgetFact('love_solution_sort_feelings');
+  }
+
+  // 気持ちを整理する
+  else if (text.contains('気持ちを整理') ||
+      text.contains('整理したい') ||
+      text.contains('自分の気持ち')) {
+
+    rememberFact('love_solution_sort_feelings');
+
+    forgetFact('love_solution_wait');
+    forgetFact('love_solution_line');
+  }
+
+  solutionFlow.chooseDirection();
+
+  lastQuestionType = null;
+}
+
+// -------------------------
+// 恋愛：LINEの具体策を選ぶ
+// -------------------------
+if (lastQuestionType == 'loveLineActionChoice') {
+
+  // 送るタイミング
+  if (text.contains('タイミング') ||
+      text.contains('いつ送る') ||
+      text.contains('送る時間')) {
+
+    rememberFact('love_line_action_timing');
+
+    forgetFact('love_line_action_opening');
+    forgetFact('love_line_action_content');
+  }
+
+  // 最初の一言
+ else if (text.contains('最初の一言') ||
+    text.contains('書き出し') ||
+    text.contains('最初になんて')) {
+
+  print('★★ loveLineActionChoice：最初の一言を検出 ★★');
+
+  rememberFact('love_line_action_opening');
+
+  print(
+    '★★ love_line_action_opening = '
+    '${knows('love_line_action_opening')} ★★',
+  );
+
+  forgetFact('love_line_action_timing');
+  forgetFact('love_line_action_content');
+}
+
+  // 何を伝えるか
+  else if (text.contains('何を伝える') ||
+      text.contains('伝える内容') ||
+      text.contains('気持ちを伝える')) {
+
+    rememberFact('love_line_action_content');
+
+    forgetFact('love_line_action_timing');
+    forgetFact('love_line_action_opening');
+  }
+
+  solutionFlow.chooseAction();
+
+  lastQuestionType = null;
+}
+
+// -------------------------
+// 恋愛：LINEの最初の一言を実行プランにする
+// -------------------------
+if (lastQuestionType == 'loveOpeningPlan') {
+  final normalizedAnswer = text
+      .replaceAll('。', '')
+      .replaceAll('！', '')
+      .replaceAll('!', '')
+      .trim();
+
+  final yesReplies = [
+    'うん',
+    'はい',
+    '送れそう',
+    'これなら送れそう',
+    'これでいい',
+    'いいと思う',
+    'やってみる',
+  ];
+
+  if (yesReplies.any(
+    (reply) => normalizedAnswer.contains(reply),
+  )) {
+    rememberFact('love_plan_opening_ready');
+
+    solutionFlow.complete();
+  }
+
+  lastQuestionType = null;
+}
+// -------------------------
+// 恋愛：今どうしたいか
+// -------------------------
+if (lastQuestionType == 'loveSupportPreference') {
+
+  // まだ話を聞いてほしい
+  if (text.contains('話したい') ||
+      text.contains('もう少し話したい') ||
+      text.contains('聞いてほしい')) {
+
+    wantsSupport = true;
+    wantsToSolve = false;
+
+    rememberFact('love_wants_to_talk_more');
+    forgetFact('love_wants_to_solve_now');
+  }
+
+  // 一緒に解決方法を考えたい
+  else if (text.contains('一緒に考えたい') ||
+      text.contains('考えてみたい') ||
+      text.contains('考えたい') ||
+      text.contains('どうしたらいい') ||
+      text.contains('どうすればいい') ||
+      text.contains('解決したい')) {
+
+    wantsToSolve = true;
+    wantsSupport = false;
+
+    solutionFlow.start();
+
+    rememberFact('love_wants_to_solve_now');
+    forgetFact('love_wants_to_talk_more');
+  }
+
+  lastQuestionType = null;
+}
     // 直前の質問への「うん / ううん」を理解
     if (lastLunaMessage.contains('連絡を取ってる') ||
         lastLunaMessage.contains('連絡は取ってる')) {
@@ -430,6 +616,22 @@ if (text.contains('人間関係') &&
   rememberFact('work_human_relations');
 }
 
+// 仕事：上司に強く怒られた・人前で怒られた
+if (text.contains('怒鳴られ') ||
+    text.contains('みんなの前で怒られ') ||
+    text.contains('人前で怒られ') ||
+    text.contains('大声で怒られ')) {
+  rememberFact('work_supervisor_public_scolding');
+}
+
+// その出来事を恥ずかしいと感じている
+if ((text.contains('怒られ') ||
+        text.contains('怒鳴られ')) &&
+    (text.contains('恥ずかしい') ||
+        text.contains('恥ずかしかった'))) {
+  rememberFact('work_supervisor_scolding_embarrassing');
+}
+
 // -------------------------
 // つらくなる時間・場面
 // -------------------------
@@ -539,11 +741,16 @@ if (lastQuestionType == 'workSupervisorProblem') {
   lastQuestionType = null;
 }
 
+// -------------------------
 // 仕事：今どうしたいか
+// -------------------------
 if (lastQuestionType == 'workSupportPreference') {
+
+  // もう少し話したい
   if (text.contains('話したい') ||
       text.contains('もう少し話したい') ||
       text.contains('聞いてほしい')) {
+
     wantsSupport = true;
     wantsToSolve = false;
 
@@ -551,15 +758,113 @@ if (lastQuestionType == 'workSupportPreference') {
     forgetFact('work_wants_to_solve_now');
   }
 
+  // 一緒に考えたい
   else if (text.contains('一緒に考えたい') ||
+      text.contains('考えてみたい') ||
+      text.contains('一緒に考える') ||
+      text.contains('考えたい') ||
       text.contains('どうしたらいい') ||
       text.contains('楽になりたい') ||
       text.contains('解決したい')) {
+
     wantsToSolve = true;
     wantsSupport = false;
 
+    // 解決モード開始
+    solutionFlow.start();
+
     rememberFact('work_wants_to_solve_now');
     forgetFact('work_wants_to_talk_more');
+  }
+
+  lastQuestionType = null;
+}
+
+// 仕事：解決モードで何を一緒に考えたいか
+if (lastQuestionType == 'workSolutionChoice') {
+
+  // 上司との関わり方
+  if (text.contains('上司') ||
+      text.contains('関わる時の負担') ||
+      text.contains('関わりを減らしたい')) {
+
+    rememberFact('work_solution_supervisor_contact');
+    forgetFact('work_solution_consult');
+    forgetFact('work_solution_emotional_recovery');
+  }
+
+  // 職場で相談できる人
+  else if (text.contains('相談') ||
+      text.contains('相談できる人')) {
+
+    rememberFact('work_solution_consult');
+    forgetFact('work_solution_supervisor_contact');
+    forgetFact('work_solution_emotional_recovery');
+  }
+
+  // 怒られた後の気持ち
+  else if (text.contains('引きずる') ||
+      text.contains('気持ちを切り替えたい') ||
+      text.contains('気持ち')) {
+
+    rememberFact('work_solution_emotional_recovery');
+    forgetFact('work_solution_supervisor_contact');
+    forgetFact('work_solution_consult');
+  }
+
+solutionFlow.chooseDirection();
+
+  lastQuestionType = null;
+}
+
+// 仕事：具体策を選ぶ
+if (lastQuestionType == 'workActionChoice') {
+
+  if (text.contains('メモ') ||
+      text.contains('確認したいことを先にメモ')) {
+    rememberFact('work_action_prepare_memo');
+  }
+
+  else if (text.contains('一対一') ||
+      text.contains('一人にならない') ||
+      text.contains('タイミングを選ぶ')) {
+    rememberFact('work_action_avoid_one_on_one');
+  }
+
+  else if (text.contains('簡潔') ||
+      text.contains('必要なことだけ') ||
+      text.contains('短く伝える')) {
+    rememberFact('work_action_keep_brief');
+  }
+
+  solutionFlow.chooseAction();
+
+  lastQuestionType = null;
+}
+
+// 仕事：実行プランを決める
+if (lastQuestionType == 'workMemoPlan') {
+  final normalized = text
+      .replaceAll('。', '')
+      .replaceAll('！', '')
+      .replaceAll('!', '')
+      .trim();
+
+  final yesReplies = [
+    'うん',
+    'はい',
+    'できそう',
+    'やってみる',
+    'やってみたい',
+    'それならできそう',
+  ];
+
+  if (yesReplies.any(
+    (reply) => normalized.contains(reply),
+  )) {
+    rememberFact('work_plan_memo_ready');
+
+    solutionFlow.complete();
   }
 
   lastQuestionType = null;

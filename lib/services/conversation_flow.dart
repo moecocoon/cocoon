@@ -48,6 +48,14 @@ if (context.knows('work_supervisor_scolding') &&
   return ConversationAction.reflect;
 }
 
+// 人前で怒られた・恥ずかしかったという
+// 新しい重要情報が出たら、一度受け止める
+if ((context.knows('work_supervisor_public_scolding') ||
+        context.knows('work_supervisor_scolding_embarrassing')) &&
+    !context.knows('work_supervisor_public_scolding_reflected')) {
+  return ConversationAction.reflect;
+}
+
     // 短い相づちなら無理に質問しない
     if (_isShortResponse(normalized)) {
       return ConversationAction.support;
