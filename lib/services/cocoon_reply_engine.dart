@@ -3,11 +3,12 @@ import 'luna_brain.dart';
 class CocoonReplyEngine {
   const CocoonReplyEngine();
 
-  String compose({
+ String compose({
   required LunaBrainResult brainResult,
   required String legacyReply,
   required String userText,
   List<String> recentUserMessages = const [],
+  List<String> recentLunaMessages = const [],
 }) {
   final intro = brainResult.firstReply.trim();
   final oldReply = legacyReply.trim();
@@ -54,8 +55,10 @@ final shortenedLegacy =
   }
 
   if (question.isEmpty) {
-  final pauseReply =
-      _createPauseReply(userText);
+  final pauseReply = _createPauseReply(
+  userText,
+  recentLunaMessages: recentLunaMessages,
+);
 
   if (pauseReply.isNotEmpty &&
       !_isNearlySame(
@@ -230,9 +233,23 @@ bool _containsAny(
 ) {
   return keywords.any(text.contains);
 }
-
-String _createPauseReply(String text) {
+String _createPauseReply(
+  String text, {
+  List<String> recentLunaMessages = const [],
+}) {
   final lower = text.toLowerCase();
+
+  final normalized = lower
+      .replaceAll('。', '')
+      .replaceAll('！', '')
+      .replaceAll('!', '')
+      .replaceAll('？', '')
+      .replaceAll('?', '')
+      .trim();
+
+  final lastLuna = recentLunaMessages.isNotEmpty
+      ? recentLunaMessages.last
+      : '';
 
   if (lower.contains('疲れた') ||
       lower.contains('しんどい') ||
@@ -243,10 +260,41 @@ String _createPauseReply(String text) {
         '少しここで力を抜いていこう。';
   }
 
-  if (lower == 'うん' ||
-      lower == 'そう' ||
-      lower == 'そうだね') {
-    return 'うん。ルナはここにいるよ。';
+  // 「うん」系
+  if ([
+    'うん',
+    'うんうん',
+    'そう',
+    'そうだね',
+    'はい',
+  ].contains(normalized)) {
+
+    if (lastLuna.contains('話せてる') ||
+        lastLuna.contains('普通に話せてる')) {
+      return 'そっか、話すことはできてるんだね。';
+    }
+
+    if (lastLuna.contains('返事を待ってる') ||
+        lastLuna.contains('返信を待ってる')) {
+      return 'そっか、今は返事を待ってるんだね。';
+    }
+
+  }
+
+  // 「違う」系
+  if ([
+    'ううん',
+    'いや',
+    '違う',
+    'ちがう',
+    'いいえ',
+  ].contains(normalized)) {
+    if (lastLuna.contains('連絡を取ってる') ||
+        lastLuna.contains('連絡は取ってる')) {
+      return 'そっか、今は連絡を取ってないんだね。';
+    }
+
+    return 'そっか。';
   }
 
   if (lower.contains('わからない') ||

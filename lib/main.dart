@@ -2207,9 +2207,15 @@ State<LunaHouseScreen> createState() =>
     _LunaHouseScreenState();
 }
 
-class _LunaHouseScreenState extends State<LunaHouseScreen> {
+class _LunaHouseScreenState extends State<LunaHouseScreen>
+    with SingleTickerProviderStateMixin {
   int fullness = 0;
   int affection = 0;
+  bool isEating = false;
+String eatingMessage = '';
+late final AnimationController eatingController;
+late final Animation<double> eatingAnimation;
+
   String lunaHouseMessage() {
   if (affection >= 50) {
     return '会いに来てくれると、ルナすごくうれしいよ🐶💜';
@@ -2224,6 +2230,22 @@ class _LunaHouseScreenState extends State<LunaHouseScreen> {
   @override
 void initState() {
   super.initState();
+
+  eatingController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 350),
+  );
+
+  eatingAnimation = Tween<double>(
+    begin: 0,
+    end: 7,
+  ).animate(
+    CurvedAnimation(
+      parent: eatingController,
+      curve: Curves.easeInOut,
+    ),
+  );
+
   loadFullness();
 }
 
@@ -2241,6 +2263,12 @@ Future<void> saveFullness() async {
 
   await prefs.setInt('lunaFullness', fullness);
   await prefs.setInt('lunaAffection', affection);
+}
+
+@override
+void dispose() {
+  eatingController.dispose();
+  super.dispose();
 }
 
   @override
@@ -2282,11 +2310,100 @@ Future<void> saveFullness() async {
                 ),
               ),
               const SizedBox(height: 24),
-              Image.asset(
-  'assets/images/luna.png',
-height: 140,
-  fit: BoxFit.contain,
+              GestureDetector(
+  onTap: () async {
+    if (isEating) return;
+
+    setState(() {
+      if (affection < 100) {
+        affection++;
+      }
+    });
+
+    await saveFullness();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '🐶 なでなでしてくれてありがとう💜',
+        ),
+      ),
+    );
+  },
+child: AnimatedBuilder(
+  animation: eatingAnimation,
+  builder: (context, child) {
+    return Transform.translate(
+      offset: Offset(
+        0,
+        isEating ? eatingAnimation.value : 0,
+      ),
+      child: Transform.scale(
+        scale: isEating ? 1.04 : 1.0,
+        child: child,
+      ),
+    );
+  },
+  child: Image.asset(
+    'assets/images/luna.png',
+    height: 170,
+    fit: BoxFit.contain,
+  ),
 ),
+),
+
+AnimatedSwitcher(
+  duration: const Duration(milliseconds: 250),
+  child: isEating
+      ? Column(
+          key: const ValueKey('eating'),
+          children: [
+            const Text(
+              '🍚',
+              style: TextStyle(fontSize: 44),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              eatingMessage,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        )
+      : const SizedBox(
+          key: ValueKey('notEating'),
+          height: 8,
+        ),
+),
+
+const SizedBox(height: 12),
+
+Container(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 18,
+    vertical: 12,
+  ),
+  decoration: BoxDecoration(
+    color: Colors.white.withOpacity(0.80),
+    borderRadius: BorderRadius.circular(22),
+  ),
+  child: Text(
+    lunaHouseMessage(),
+    textAlign: TextAlign.center,
+    style: const TextStyle(
+      fontSize: 14,
+      height: 1.5,
+      color: Color(0xFF655572),
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+),
+
 Text(
   '🍚 まんぷく度 $fullness/10',
   style: const TextStyle(
@@ -2309,30 +2426,58 @@ Text(
 const SizedBox(height: 16),
 
 ElevatedButton(
-onPressed: () async {
-setState(() {
-  if (fullness < 10) {
-    fullness++;
-  }
+  onPressed: isEating
+      ? null
+      : () async {
+          setState(() {
+            isEating = true;
+            eatingMessage = 'ごはんだ！🐶🍚';
+          });
+          eatingController.repeat(
+  reverse: true,
+);
 
-  if (affection < 100) {
-    affection++;
-  }
-});
+          await Future.delayed(
+            const Duration(milliseconds: 700),
+          );
 
-  await saveFullness();
+          if (!mounted) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        fullness >= 10
-            ? '🐶 おなかいっぱい！しあわせ〜🍚✨'
-            : '🐶 もぐもぐ…ありがとう！元気が出たよ🍚',
-      ),
-    ),
-  );
-},
-  child: const Text('ルナにごはんをあげる 🍚'),
+          setState(() {
+            eatingMessage = 'もぐもぐ…🍚';
+          });
+
+          await Future.delayed(
+            const Duration(milliseconds: 1400),
+          );
+
+          if (!mounted) return;
+
+          setState(() {
+            if (fullness < 10) {
+              fullness++;
+            }
+
+            if (affection < 100) {
+              affection++;
+            }
+
+            eatingMessage = fullness >= 10
+                ? 'おなかいっぱい〜！🐶✨'
+                : 'おいしかった！ありがとう🐾';
+
+            isEating = false;
+          });
+          eatingController.stop();
+eatingController.reset();
+
+          await saveFullness();
+        },
+  child: Text(
+    isEating
+        ? 'ルナが食べています…'
+        : 'ルナにごはんをあげる 🍚',
+  ),
 ),
               const SizedBox(height: 28),
               Container(

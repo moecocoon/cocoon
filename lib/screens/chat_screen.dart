@@ -340,10 +340,7 @@ final brainResult = lunaBrain.think(
       widget.latestMood?.emotionPercents,
 );
 
-final legacyReply = makeCocoonReply(
-  text,
-  widget.messages,
-);
+final legacyReply = '';
 
 final insightText = insightBrain.createInsight(
   topic: brainResult.topic,
@@ -356,7 +353,8 @@ final lunaReply = cocoonReplyEngine.compose(
   brainResult: brainResult,
   legacyReply: legacyReply,
   userText: text,
-  recentUserMessages: recentUserMessages,
+  recentUserMessages: recentUserMessages.cast<String>(),
+  recentLunaMessages: recentLunaMessages.cast<String>(),
 );
 
 setState(() {

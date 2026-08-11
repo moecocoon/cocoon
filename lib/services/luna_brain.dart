@@ -1,3 +1,5 @@
+import 'conversation_flow.dart';
+import 'conversation_context.dart';
 import 'mood_brain.dart';
 import 'emotion_brain.dart';
 import 'topic_brain.dart';
@@ -25,6 +27,12 @@ class LunaBrain {
   final MemoryBrain memoryBrain = MemoryBrain();
   final MoodBrain moodBrain = MoodBrain();
 
+  final ConversationContext conversationContext =
+    ConversationContext();
+
+    final ConversationFlow conversationFlow =
+    ConversationFlow();
+
   LunaBrainResult think(
   String message, {
   List<String> recentUserMessages = const [],
@@ -35,13 +43,37 @@ class LunaBrain {
     final emotionResult = emotionBrain.analyze(message);
 
     // 話題分析
-    final topicResult = topicBrain.analyze(message);
+    final topicResult = topicBrain.analyze(
+  message,
+  recentUserMessages: recentUserMessages,
+);
+
+conversationContext.updateTopic(
+  topicResult.topic,
+);
+
+final lastLunaMessage =
+    recentLunaMessages.isNotEmpty
+        ? recentLunaMessages.last.toString()
+        : '';
+
+conversationContext.updateFromUserMessage(
+  message,
+  lastLunaMessage: lastLunaMessage,
+);
+
+final conversationAction = conversationFlow.decide(
+  text: message,
+  emotion: emotionResult.strongestEmotion,
+  context: conversationContext,
+);
 
     // 過去の会話確認
-    final memoryResult = memoryBrain.recall(
-      currentTopic: topicResult.topic,
-      recentUserMessages: recentUserMessages,
-    );
+   final memoryResult = memoryBrain.recall(
+  currentTopic: topicResult.topic,
+  recentUserMessages: recentUserMessages.cast<String>(),
+  currentMessage: message,
+); 
 
     final moodResult = moodBrain.analyze(
   moodEmotionPercents,
@@ -61,21 +93,68 @@ class LunaBrain {
     ? moodResult.moodText
     : '';  
 
-    // 次の質問
-    final question = questionBrain.createQuestion(
+// 次の返答・質問をConversationFlowで決める
+String question = '';
+
+switch (conversationAction) {
+  case ConversationAction.pause:
+    question = '';
+    break;
+
+  case ConversationAction.support:
+  question = questionBrain.createQuestion(
+    text: message,
+    topic: topicResult.topic,
+    emotion: emotionResult.strongestEmotion,
+    conversationContext: conversationContext,
+    recentUserMessages: recentUserMessages,
+    recentLunaMessages: recentLunaMessages,
+  );
+
+  if (question.isEmpty) {
+    question = 'うん。ちゃんと聞いてるよ。';
+  }
+  break;
+
+  case ConversationAction.reflect:
+    question = questionBrain.createQuestion(
       text: message,
       topic: topicResult.topic,
       emotion: emotionResult.strongestEmotion,
+      conversationContext: conversationContext,
       recentUserMessages: recentUserMessages,
       recentLunaMessages: recentLunaMessages,
     );
+    break;
+
+  case ConversationAction.help:
+    question = questionBrain.createQuestion(
+      text: message,
+      topic: topicResult.topic,
+      emotion: emotionResult.strongestEmotion,
+      conversationContext: conversationContext,
+      recentUserMessages: recentUserMessages,
+      recentLunaMessages: recentLunaMessages,
+    );
+    break;
+
+  case ConversationAction.ask:
+    question = questionBrain.createQuestion(
+      text: message,
+      topic: topicResult.topic,
+      emotion: emotionResult.strongestEmotion,
+      conversationContext: conversationContext,
+      recentUserMessages: recentUserMessages,
+      recentLunaMessages: recentLunaMessages,
+    );
+    break;
+}
 
     return LunaBrainResult(
       emotion: emotionResult.strongestEmotion,
       topic: topicResult.topic,
      firstReply: [
   firstReply,
-  if (memoryText.isNotEmpty) memoryText,
   if (moodText.isNotEmpty) moodText,
 ].join('\n\n'),
       nextQuestion: question,
@@ -106,7 +185,7 @@ class LunaBrain {
         return '少し安心できる気持ちがあるんだね。';
 
       default:
-        return '話してくれてありがとう。';
+  return '';
     }
   }
 }
