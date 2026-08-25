@@ -658,6 +658,80 @@ if (conversationContext.solutionFlow.isComplete &&
       'まずは会話を始めることだけを目標にしてみよう。';
 }
 
+// -------------------------
+// 恋愛：送るタイミング決定後
+// -------------------------
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_timing_tonight')) {
+
+  return 'じゃあ、今日は少し落ち着いてから送ってみようか。\n\n'
+      '「絶対この時間に送らなきゃ」と決めすぎなくて大丈夫。'
+      '自分が少し落ち着いたタイミングで送れたら十分だよ。';
+}
+
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_timing_tomorrow')) {
+
+  return 'じゃあ、今日は無理に送らず、明日にしようか。\n\n'
+      '少し時間を置いてから送るのもちゃんと一つの選択だよ。'
+      '明日、自分が落ち着いている時に送れたら十分。';
+}
+
+// -------------------------
+// 恋愛：伝える内容を決めた後
+// -------------------------
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_content_feelings')) {
+
+  return 'じゃあ今回は、自分の気持ちを伝えることを大事にしてみよう。\n\n'
+      '全部を一度に説明しなくても大丈夫。'
+      '「私はこう感じてたよ」って、自分の気持ちを短く伝えるだけでも十分だよ。';
+}
+
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_content_apology')) {
+
+  return 'じゃあ今回は、まず謝りたい気持ちを伝えてみよう。\n\n'
+      '長い文章にしなくても大丈夫。'
+      '「この前はごめんね」みたいに、最初は短く伝えるところからでもいいよ。';
+}
+
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_content_question')) {
+
+  return 'じゃあ今回は、相手に聞きたいことを一つだけ決めてみよう。\n\n'
+      '一度にたくさん聞くより、'
+      '今いちばん知りたいことを一つだけ伝える方が話しやすいと思うよ。';
+}
+
+// -------------------------
+// 恋愛：LINEで何を伝えるか整理する
+// -------------------------
+if (conversationContext.knows('love_line_action_content')) {
+  conversationContext.lastQuestionType =
+      'loveContentPlan';
+
+  return 'じゃあ、何を伝えたいか一緒に整理しよう。\n\n'
+      'たとえば、\n'
+      '・自分の気持ちを伝える\n'
+      '・謝りたいことを伝える\n'
+      '・相手に聞きたいことを伝える\n\n'
+      '今いちばん近いのはどれかな？';
+}
+
+// -------------------------
+// 恋愛：LINEを送るタイミングを決める
+// -------------------------
+if (conversationContext.knows('love_line_action_timing')) {
+  conversationContext.lastQuestionType =
+      'loveTimingPlan';
+
+  return 'じゃあ、送るタイミングを一緒に考えよう。\n\n'
+      '急いで今すぐ送らなくても大丈夫だよ。'
+      '自分が少し落ち着いていて、相手も忙しすぎなさそうな時間を選ぶのがよさそう。\n\n'
+      '今日の夜と明日なら、どっちの方が落ち着いて送れそう？';
+}
+
     // -------------------------
 // 恋愛：LINEの最初の一言を作る
 // -------------------------
@@ -671,6 +745,82 @@ if (conversationContext.knows('love_line_action_opening')) {
       'くらいの短さでも大丈夫。\n\n'
       'この感じなら送れそう？';
 }  
+
+// -------------------------
+// 恋愛：少し待つ期間を決めた後
+// -------------------------
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_wait_today')) {
+
+  return 'じゃあ、今日は少し待ってみようか。\n\n'
+      '待っている間ずっと相手のことを考え続けなくても大丈夫。'
+      '今日は自分の時間も大事にしながら過ごしてみよう。';
+}
+
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_wait_tomorrow')) {
+
+  return 'じゃあ、明日までは少し待ってみようか。\n\n'
+      '「明日までは待つ」って区切りを決めておけば、'
+      'ずっと待ち続けなきゃって思わなくていいよ。';
+}
+
+// -------------------------
+// 恋愛：気持ちを整理した後
+// -------------------------
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_feeling_still_loves')) {
+
+  return 'まだ好きな気持ちがちゃんと残ってるんだね。\n\n'
+      '今すぐ答えを出さなくても大丈夫。'
+      'まずは「まだ好きなんだ」って、自分の気持ちをそのまま認めてあげよう。';
+}
+
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_feeling_hurt')) {
+
+  return '今は、好きかどうかより傷ついた気持ちの方が大きいんだね。\n\n'
+      '無理に関係をどうするか決めなくて大丈夫。'
+      'まずは、自分がどんなことで傷ついたのかを大事にしていいよ。';
+}
+
+if (conversationContext.solutionFlow.isComplete &&
+    conversationContext.knows('love_feeling_uncertain')) {
+
+  return 'まだ自分でも分からないんだね。\n\n'
+      '分からないままでも大丈夫。'
+      '今すぐ「好き」「別れたい」みたいに答えを決めなくても、'
+      '少し時間を置きながら気持ちを見ていこう。';
+}
+
+// -------------------------
+// 恋愛：自分の気持ちを整理する
+// -------------------------
+if (conversationContext.knows('love_solution_sort_feelings')) {
+  conversationContext.lastQuestionType =
+      'loveSortFeelingsPlan';
+
+  return 'じゃあ、まず自分の気持ちから整理してみよう。\n\n'
+      '今の気持ちにいちばん近いのは、\n'
+      '・まだ好きな気持ちがある\n'
+      '・傷ついた気持ちが大きい\n'
+      '・自分でもまだ分からない\n\n'
+      'この中だと、どれが近そう？';
+}
+
+// -------------------------
+// 恋愛：少し待つ方向を選んだ
+// -------------------------
+if (conversationContext.knows('love_solution_wait')) {
+  conversationContext.lastQuestionType =
+      'loveWaitPlan';
+
+  return 'じゃあ、今は少し待つ方向で考えてみよう。\n\n'
+      '待つとしても、ずっと何もせず我慢する必要はないよ。\n'
+      '「今日だけ待つ」「明日まで待つ」みたいに、'
+      '自分の中で区切りを決めると少し楽かも。\n\n'
+      '今日まで待つのと、明日まで待つのなら、どっちがよさそう？';
+}
 
       // -------------------------
 // 恋愛：LINEする方向を選んだ

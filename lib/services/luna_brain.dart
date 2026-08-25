@@ -33,133 +33,141 @@ class LunaBrain {
     final ConversationFlow conversationFlow =
     ConversationFlow();
 
-  LunaBrainResult think(
+LunaBrainResult think(
   String message, {
   List<String> recentUserMessages = const [],
   List<String> recentLunaMessages = const [],
   Map<String, double>? moodEmotionPercents,
 }) {
-    // 感情分析
-    final emotionResult = emotionBrain.analyze(message);
+  // 感情分析
+  final emotionResult = emotionBrain.analyze(message);
 
-    // 話題分析
-    final topicResult = topicBrain.analyze(
-  message,
-  recentUserMessages: recentUserMessages,
-);
-
-conversationContext.updateTopic(
-  topicResult.topic,
-);
-
-final lastLunaMessage =
-    recentLunaMessages.isNotEmpty
-        ? recentLunaMessages.last.toString()
-        : '';
-
-conversationContext.updateFromUserMessage(
-  message,
-  lastLunaMessage: lastLunaMessage,
-);
-
-final conversationAction = conversationFlow.decide(
-  text: message,
-  emotion: emotionResult.strongestEmotion,
-  context: conversationContext,
-);
-
-    // 過去の会話確認
-   final memoryResult = memoryBrain.recall(
-  currentTopic: topicResult.topic,
-  recentUserMessages: recentUserMessages.cast<String>(),
-  currentMessage: message,
-); 
-
-    final moodResult = moodBrain.analyze(
-  moodEmotionPercents,
-);
-
-    // 最初の返答
-    final firstReply = _firstReply(
-      emotionResult.strongestEmotion,
-    );
-
-    // MemoryBrainの内容
-    final memoryText = memoryResult.hasRelatedMemory
-        ? memoryResult.memoryText
-        : '';
-
-      final moodText = moodResult.hasMood
-    ? moodResult.moodText
-    : '';  
-
-// 次の返答・質問をConversationFlowで決める
-String question = '';
-
-switch (conversationAction) {
-  case ConversationAction.pause:
-    question = '';
-    break;
-
-  case ConversationAction.support:
-  question = questionBrain.createQuestion(
-    text: message,
-    topic: topicResult.topic,
-    emotion: emotionResult.strongestEmotion,
-    conversationContext: conversationContext,
+  // 話題分析
+  final topicResult = topicBrain.analyze(
+    message,
     recentUserMessages: recentUserMessages,
-    recentLunaMessages: recentLunaMessages,
   );
 
-  if (question.isEmpty) {
-    question = 'うん。ちゃんと聞いてるよ。';
+  // 今の文章だけではgeneralになった場合、
+  // 直前までの話題を引き継ぐ
+  final resolvedTopic =
+      topicResult.topic == 'general' &&
+              conversationContext.topic != null
+          ? conversationContext.topic!
+          : topicResult.topic;
+
+  conversationContext.updateTopic(
+    resolvedTopic,
+  );
+
+  final lastLunaMessage =
+      recentLunaMessages.isNotEmpty
+          ? recentLunaMessages.last.toString()
+          : '';
+
+  conversationContext.updateFromUserMessage(
+    message,
+    lastLunaMessage: lastLunaMessage,
+  );
+
+  final conversationAction = conversationFlow.decide(
+    text: message,
+    emotion: emotionResult.strongestEmotion,
+    context: conversationContext,
+  );
+
+  // 過去の会話確認
+  final memoryResult = memoryBrain.recall(
+    currentTopic: resolvedTopic,
+    recentUserMessages: recentUserMessages.cast<String>(),
+    currentMessage: message,
+  );
+
+  final moodResult = moodBrain.analyze(
+    moodEmotionPercents,
+  );
+
+  // 最初の返答
+  final firstReply = _firstReply(
+    emotionResult.strongestEmotion,
+  );
+
+  // MemoryBrainの内容
+  final memoryText = memoryResult.hasRelatedMemory
+      ? memoryResult.memoryText
+      : '';
+
+  final moodText = moodResult.hasMood
+      ? moodResult.moodText
+      : '';
+
+  // 次の返答・質問をConversationFlowで決める
+  String question = '';
+
+  switch (conversationAction) {
+    case ConversationAction.pause:
+      question = '';
+      break;
+
+    case ConversationAction.support:
+      question = questionBrain.createQuestion(
+        text: message,
+        topic: resolvedTopic,
+        emotion: emotionResult.strongestEmotion,
+        conversationContext: conversationContext,
+        recentUserMessages: recentUserMessages,
+        recentLunaMessages: recentLunaMessages,
+      );
+
+      if (question.isEmpty) {
+        question = 'うん。ちゃんと聞いてるよ。';
+      }
+      break;
+
+    case ConversationAction.reflect:
+      question = questionBrain.createQuestion(
+        text: message,
+        topic: resolvedTopic,
+        emotion: emotionResult.strongestEmotion,
+        conversationContext: conversationContext,
+        recentUserMessages: recentUserMessages,
+        recentLunaMessages: recentLunaMessages,
+      );
+      break;
+
+    case ConversationAction.help:
+      question = questionBrain.createQuestion(
+        text: message,
+        topic: resolvedTopic,
+        emotion: emotionResult.strongestEmotion,
+        conversationContext: conversationContext,
+        recentUserMessages: recentUserMessages,
+        recentLunaMessages: recentLunaMessages,
+      );
+      break;
+
+    case ConversationAction.ask:
+      question = questionBrain.createQuestion(
+        text: message,
+        topic: resolvedTopic,
+        emotion: emotionResult.strongestEmotion,
+        conversationContext: conversationContext,
+        recentUserMessages: recentUserMessages,
+        recentLunaMessages: recentLunaMessages,
+      );
+      break;
   }
-  break;
 
-  case ConversationAction.reflect:
-    question = questionBrain.createQuestion(
-      text: message,
-      topic: topicResult.topic,
-      emotion: emotionResult.strongestEmotion,
-      conversationContext: conversationContext,
-      recentUserMessages: recentUserMessages,
-      recentLunaMessages: recentLunaMessages,
-    );
-    break;
-
-  case ConversationAction.help:
-    question = questionBrain.createQuestion(
-      text: message,
-      topic: topicResult.topic,
-      emotion: emotionResult.strongestEmotion,
-      conversationContext: conversationContext,
-      recentUserMessages: recentUserMessages,
-      recentLunaMessages: recentLunaMessages,
-    );
-    break;
-
-  case ConversationAction.ask:
-    question = questionBrain.createQuestion(
-      text: message,
-      topic: topicResult.topic,
-      emotion: emotionResult.strongestEmotion,
-      conversationContext: conversationContext,
-      recentUserMessages: recentUserMessages,
-      recentLunaMessages: recentLunaMessages,
-    );
-    break;
+  return LunaBrainResult(
+    emotion: emotionResult.strongestEmotion,
+    topic: resolvedTopic,
+    firstReply: [
+      firstReply,
+      if (moodText.isNotEmpty) moodText,
+    ].join('\n\n'),
+    nextQuestion: question,
+  );
 }
-
-    return LunaBrainResult(
-      emotion: emotionResult.strongestEmotion,
-      topic: topicResult.topic,
-     firstReply: [
-  firstReply,
-  if (moodText.isNotEmpty) moodText,
-].join('\n\n'),
-      nextQuestion: question,
-    );
-  }
 
   String _firstReply(String emotion) {
     switch (emotion) {

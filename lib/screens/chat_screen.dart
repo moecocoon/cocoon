@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -301,6 +302,43 @@ String getLunaInsight(List<ChatMessage> pastMessages) {
   return '🐶ルナの気づき\n\n今日は ${insights.join('・')} が近くにいるみたい。\nその中で、今いちばん大きい気持ちはどれかな？';
 }
 
+Future<String> getLunaApiReply(String message) async {
+  final url = Uri.parse(
+    'https://asia-northeast1-cocoon-688eb.cloudfunctions.net/lunaChat',
+  );
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'message': message,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+      final reply = data['reply'];
+
+      if (reply is String && reply.trim().isNotEmpty) {
+        return reply.trim();
+      }
+    }
+
+    debugPrint(
+      'lunaChat error: ${response.statusCode} ${response.body}',
+    );
+
+    throw Exception('API request failed');
+  } catch (e) {
+    debugPrint('getLunaApiReply error: $e');
+    rethrow;
+  }
+}
+
 void sendQuickTopic(String topic) {
   chatController.text = topic;
   sendMessage();
@@ -348,14 +386,15 @@ final insightText = insightBrain.createInsight(
   recentMessages: recentUserMessages,
 );
 
-// 普段の返事にはInsightを入れない
-final lunaReply = cocoonReplyEngine.compose(
-  brainResult: brainResult,
-  legacyReply: legacyReply,
-  userText: text,
-  recentUserMessages: recentUserMessages.cast<String>(),
-  recentLunaMessages: recentLunaMessages.cast<String>(),
-);
+String lunaReply;
+
+try {
+  // まず新しいOpenAI API版ルナを使う
+  lunaReply = await getLunaApiReply(text);
+} catch (e) {
+  // APIが失敗したときは、今までのルナに戻す
+  lunaReply = 'API接続テストでエラーが起きたよ。';
+}
 
 setState(() {
   isThinking = false;
@@ -3538,30 +3577,33 @@ if (text.contains('誰にも言えない') ||
   body: SafeArea(
         child: Column(
           children: [
-Container(
+            Container(
   width: double.infinity,
-  margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-  padding: const EdgeInsets.all(20),
+  margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+  padding: const EdgeInsets.symmetric(
+    horizontal: 18,
+    vertical: 14,
+  ),
   decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.94),
-    borderRadius: BorderRadius.circular(28),
+    color: Colors.white.withOpacity(0.96),
+    borderRadius: BorderRadius.circular(24),
     border: Border.all(
       color: const Color(0xFFE8DFEE),
     ),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.06),
-        blurRadius: 16,
-        offset: const Offset(0, 6),
+        color: Colors.black.withOpacity(0.045),
+        blurRadius: 14,
+        offset: const Offset(0, 5),
       ),
     ],
   ),
   child: Row(
     children: [
       Container(
-        width: 64,
-        height: 64,
-        padding: const EdgeInsets.all(7),
+        width: 52,
+        height: 52,
+        padding: const EdgeInsets.all(6),
         decoration: const BoxDecoration(
           color: Color(0xFFF1E8F8),
           shape: BoxShape.circle,
@@ -3571,7 +3613,9 @@ Container(
           fit: BoxFit.contain,
         ),
       ),
-      const SizedBox(width: 16),
+
+      const SizedBox(width: 14),
+
       const Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -3579,18 +3623,21 @@ Container(
             Text(
               'COCOON',
               style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
                 color: Color(0xFF6F5B8E),
               ),
             ),
-            SizedBox(height: 6),
+
+            SizedBox(height: 3),
+
             Text(
-              'おかえり。\n今日はどんなことがあった？',
+              'おかえり。今日はどんなことがあった？',
               style: TextStyle(
                 fontSize: 14,
-                height: 1.5,
-                color: Color(0xFF6D6478),
+                height: 1.4,
+                color: Color(0xFF746A7D),
               ),
             ),
           ],
@@ -3599,7 +3646,6 @@ Container(
     ],
   ),
 ),
-
 Padding(
   padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
   child: SizedBox(
@@ -3608,7 +3654,12 @@ Padding(
     scrollDirection: Axis.horizontal,
     child: Row(
       children: [
-  Container(
+// -------------------------
+// クイック相談ボタン
+// -------------------------
+
+// 恋愛相談
+Container(
   decoration: BoxDecoration(
     gradient: const LinearGradient(
       colors: [
@@ -3616,14 +3667,7 @@ Padding(
         Color(0xFFF6EAF4),
       ],
     ),
-    borderRadius: BorderRadius.circular(22),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.08),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(20),
     border: Border.all(
       color: const Color(0xFFE8CFE0),
     ),
@@ -3631,26 +3675,26 @@ Padding(
   child: Material(
     color: Colors.transparent,
     child: InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       onTap: () => sendQuickTopic('恋愛のことで話したい'),
       child: const Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 12,
+          horizontal: 14,
+          vertical: 9,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '💔',
-              style: TextStyle(fontSize: 18),
+              style: TextStyle(fontSize: 16),
             ),
-            SizedBox(width: 8),
+            SizedBox(width: 6),
             Text(
               '恋愛相談',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF7C536C),
               ),
             ),
@@ -3660,7 +3704,9 @@ Padding(
     ),
   ),
 ),
- Container(
+
+// 不安を整理
+Container(
   decoration: BoxDecoration(
     gradient: const LinearGradient(
       colors: [
@@ -3668,38 +3714,34 @@ Padding(
         Color(0xFFFFF1CC),
       ],
     ),
-    borderRadius: BorderRadius.circular(22),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.08),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: Color(0xFFEFD89B),
+      color: const Color(0xFFEFD89B),
     ),
   ),
   child: Material(
     color: Colors.transparent,
     child: InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       onTap: () => sendQuickTopic('不安な気持ちを整理したい'),
       child: const Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 12,
+          horizontal: 14,
+          vertical: 9,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('😰', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
+            Text(
+              '😰',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(width: 6),
             Text(
               '不安を整理',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF8C6A00),
               ),
             ),
@@ -3709,6 +3751,8 @@ Padding(
     ),
   ),
 ),
+
+// 眠れない夜
 Container(
   decoration: BoxDecoration(
     gradient: const LinearGradient(
@@ -3717,38 +3761,34 @@ Container(
         Color(0xFFDCE8FF),
       ],
     ),
-    borderRadius: BorderRadius.circular(22),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.08),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: Color(0xFFC7D8FF),
+      color: const Color(0xFFC7D8FF),
     ),
   ),
   child: Material(
     color: Colors.transparent,
     child: InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       onTap: () => sendQuickTopic('眠れない夜でつらい'),
       child: const Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 12,
+          horizontal: 14,
+          vertical: 9,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🌙', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
+            Text(
+              '🌙',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(width: 6),
             Text(
               '眠れない夜',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF5066A8),
               ),
             ),
@@ -3758,6 +3798,8 @@ Container(
     ),
   ),
 ),
+
+// 家族のこと
 Container(
   decoration: BoxDecoration(
     gradient: const LinearGradient(
@@ -3766,38 +3808,34 @@ Container(
         Color(0xFFDDF3E0),
       ],
     ),
-    borderRadius: BorderRadius.circular(22),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.08),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: Color(0xFFC9E5CE),
+      color: const Color(0xFFC9E5CE),
     ),
   ),
   child: Material(
     color: Colors.transparent,
     child: InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       onTap: () => sendQuickTopic('家族のことで悩んでいる'),
       child: const Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 12,
+          horizontal: 14,
+          vertical: 9,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🏠', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
+            Text(
+              '🏠',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(width: 6),
             Text(
               '家族のこと',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF4D7A52),
               ),
             ),
@@ -3807,6 +3845,8 @@ Container(
     ),
   ),
 ),
+
+// 話を聞いて
 Container(
   decoration: BoxDecoration(
     gradient: const LinearGradient(
@@ -3815,38 +3855,34 @@ Container(
         Color(0xFFE9DEFF),
       ],
     ),
-    borderRadius: BorderRadius.circular(22),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.08),
-        blurRadius: 12,
-        offset: const Offset(0, 5),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: Color(0xFFD9C8FF),
+      color: const Color(0xFFD9C8FF),
     ),
   ),
   child: Material(
     color: Colors.transparent,
     child: InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       onTap: () => sendQuickTopic('ただ話を聞いてほしい'),
       child: const Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 12,
+          horizontal: 14,
+          vertical: 9,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🫂', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
+            Text(
+              '🫂',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(width: 6),
             Text(
               '話を聞いて',
               style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF6F5B8E),
               ),
             ),
@@ -3856,7 +3892,6 @@ Container(
     ),
   ),
 ),
-
         ],
       ),
     ),

@@ -415,8 +415,14 @@ class _LunaFirstMeetingScreenState extends State<LunaFirstMeetingScreen>
                       child: SizedBox(
                         width: double.infinity,
                         height: 56,
-                        child: ElevatedButton(
-                          onPressed: widget.onStart,
+                        child:ElevatedButton(
+  onPressed: () {
+    widget.onStart();
+
+    Navigator.of(context).popUntil(
+      (route) => route.isFirst,
+    );
+  },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8E7BBE),
                             foregroundColor: Colors.white,

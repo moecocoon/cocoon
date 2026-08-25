@@ -1876,76 +1876,261 @@ class _BreathingGuideScreenState extends State<BreathingGuideScreen>
   }
 
 
-
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-   body: SizedBox.expand(
-  child: Container(
-    decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/breath_forest_bg.png'),
-          fit: BoxFit.cover,
+  body: SizedBox.expand(
+    child: Stack(
+      children: [
+        // =========================
+        // 背景
+        // =========================
+        Positioned.fill(
+          child: Image.asset(
+            'assets/images/breath_forest_bg.png',
+            fit: BoxFit.cover,
+          ),
         ),
-      ),
-      child: Container(
-        color: Colors.white.withOpacity(0.25),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              children: [
-                const Text(
-                  '深呼吸の森',
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3C946F),
-                  ),
-                ),
-                const SizedBox(height: 20),
 
-                ScaleTransition(
-                  scale: controller,
-                  child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.85),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        isBreathingIn ? '吸って…' : '吐いて…',
-                        style: const TextStyle(fontSize: 28),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                Image.asset(
-                  'assets/images/luna.png',
-                  height: 140,
-                ),
-
-                const SizedBox(height: 24),
-
-                ElevatedButton(
-                  onPressed: widget.onBack,
-                  child: const Text('心の広場に戻る'),
-                ),
-              ],
+        // 森を少し落ち着かせるフィルター
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFFF8FFF9).withOpacity(0.20),
+                  const Color(0xFFEFF8F2).withOpacity(0.24),
+                  const Color(0xFFE6F0EA).withOpacity(0.34),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-       ),
-  ),
-);
+
+        SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  24,
+                  24,
+                  34,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 58,
+                  ),
+                  child: SizedBox(
+  width: double.infinity,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+                      // =========================
+                      // タイトル
+                      // =========================
+                      const Icon(
+                        Icons.air_rounded,
+                        size: 22,
+                        color: Color(0xFF4F765F),
+                      ),
+
+                      const SizedBox(height: 7),
+
+                      const Text(
+                        '深呼吸の森',
+                        style: TextStyle(
+                          fontSize: 29,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                          color: Color(0xFF3F5949),
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      const Text(
+                        'ここでは、少しだけ呼吸に戻ってこよう。',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: Color(0xFF66736B),
+                        ),
+                      ),
+
+                      const SizedBox(height: 34),
+
+                      // =========================
+                      // 呼吸の円
+                      // =========================
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 250,
+                            height: 250,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.42),
+                              ),
+                            ),
+                          ),
+
+                          ScaleTransition(
+                            scale: controller,
+                            child: Container(
+                              width: 190,
+                              height: 190,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFF8FFF9)
+                                    .withOpacity(0.78),
+                                border: Border.all(
+                                  color: const Color(0xFFBFD4C6),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF799686)
+                                        .withOpacity(0.10),
+                                    blurRadius: 26,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isBreathingIn
+                                          ? Icons.arrow_upward_rounded
+                                          : Icons.arrow_downward_rounded,
+                                      size: 20,
+                                      color: const Color(0xFF5E816B),
+                                    ),
+
+                                    const SizedBox(height: 8),
+
+                                    Text(
+                                      isBreathingIn
+                                          ? 'すって…'
+                                          : 'はいて…',
+                                      style: const TextStyle(
+                                        fontSize: 25,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF445C4C),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 6),
+
+                                    Text(
+                                      isBreathingIn
+                                          ? 'ゆっくり、息を入れよう'
+                                          : '力を抜いて、ゆっくり外へ',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: Color(0xFF78847B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // =========================
+                      // ルナ
+                      // =========================
+                      Image.asset(
+                        'assets/images/luna.png',
+                        height: 115,
+                        fit: BoxFit.contain,
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Container(
+                        constraints: const BoxConstraints(
+                          maxWidth: 330,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.74),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.80),
+                          ),
+                        ),
+                        child: const Text(
+                          'うまくやらなくて大丈夫。\n'
+                          'ただ、呼吸を感じるだけでいいよ。',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.6,
+                            color: Color(0xFF5C665F),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // =========================
+                      // 戻る
+                      // =========================
+                      TextButton.icon(
+                        onPressed: widget.onBack,
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          size: 17,
+                        ),
+                        label: const Text(
+                          '心の広場へ戻る',
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF4F6658),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 11,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+   ),
+  );
 }
 }
+
+
 
 class SimplePage extends StatelessWidget {
   final String title;
@@ -1966,7 +2151,7 @@ class SimplePage extends StatelessWidget {
 }
 
 
-class HitoyasumiCafeScreen extends StatelessWidget {
+class HitoyasumiCafeScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const HitoyasumiCafeScreen({
@@ -1975,95 +2160,795 @@ class HitoyasumiCafeScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-   return Scaffold(
-  body: SizedBox.expand(
-    child: Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(
-            'assets/images/cafe_bg.png',
-          ),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        color: Colors.white.withOpacity(0.20),
-        child: SafeArea(
-  child: Padding(
-    padding: const EdgeInsets.all(28),
-    child: Column(
-            children: [
-              const Text(
-                'ひとやすみカフェ',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF9A6B4F),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'あたたかい飲みものみたいに、少しだけ心をゆるめよう。',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Color(0xFF6D5A4E),
-                ),
-              ),
-              const SizedBox(height: 36),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: const Text(
-                  '今日は、ちゃんと頑張った日。\n何もできなかったように見えても、ここまで来たことがもう十分だよ。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    height: 1.7,
-                    color: Color(0xFF5F4D43),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+  State<HitoyasumiCafeScreen> createState() =>
+      _HitoyasumiCafeScreenState();
+}
 
-ElevatedButton(
-  onPressed: () {
-    final messages = [
-      '今日は、何も進まなくても大丈夫。',
-      'ちゃんと休むことも、前に進むことの一つだよ。',
-      '深呼吸して、少しだけ肩の力を抜こう。',
-      '今ここにいるだけで、もう十分がんばってるよ。',
-      'あたたかい飲みものみたいに、心を少しゆるめよう。',
-    ];
+class _HitoyasumiCafeScreenState
+    extends State<HitoyasumiCafeScreen> {
+  String? selectedCafeMood;
+  String? selectedDrink;
+  String? lastDrink;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(messages[Random().nextInt(messages.length)]),
-      ),
-    );
-  },
-  child: const Text('今日のやさしい一言をもらう ☕️'),
-),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: onBack,
-                child: const Text('心の広場に戻る'),
-   ),
-                  ],
+  String drinkEmoji = '';
+  String cafeMessage = '';
+  String drinkMessage = '';
+  String gentleMessage = '';
+
+  int drinkCount = 0;
+
+  // ==================================================
+  // 気分 × 飲みもの
+  // ==================================================
+
+  String getCafeMessage(
+    String drink,
+    String? mood,
+  ) {
+    if (drink == 'ココア') {
+      switch (mood) {
+        case '疲れた':
+          return '今日はちょっと疲れてるんだね。\n'
+              '甘いココアと一緒に、少しだけ力を抜こう。';
+
+        case '不安':
+          return '不安が少し大きくなってるのかな。\n'
+              '今は全部考えなくて大丈夫。';
+
+        case '落ち込んでる':
+          return '今日は少し心が沈んでるんだね。\n'
+              '自分にも、やさしい時間をあげよう。';
+
+        case '眠れない':
+          return 'まだ眠れないんだね。\n'
+              'ここでは時間を気にせず、のんびりしていこう。';
+
+        case 'なんとなく休みたい':
+          return '理由がなくても、休みたいときは休んでいいよ。\n'
+              '少しだけ、ぼーっとしよう。';
+
+        default:
+          return 'あったかいココアにしよう。\n'
+              '今日は少しだけ、力を抜いていこう。';
+      }
+    }
+
+    if (drink == 'お茶') {
+      switch (mood) {
+        case '疲れた':
+          return '今日は少し疲れがたまってるんだね。\n'
+              'あたたかいお茶を飲みながら、ひと息つこう。';
+
+        case '不安':
+          return '頭の中がぐるぐるしてるのかな。\n'
+              '今は答えを出さずに、ゆっくりしよう。';
+
+        case '落ち込んでる':
+          return '今日は少し元気が出ない日なんだね。\n'
+              '無理に元気にならなくていいよ。';
+
+        case '眠れない':
+          return 'まだ眠れないんだね。\n'
+              '静かにお茶を飲みながら、ゆっくりしていこう。';
+
+        case 'なんとなく休みたい':
+          return 'なんとなく休みたい日もあるよね。\n'
+              '今日はのんびりしよう。';
+
+        default:
+          return 'あたたかいお茶にしよう。\n'
+              '気持ちも急がなくて大丈夫だよ。';
+      }
+    }
+
+    if (drink == 'ホットミルク') {
+      switch (mood) {
+        case '疲れた':
+          return '今日はたくさん頑張ったんだね。\n'
+              'あたたかいミルクと一緒に、ゆっくり休もう。';
+
+        case '不安':
+          return '不安なことが頭から離れないのかな。\n'
+              '今は答えを出さなくても大丈夫。';
+
+        case '落ち込んでる':
+          return '今日は心が少し疲れてるんだね。\n'
+              'ここでは、そのままの気持ちでいていいよ。';
+
+        case '眠れない':
+          return '眠れない夜なんだね。\n'
+              'あたたかいミルクと一緒に、ゆっくりしよう。';
+
+        case 'なんとなく休みたい':
+          return '今日はちょっと休憩したい気分なんだね。\n'
+              '何かを頑張らなくてもいい時間にしよう。';
+
+        default:
+          return 'ホットミルクにしよう。\n'
+              '今は頑張るより、休む時間にしよう。';
+      }
+    }
+
+    return '';
+  }
+
+  // ==================================================
+  // 気分
+  // ==================================================
+
+  void selectMood(String mood) {
+    setState(() {
+      selectedCafeMood = mood;
+
+      if (selectedDrink != null) {
+        cafeMessage = getCafeMessage(
+          selectedDrink!,
+          mood,
+        );
+      }
+    });
+  }
+
+  // ==================================================
+  // 飲みもの
+  // ==================================================
+
+  void selectDrink(String drink) {
+    setState(() {
+      selectedDrink = drink;
+      lastDrink = drink;
+
+      drinkCount = 0;
+      drinkMessage = '';
+      gentleMessage = '';
+
+      if (drink == 'ココア') {
+        drinkEmoji = '☕';
+      } else if (drink == 'お茶') {
+        drinkEmoji = '🍵';
+      } else {
+        drinkEmoji = '🥛';
+      }
+
+      cafeMessage = getCafeMessage(
+        drink,
+        selectedCafeMood,
+      );
+    });
+  }
+
+  // ==================================================
+  // ひとくち飲む
+  // ==================================================
+
+  Future<void> takeSip() async {
+    if (selectedDrink == null) return;
+
+    setState(() {
+      drinkCount++;
+
+      if (drinkCount == 1) {
+        drinkMessage = 'ふぅ…あったかいね。';
+      } else if (drinkCount == 2) {
+        drinkMessage = 'もうひとくち。急がなくて大丈夫。';
+      } else if (drinkCount == 3) {
+        drinkMessage = '少しずつ、心もゆるんできたかな。';
+      } else {
+        drinkMessage = 'ごちそうさま。ひと息つけたね。';
+      }
+    });
+
+    if (drinkCount >= 4) {
+      await Future.delayed(
+        const Duration(milliseconds: 1200),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        selectedDrink = null;
+        drinkEmoji = '';
+        cafeMessage = '';
+        drinkMessage = '';
+        drinkCount = 0;
+      });
+    }
+  }
+
+  // ==================================================
+  // 今日のやさしい一言
+  // ==================================================
+
+  void showGentleMessage() {
+    List<String> messages;
+
+    if (lastDrink == 'ココア') {
+      messages = [
+        '今日は少しくらい、自分を甘やかしてもいい日だよ。',
+        '頑張ったぶんだけ、やさしい時間ももらっていいんだよ。',
+        '「ちゃんとしなきゃ」を、今日は少し置いておこう。',
+        '自分にも、やさしい言葉を向けてあげよう。',
+        '甘いひと休みも、大切な時間だよ。',
+      ];
+    } else if (lastDrink == 'お茶') {
+      messages = [
+        '急いで答えを出さなくても大丈夫。',
+        '今は少しだけ、考えることをお休みしよう。',
+        'ひと息つくだけでも、心の景色は少し変わるよ。',
+        '今日のことは、今日の自分のペースで大丈夫。',
+        'ゆっくり、ひとつずつでいいよ。',
+      ];
+    } else if (lastDrink == 'ホットミルク') {
+      messages = [
+        '今日はもう、頑張ることをお休みしてもいいよ。',
+        '何もしない時間も、ちゃんと大切な時間だよ。',
+        '疲れた日は、休むことを一番にしていいよ。',
+        '今日は自分に「おつかれさま」って言ってあげよう。',
+        '今は安心できる場所で、ゆっくりしよう。',
+      ];
+    } else {
+      messages = [
+        '今日は、何も進まなくても大丈夫。',
+        'ちゃんと休むことも、大切な時間だよ。',
+        '少しだけ肩の力を抜こう。',
+        'ここでは急がなくて大丈夫。',
+        '今日は自分のペースで過ごしていいよ。',
+      ];
+    }
+
+    setState(() {
+      gentleMessage =
+          messages[Random().nextInt(messages.length)];
+    });
+  }
+
+  // ==================================================
+  // 気分アイコン
+  // ==================================================
+
+  Widget moodItem({
+    required String emoji,
+    required String label,
+    required String value,
+  }) {
+    final selected = selectedCafeMood == value;
+
+    return GestureDetector(
+      onTap: () => selectMood(value),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 68,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFCF8).withOpacity(0.78),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xFF8E7BBE)
+                      : const Color(0xFFE7DED6),
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Text(
+                emoji,
+                style: const TextStyle(
+                  fontSize: 27,
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 7),
+            Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: const Color(0xFF554B47),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+  // ==================================================
+  // 飲みものアイコン
+  // ==================================================
+
+  Widget drinkItem({
+    required String emoji,
+    required String label,
+    required String value,
+  }) {
+    final selected = selectedDrink == value;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => selectDrink(value),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 70,
+              height: 70,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFCF8).withOpacity(0.82),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xFF8E7BBE)
+                      : const Color(0xFFE7DED6),
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Text(
+                emoji,
+                style: const TextStyle(
+                  fontSize: 32,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+                color: const Color(0xFF554B47),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================================================
+  // BUILD
+  // ==================================================
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F1EC),
+      body: Stack(
+        children: [
+          // 背景
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/cafe_bg.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // 全体を少し落ち着かせる
+          Positioned.fill(
+            child: Container(
+              color: const Color(0xFFFFF9F4).withOpacity(0.16),
+            ),
+          ),
+
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    22,
+                    22,
+                    22,
+                    34,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: constraints.maxWidth,
+                      minHeight: constraints.maxHeight - 56,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // -----------------------------
+                        // タイトル
+                        // -----------------------------
+                        const Icon(
+                          Icons.local_cafe_outlined,
+                          size: 19,
+                          color: Color(0xFF6B5B53),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        const Text(
+                          'ひとやすみカフェ',
+                          style: TextStyle(
+                            fontSize: 27,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.1,
+                            color: Color(0xFF55463F),
+                          ),
+                        ),
+
+                        const SizedBox(height: 7),
+
+                        const Text(
+                          '今日は少し、ここで休もう。',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF756D68),
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // -----------------------------
+                        // 気分
+                        // -----------------------------
+                        const Text(
+                          '今日はどうしたの？',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF55463F),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: [
+                              moodItem(
+                                emoji: '😮‍💨',
+                                label: '疲れた',
+                                value: '疲れた',
+                              ),
+                              moodItem(
+                                emoji: '😰',
+                                label: '不安',
+                                value: '不安',
+                              ),
+                              moodItem(
+                                emoji: '😢',
+                                label: '落ち込み',
+                                value: '落ち込んでる',
+                              ),
+                              moodItem(
+                                emoji: '🌙',
+                                label: '眠れない',
+                                value: '眠れない',
+                              ),
+                              moodItem(
+                                emoji: '☁️',
+                                label: '休みたい',
+                                value: 'なんとなく休みたい',
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // -----------------------------
+                        // 飲みもの
+                        // -----------------------------
+                        const Text(
+                          '何を飲む？',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF55463F),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Row(
+                          children: [
+                            drinkItem(
+                              emoji: '☕',
+                              label: 'ココア',
+                              value: 'ココア',
+                            ),
+                            drinkItem(
+                              emoji: '🍵',
+                              label: 'お茶',
+                              value: 'お茶',
+                            ),
+                            drinkItem(
+                              emoji: '🥛',
+                              label: 'ミルク',
+                              value: 'ホットミルク',
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // -----------------------------
+                        // 飲みものカード
+                        // -----------------------------
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 280),
+                          child: selectedDrink == null
+                              ? const SizedBox.shrink()
+                              : Center(
+                                  child: Container(
+                                    key: ValueKey(selectedDrink),
+                                    width: 340,
+                                    padding: const EdgeInsets.fromLTRB(
+                                      22,
+                                      18,
+                                      22,
+                                      16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFFCF8)
+                                          .withOpacity(0.76),
+                                      borderRadius:
+                                          BorderRadius.circular(26),
+                                      border: Border.all(
+                                        color: const Color(0xFFE7DED6),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        AnimatedScale(
+                                          scale: drinkCount == 0
+                                              ? 1
+                                              : drinkCount == 1
+                                                  ? 0.95
+                                                  : drinkCount == 2
+                                                      ? 0.90
+                                                      : drinkCount == 3
+                                                          ? 0.84
+                                                          : 0.78,
+                                          duration: const Duration(
+                                            milliseconds: 220,
+                                          ),
+                                          child: Text(
+                                            drinkEmoji,
+                                            style: const TextStyle(
+                                              fontSize: 40,
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 8),
+
+                                        Text(
+                                          '$selectedDrinkを用意したよ',
+                                          style: const TextStyle(
+                                            fontSize: 15.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF55463F),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 9),
+
+                                        Text(
+                                          cafeMessage,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            height: 1.6,
+                                            color: Color(0xFF5E5652),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 14),
+
+                                        Container(
+                                          width: double.infinity,
+                                          height: 1,
+                                          color: const Color(0xFFE7DED6),
+                                        ),
+
+                                        const SizedBox(height: 14),
+
+                                        SizedBox(
+                                          height: 44,
+                                          child: ElevatedButton.icon(
+                                            onPressed: takeSip,
+                                            icon: const Icon(
+                                              Icons.local_cafe_outlined,
+                                              size: 17,
+                                            ),
+                                            label: const Text(
+                                              'ひとくち飲む',
+                                            ),
+                                            style:
+                                                ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color(0xFFF4ECE6),
+                                              foregroundColor:
+                                                  const Color(0xFF55463F),
+                                              elevation: 0,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 24,
+                                              ),
+                                              shape:
+                                                  RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                  22,
+                                                ),
+                                                side: const BorderSide(
+                                                  color: Color(0xFFE0D5CE),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 9),
+
+                                        Text(
+                                          drinkCount == 0
+                                              ? 'ゆっくり飲んでね'
+                                              : '$drinkCount / 4 ひとくち目',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: Color(0xFF8A817C),
+                                          ),
+                                        ),
+
+                                        if (drinkMessage.isNotEmpty) ...[
+                                          const SizedBox(height: 7),
+                                          Text(
+                                            drinkMessage,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 12.5,
+                                              color: Color(0xFF756D68),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // -----------------------------
+                        // 今日のやさしい一言
+                        // -----------------------------
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 280),
+                          child: gentleMessage.isEmpty
+                              ? OutlinedButton.icon(
+                                  key: const ValueKey('gentleButton'),
+                                  onPressed: showGentleMessage,
+                                  icon: const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    '今日のやさしい一言',
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor:
+                                        const Color(0xFF55463F),
+                                    backgroundColor:
+                                        const Color(0xFFFFFCF8)
+                                            .withOpacity(0.72),
+                                    side: const BorderSide(
+                                      color: Color(0xFFE0D5CE),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 22,
+                                      vertical: 11,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(22),
+                                    ),
+                                  ),
+                                )
+                              : Center(
+                                  child: Container(
+                                    key: ValueKey(gentleMessage),
+                                    width: 340,
+                                    padding: const EdgeInsets.fromLTRB(
+                                      22,
+                                      17,
+                                      22,
+                                      18,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFFCF8)
+                                          .withOpacity(0.80),
+                                      borderRadius:
+                                          BorderRadius.circular(24),
+                                      border: Border.all(
+                                        color: const Color(0xFFE7DED6),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const Icon(
+                                          Icons.auto_awesome_rounded,
+                                          size: 18,
+                                          color: Color(0xFF8E7BBE),
+                                        ),
+
+                                        const SizedBox(height: 8),
+
+                                        Text(
+                                          gentleMessage,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontSize: 14.5,
+                                            height: 1.65,
+                                            color: Color(0xFF554B47),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // -----------------------------
+                        // 戻る
+                        // -----------------------------
+                        TextButton.icon(
+                          onPressed: widget.onBack,
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            size: 17,
+                          ),
+                          label: const Text(
+                            '心の広場へ戻る',
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                const Color(0xFF55463F),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 11,
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
 
 class NightShelterScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -2078,120 +2963,572 @@ class NightShelterScreen extends StatefulWidget {
       _NightShelterScreenState();
 }
 
-class _NightShelterScreenState extends State<NightShelterScreen> {
-  final TextEditingController noteController = TextEditingController();
+class _NightShelterScreenState
+    extends State<NightShelterScreen> {
+  final TextEditingController noteController =
+      TextEditingController();
+
+  bool hasPlacedThought = false;
+  String placedMessage = '';
+
+  @override
+  void dispose() {
+    noteController.dispose();
+    super.dispose();
+  }
+
+  void placeThought() {
+    final text = noteController.text.trim();
+
+    setState(() {
+      hasPlacedThought = true;
+
+      if (text.isEmpty) {
+        placedMessage =
+            '今夜は答えを出さなくて大丈夫。\n'
+            'ここでは、少しだけ心を休ませよう。';
+      } else {
+        placedMessage =
+            '考えごと、ここで預かっておくね。\n'
+            '今夜はもう、少し休んでいいよ。';
+      }
+
+      noteController.clear();
+    });
+  }
+
+  void resetThought() {
+    setState(() {
+      hasPlacedThought = false;
+      placedMessage = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-  body: SizedBox.expand(
-    child: Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(
-            'assets/images/night_shelter_bg.png',
+      backgroundColor: const Color(0xFF17172A),
+      body: Stack(
+        children: [
+          // =============================
+          // 背景
+          // =============================
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/night_shelter_bg.png',
+              fit: BoxFit.cover,
+            ),
           ),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        color: Colors.black54,
-        child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            children: [
-              const Text(
-                '夜の避難所',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D5F92),
+
+          // 真っ黒ではなく、紺紫を重ねる
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF17172A)
+                        .withOpacity(0.45),
+                    const Color(0xFF25233E)
+                        .withOpacity(0.62),
+                    const Color(0xFF17172A)
+                        .withOpacity(0.78),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                '眠れない夜も、ここでは急がなくて大丈夫。',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Color(0xFF55566F),
-                ),
-              ),
-              const SizedBox(height: 36),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: const Text(
-                  '夜は、考えごとが少し大きく見える時間。\n今は答えを出さなくていいよ。\nただ、体を横にして休ませてあげよう。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    height: 1.7,
-                    color: Color(0xFF4F5068),
+            ),
+          ),
+
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics:
+                      const BouncingScrollPhysics(),
+                  padding:
+                      const EdgeInsets.fromLTRB(
+                    22,
+                    24,
+                    22,
+                    34,
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight:
+                          constraints.maxHeight - 58,
+                    ),
+                    child: Column(
+                      children: [
+                        // =============================
+                        // タイトル
+                        // =============================
+                        const Icon(
+                          Icons.nights_stay_rounded,
+                          color: Color(0xFFCBC4F2),
+                          size: 24,
+                        ),
 
-TextField(
-  controller: noteController,
-  maxLines: 4,
-  decoration: InputDecoration(
-    hintText: '今の考えごとをここに置いていこう🌙',
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(20),
-    ),
-  ),
-),
+                        const SizedBox(height: 8),
 
-const SizedBox(height: 16),
+                        const Text(
+                          '夜の避難所',
+                          style: TextStyle(
+                            fontSize: 27,
+                            fontWeight:
+                                FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: Color(0xFFF0ECFF),
+                          ),
+                        ),
 
-ElevatedButton(
-  onPressed: () {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('🌙預かったよ'),
-        content: Text(
-  noteController.text.trim().isEmpty
-      ? '今夜は答えを出さなくて大丈夫。\nここに置いて、少し休もう。'
-      : '「${noteController.text.trim()}」\n\n今夜は答えを出さなくて大丈夫。\nここに置いて、少し休もう。',
-),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('ありがとう'),
+                        const SizedBox(height: 8),
+
+                        const Text(
+                          '眠れない夜は、ここで少し休もう。',
+                          textAlign:
+                              TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: Color(0xFFD2CDE3),
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // =============================
+                        // 最初の言葉
+                        // =============================
+                        Container(
+                          width: double.infinity,
+                          padding:
+                              const EdgeInsets.fromLTRB(
+                            22,
+                            20,
+                            22,
+                            20,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                                    0xFF2F2C49)
+                                .withOpacity(0.72),
+                            borderRadius:
+                                BorderRadius.circular(28),
+                            border: Border.all(
+                              color: Colors.white
+                                  .withOpacity(0.12),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons
+                                    .bedtime_outlined,
+                                size: 20,
+                                color:
+                                    Color(0xFFBEB5E9),
+                              ),
+
+                              const SizedBox(
+                                  height: 10),
+
+                              const Text(
+                                '夜は、考えごとが\n'
+                                '少し大きく見える時間。',
+                                textAlign:
+                                    TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  height: 1.6,
+                                  fontWeight:
+                                      FontWeight.w600,
+                                  color:
+                                      Color(0xFFF0ECFA),
+                                ),
+                              ),
+
+                              const SizedBox(
+                                  height: 10),
+
+                              const Text(
+                                '今は答えを出さなくて大丈夫。\n'
+                                '考えることを、ここに置いていこう。',
+                                textAlign:
+                                    TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  height: 1.6,
+                                  color:
+                                      Color(0xFFD2CCDF),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // =============================
+                        // 入力エリア
+                        // =============================
+                        AnimatedSwitcher(
+                          duration: const Duration(
+                            milliseconds: 280,
+                          ),
+                          child: !hasPlacedThought
+                              ? Container(
+                                  key: const ValueKey(
+                                    'inputArea',
+                                  ),
+                                  width:
+                                      double.infinity,
+                                  padding:
+                                      const EdgeInsets
+                                          .fromLTRB(
+                                    18,
+                                    18,
+                                    18,
+                                    18,
+                                  ),
+                                  decoration:
+                                      BoxDecoration(
+                                    color: Colors.white
+                                        .withOpacity(
+                                            0.10),
+                                    borderRadius:
+                                        BorderRadius
+                                            .circular(28),
+                                    border:
+                                        Border.all(
+                                      color: Colors
+                                          .white
+                                          .withOpacity(
+                                              0.14),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment
+                                            .start,
+                                    children: [
+                                      const Text(
+                                        '今の考えごと',
+                                        style:
+                                            TextStyle(
+                                          fontSize: 13,
+                                          fontWeight:
+                                              FontWeight
+                                                  .w600,
+                                          color: Color(
+                                              0xFFD8D2EB),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                          height: 10),
+
+                                      TextField(
+                                        controller:
+                                            noteController,
+                                        minLines: 3,
+                                        maxLines: 5,
+                                        style:
+                                            const TextStyle(
+                                          fontSize: 14,
+                                          height: 1.5,
+                                          color:
+                                              Colors.white,
+                                        ),
+                                        cursorColor:
+                                            const Color(
+                                                0xFFC8BFF0),
+                                        decoration:
+                                            InputDecoration(
+                                          hintText:
+                                              'ここに置いていこう…',
+                                          hintStyle:
+                                              TextStyle(
+                                            color: Colors
+                                                .white
+                                                .withOpacity(
+                                                    0.42),
+                                          ),
+                                          filled: true,
+                                          fillColor:
+                                              Colors.white
+                                                  .withOpacity(
+                                                      0.08),
+                                          contentPadding:
+                                              const EdgeInsets
+                                                  .all(16),
+                                          enabledBorder:
+                                              OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius
+                                                    .circular(
+                                                        20),
+                                            borderSide:
+                                                BorderSide(
+                                              color: Colors
+                                                  .white
+                                                  .withOpacity(
+                                                      0.10),
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius
+                                                    .circular(
+                                                        20),
+                                            borderSide:
+                                                const BorderSide(
+                                              color: Color(
+                                                  0xFFAAA0D8),
+                                              width: 1.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                          height: 14),
+
+                                      SizedBox(
+                                        width:
+                                            double.infinity,
+                                        height: 46,
+                                        child:
+                                            ElevatedButton.icon(
+                                          onPressed:
+                                              placeThought,
+                                          icon:
+                                              const Icon(
+                                            Icons
+                                                .dark_mode_outlined,
+                                            size: 17,
+                                          ),
+                                          label:
+                                              const Text(
+                                            'ここに置いていく',
+                                          ),
+                                          style:
+                                              ElevatedButton
+                                                  .styleFrom(
+                                            backgroundColor:
+                                                const Color(
+                                                    0xFF9186C8),
+                                            foregroundColor:
+                                                Colors.white,
+                                            elevation: 0,
+                                            shape:
+                                                RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius
+                                                      .circular(
+                                                          23),
+                                            ),
+                                            textStyle:
+                                                const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight:
+                                                  FontWeight
+                                                      .w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+
+                              // =============================
+                              // 置いていった後
+                              // =============================
+                              : Container(
+                                  key: const ValueKey(
+                                    'placedArea',
+                                  ),
+                                  width:
+                                      double.infinity,
+                                  padding:
+                                      const EdgeInsets
+                                          .fromLTRB(
+                                    22,
+                                    24,
+                                    22,
+                                    22,
+                                  ),
+                                  decoration:
+                                      BoxDecoration(
+                                    color: const Color(
+                                            0xFF35314E)
+                                        .withOpacity(
+                                            0.78),
+                                    borderRadius:
+                                        BorderRadius
+                                            .circular(28),
+                                    border:
+                                        Border.all(
+                                      color: const Color(
+                                              0xFFB8AFE1)
+                                          .withOpacity(
+                                              0.25),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 54,
+                                        height: 54,
+                                        decoration:
+                                            BoxDecoration(
+                                          color: const Color(
+                                                  0xFF8C82C0)
+                                              .withOpacity(
+                                                  0.22),
+                                          shape:
+                                              BoxShape.circle,
+                                        ),
+                                        child:
+                                            const Icon(
+                                          Icons
+                                              .nights_stay_rounded,
+                                          color: Color(
+                                              0xFFD5CFF5),
+                                          size: 26,
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                          height: 15),
+
+                                      const Text(
+                                        'ここに置いていけたよ',
+                                        style:
+                                            TextStyle(
+                                          fontSize: 16,
+                                          fontWeight:
+                                              FontWeight
+                                                  .bold,
+                                          color: Color(
+                                              0xFFF0ECFF),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                          height: 10),
+
+                                      Text(
+                                        placedMessage,
+                                        textAlign:
+                                            TextAlign
+                                                .center,
+                                        style:
+                                            const TextStyle(
+                                          fontSize: 14,
+                                          height: 1.65,
+                                          color: Color(
+                                              0xFFD6D0E4),
+                                        ),
+                                      ),
+
+                                      const SizedBox(
+                                          height: 18),
+
+                                      TextButton(
+                                        onPressed:
+                                            resetThought,
+                                        style: TextButton
+                                            .styleFrom(
+                                          foregroundColor:
+                                              const Color(
+                                                  0xFFBFB6E8),
+                                        ),
+                                        child:
+                                            const Text(
+                                          'もうひとつ置いていく',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+
+                        const SizedBox(height: 26),
+
+                        // =============================
+                        // 小さな夜の一言
+                        // =============================
+                        Container(
+                          padding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white
+                                .withOpacity(0.07),
+                            borderRadius:
+                                BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            '🌙 今夜は、少し休めればそれで十分。',
+                            textAlign:
+                                TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color:
+                                  Color(0xFFCFC9DE),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 26),
+
+                        // =============================
+                        // 戻る
+                        // =============================
+                        TextButton.icon(
+                          onPressed:
+                              widget.onBack,
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            size: 17,
+                          ),
+                          label: const Text(
+                            '心の広場へ戻る',
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                const Color(
+                                    0xFFC8C0EB),
+                            padding:
+                                const EdgeInsets
+                                    .symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            textStyle:
+                                const TextStyle(
+                              fontSize: 13,
+                              fontWeight:
+                                  FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
-  },
-  child: const Text('考えごとを置いていく'),
-),
-              const Spacer(),
-ElevatedButton(
-  onPressed: widget.onBack,
-  child: const Text('心の広場に戻る'),
-),
-
-            ],
-                        ),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
+  }
 }
 class LunaHouseScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -2201,339 +3538,942 @@ class LunaHouseScreen extends StatefulWidget {
     required this.onBack,
   });
 
-
   @override
-State<LunaHouseScreen> createState() =>
-    _LunaHouseScreenState();
+  State<LunaHouseScreen> createState() =>
+      _LunaHouseScreenState();
 }
 
 class _LunaHouseScreenState extends State<LunaHouseScreen>
     with SingleTickerProviderStateMixin {
   int fullness = 0;
   int affection = 0;
+
   bool isEating = false;
-String eatingMessage = '';
-late final AnimationController eatingController;
-late final Animation<double> eatingAnimation;
+  bool isBeingPetted = false;
+  bool showPetHeart = false;
+
+  String eatingMessage = '';
+
+  DateTime? lastVisitTime;
+  bool isLongTimeNoSee = false;
+
+  int todayPetCount = 0;
+  DateTime? lastPetDate;
+
+  late final AnimationController eatingController;
+  late final Animation<double> eatingAnimation;
+
+  // ==================================================
+  // ルナのひとこと
+  // ==================================================
 
   String lunaHouseMessage() {
-  if (affection >= 50) {
-    return '会いに来てくれると、ルナすごくうれしいよ🐶💜';
-  } else if (affection >= 20) {
-    return 'また会えたね！待ってたよ🐶';
-  } else if (affection >= 10) {
-    return '少しずつ仲良くなれてうれしいな🍚';
-  } else {
+    if (eatingMessage.isNotEmpty) {
+      return eatingMessage;
+    }
+
+    if (isLongTimeNoSee) {
+      return '会いたかった〜！\nまた来てくれてうれしいよ🐶💜';
+    }
+
+    if (fullness <= 2) {
+      return 'ちょっとおなかすいたな…🐶🍚';
+    }
+
+    if (fullness <= 5) {
+      return 'まだ少し食べられそうだよ🐾';
+    }
+
+    if (fullness >= 9) {
+      return 'おなかいっぱい〜！\nしあわせ🐶✨';
+    }
+
+    if (affection >= 50) {
+      return '会いに来てくれると、\nルナすごくうれしいよ🐶💜';
+    }
+
+    if (affection >= 20) {
+      return 'また会えたね！\n待ってたよ🐶';
+    }
+
+    if (affection >= 10) {
+      return '少しずつ仲良くなれて\nうれしいな🐾';
+    }
+
     return 'ルナはここで待っているよ。';
   }
-}
+
+  // ==================================================
+  // 初期化
+  // ==================================================
+
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  eatingController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 350),
-  );
+    eatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
 
-  eatingAnimation = Tween<double>(
-    begin: 0,
-    end: 7,
-  ).animate(
-    CurvedAnimation(
-      parent: eatingController,
-      curve: Curves.easeInOut,
-    ),
-  );
+    eatingAnimation = Tween<double>(
+      begin: 0,
+      end: 7,
+    ).animate(
+      CurvedAnimation(
+        parent: eatingController,
+        curve: Curves.easeInOut,
+      ),
+    );
 
-  loadFullness();
-}
+    loadFullness();
+    loadLastVisit();
+    loadPetCount();
+  }
 
-Future<void> loadFullness() async {
-  final prefs = await SharedPreferences.getInstance();
+  // ==================================================
+  // なでた回数
+  // ==================================================
 
-  setState(() {
-    fullness = prefs.getInt('lunaFullness') ?? 0;
-    affection = prefs.getInt('lunaAffection') ?? 0;
-  });
-}
+  Future<void> loadPetCount() async {
+    final prefs = await SharedPreferences.getInstance();
 
-Future<void> saveFullness() async {
-  final prefs = await SharedPreferences.getInstance();
+    final savedCount =
+        prefs.getInt('lunaTodayPetCount') ?? 0;
 
-  await prefs.setInt('lunaFullness', fullness);
-  await prefs.setInt('lunaAffection', affection);
-}
+    final savedDateText =
+        prefs.getString('lunaLastPetDate');
 
-@override
-void dispose() {
-  eatingController.dispose();
-  super.dispose();
-}
+    final now = DateTime.now();
+
+    int count = savedCount;
+    DateTime? savedDate;
+
+    if (savedDateText != null) {
+      savedDate = DateTime.tryParse(savedDateText);
+    }
+
+    if (savedDate == null ||
+        savedDate.year != now.year ||
+        savedDate.month != now.month ||
+        savedDate.day != now.day) {
+      count = 0;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      todayPetCount = count;
+      lastPetDate = savedDate;
+    });
+  }
+
+  // ==================================================
+  // 最終訪問
+  // ==================================================
+
+  Future<void> loadLastVisit() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final saved =
+        prefs.getString('lunaHouseLastVisit');
+
+    final now = DateTime.now();
+
+    bool longTimeNoSee = false;
+
+    if (saved != null) {
+      final previousVisit =
+          DateTime.tryParse(saved);
+
+      if (previousVisit != null) {
+        final passedHours =
+            now.difference(previousVisit).inHours;
+
+        longTimeNoSee = passedHours >= 24;
+      }
+    }
+
+    await prefs.setString(
+      'lunaHouseLastVisit',
+      now.toIso8601String(),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      lastVisitTime = now;
+      isLongTimeNoSee = longTimeNoSee;
+    });
+  }
+
+  // ==================================================
+  // まんぷく度・なつき度
+  // ==================================================
+
+  Future<void> loadFullness() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    int savedFullness =
+        prefs.getInt('lunaFullness') ?? 0;
+
+    final savedAffection =
+        prefs.getInt('lunaAffection') ?? 0;
+
+    final lastUpdatedText =
+        prefs.getString('lunaFullnessLastUpdated');
+
+    if (lastUpdatedText != null) {
+      final lastUpdated =
+          DateTime.tryParse(lastUpdatedText);
+
+      if (lastUpdated != null) {
+        final now = DateTime.now();
+
+        final passedHours =
+            now.difference(lastUpdated).inHours;
+
+        final decreaseAmount =
+            passedHours ~/ 6;
+
+        if (decreaseAmount > 0) {
+          savedFullness =
+              (savedFullness - decreaseAmount)
+                  .clamp(0, 10)
+                  .toInt();
+
+          await prefs.setInt(
+            'lunaFullness',
+            savedFullness,
+          );
+
+          await prefs.setString(
+            'lunaFullnessLastUpdated',
+            now.toIso8601String(),
+          );
+        }
+      }
+    } else {
+      await prefs.setString(
+        'lunaFullnessLastUpdated',
+        DateTime.now().toIso8601String(),
+      );
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      fullness = savedFullness;
+      affection = savedAffection;
+    });
+  }
+
+  Future<void> saveFullness() async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setInt(
+      'lunaFullness',
+      fullness,
+    );
+
+    await prefs.setInt(
+      'lunaAffection',
+      affection,
+    );
+
+    await prefs.setString(
+      'lunaFullnessLastUpdated',
+      DateTime.now().toIso8601String(),
+    );
+  }
+
+  // ==================================================
+  // ルナをなでる
+  // ==================================================
+
+  Future<void> petLuna() async {
+    if (isEating || isBeingPetted) return;
+
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final now = DateTime.now();
+    final nextCount = todayPetCount + 1;
+
+    String message;
+
+    if (nextCount == 1) {
+      message = 'えへへ、うれしい🐶💜';
+    } else if (nextCount <= 3) {
+      message = 'もっとなでて〜🐾';
+    } else {
+      message =
+          '今日はいっぱいなでてもらった〜！🐶💜';
+    }
+
+    setState(() {
+      isBeingPetted = true;
+      showPetHeart = true;
+
+      todayPetCount = nextCount;
+      lastPetDate = now;
+
+      if (affection < 100) {
+        affection++;
+      }
+
+      eatingMessage = message;
+    });
+
+    await prefs.setInt(
+      'lunaTodayPetCount',
+      todayPetCount,
+    );
+
+    await prefs.setString(
+      'lunaLastPetDate',
+      now.toIso8601String(),
+    );
+
+    await saveFullness();
+
+    await Future.delayed(
+      const Duration(milliseconds: 180),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      isBeingPetted = false;
+    });
+
+    await Future.delayed(
+      const Duration(milliseconds: 500),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      showPetHeart = false;
+    });
+  }
+
+  // ==================================================
+  // ごはん
+  // ==================================================
+
+  Future<void> feedLuna() async {
+    if (isEating) return;
+
+    setState(() {
+      isEating = true;
+      eatingMessage = 'ごはんだ！🐶🍚';
+    });
+
+    eatingController.repeat(
+      reverse: true,
+    );
+
+    await Future.delayed(
+      const Duration(milliseconds: 700),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      eatingMessage = 'もぐもぐ…🍚';
+    });
+
+    await Future.delayed(
+      const Duration(milliseconds: 1400),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      if (fullness < 10) {
+        fullness++;
+      }
+
+      if (affection < 100) {
+        affection++;
+      }
+
+      eatingMessage = fullness >= 10
+          ? 'おなかいっぱい〜！しあわせ🐶✨'
+          : 'おいしかった！ありがとう🐾';
+
+      isEating = false;
+    });
+
+    eatingController.stop();
+    eatingController.reset();
+
+    await saveFullness();
+  }
+
+  // ==================================================
+  // ステータス
+  // ==================================================
+
+  Widget statusItem({
+    required String emoji,
+    required String title,
+    required String value,
+    required double progress,
+  }) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            emoji,
+            style: const TextStyle(
+              fontSize: 20,
+            ),
+          ),
+
+          const SizedBox(height: 5),
+
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF746B78),
+            ),
+          ),
+
+          const SizedBox(height: 5),
+
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF5F536A),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          ClipRRect(
+            borderRadius:
+                BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor:
+                  const Color(0xFFEDE7EF),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(
+                Color(0xFF9C87B6),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================================================
+  // BUILD
+  // ==================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-  appBar: AppBar(
-  title: const Text('ルナのおうち'),
-  backgroundColor: const Color(0xFF8E7BBE),
-  foregroundColor: Colors.white,
-  leading: IconButton(
-    icon: const Icon(Icons.arrow_back),
-    onPressed: widget.onBack,
-  ),
-),
-     body: SizedBox.expand(
-  child: Container(
-    decoration: const BoxDecoration(
-      image: DecorationImage(
-        image: AssetImage(
-          'assets/images/luna_home_bg.png',
-        ),
-        fit: BoxFit.cover,
-      ),
-    ),
-    child: Container(
-      color: Colors.white.withOpacity(0.15),
-      child: SafeArea(
-        child: SingleChildScrollView(
-    child: Padding(
-      padding: const EdgeInsets.all(28),
-      child: Column(
-            children: [
-              const Text(
-                'ルナのおうち',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-  onTap: () async {
-    if (isEating) return;
-
-    setState(() {
-      if (affection < 100) {
-        affection++;
-      }
-    });
-
-    await saveFullness();
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          '🐶 なでなでしてくれてありがとう💜',
-        ),
-      ),
-    );
-  },
-child: AnimatedBuilder(
-  animation: eatingAnimation,
-  builder: (context, child) {
-    return Transform.translate(
-      offset: Offset(
-        0,
-        isEating ? eatingAnimation.value : 0,
-      ),
-      child: Transform.scale(
-        scale: isEating ? 1.04 : 1.0,
-        child: child,
-      ),
-    );
-  },
-  child: Image.asset(
-    'assets/images/luna.png',
-    height: 170,
-    fit: BoxFit.contain,
-  ),
-),
-),
-
-AnimatedSwitcher(
-  duration: const Duration(milliseconds: 250),
-  child: isEating
-      ? Column(
-          key: const ValueKey('eating'),
-          children: [
-            const Text(
-              '🍚',
-              style: TextStyle(fontSize: 44),
+      backgroundColor:
+          const Color(0xFFF8F3FA),
+      body: Stack(
+        children: [
+          // -------------------------
+          // 背景
+          // -------------------------
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/luna_home_bg.png',
+              fit: BoxFit.cover,
             ),
-            const SizedBox(height: 6),
-            Text(
-              eatingMessage,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        )
-      : const SizedBox(
-          key: ValueKey('notEating'),
-          height: 8,
-        ),
-),
-
-const SizedBox(height: 12),
-
-Container(
-  padding: const EdgeInsets.symmetric(
-    horizontal: 18,
-    vertical: 12,
-  ),
-  decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.80),
-    borderRadius: BorderRadius.circular(22),
-  ),
-  child: Text(
-    lunaHouseMessage(),
-    textAlign: TextAlign.center,
-    style: const TextStyle(
-      fontSize: 14,
-      height: 1.5,
-      color: Color(0xFF655572),
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-),
-
-Text(
-  '🍚 まんぷく度 $fullness/10',
-  style: const TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  ),
-),
-
-const SizedBox(height: 8),
-
-Text(
-  '❤️ なつき度 $affection/100',
-  style: const TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-  ),
-),
-const SizedBox(height: 16),
-
-ElevatedButton(
-  onPressed: isEating
-      ? null
-      : () async {
-          setState(() {
-            isEating = true;
-            eatingMessage = 'ごはんだ！🐶🍚';
-          });
-          eatingController.repeat(
-  reverse: true,
-);
-
-          await Future.delayed(
-            const Duration(milliseconds: 700),
-          );
-
-          if (!mounted) return;
-
-          setState(() {
-            eatingMessage = 'もぐもぐ…🍚';
-          });
-
-          await Future.delayed(
-            const Duration(milliseconds: 1400),
-          );
-
-          if (!mounted) return;
-
-          setState(() {
-            if (fullness < 10) {
-              fullness++;
-            }
-
-            if (affection < 100) {
-              affection++;
-            }
-
-            eatingMessage = fullness >= 10
-                ? 'おなかいっぱい〜！🐶✨'
-                : 'おいしかった！ありがとう🐾';
-
-            isEating = false;
-          });
-          eatingController.stop();
-eatingController.reset();
-
-          await saveFullness();
-        },
-  child: Text(
-    isEating
-        ? 'ルナが食べています…'
-        : 'ルナにごはんをあげる 🍚',
-  ),
-),
-              const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Text(
-  '${lunaHouseMessage()}\n\n何かを話しても、何も話さなくても大丈夫。\n今日は少しだけ、そばで休もう。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    height: 1.7,
-                    color: Color(0xFF5F566B),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-ElevatedButton(
-  onPressed: widget.onBack,
-  child: const Text('心の広場に戻る'),
-),
-
-            ],
           ),
-        ),
+
+          // 柔らかいフィルター
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.20),
+                    const Color(0xFFF8F0FA)
+                        .withOpacity(0.16),
+                    const Color(0xFFF0E5F3)
+                        .withOpacity(0.28),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics:
+                      const BouncingScrollPhysics(),
+                  padding:
+                      const EdgeInsets.fromLTRB(
+                    22,
+                    20,
+                    22,
+                    34,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight:
+                          constraints.maxHeight - 54,
+                    ),
+                    child: Column(
+                      children: [
+                        // =============================
+                        // タイトル
+                        // =============================
+                        const Icon(
+                          Icons.home_rounded,
+                          size: 21,
+                          color: Color(0xFF846C96),
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        const Text(
+                          'ルナのおうち',
+                          style: TextStyle(
+                            fontSize: 27,
+                            fontWeight:
+                                FontWeight.w700,
+                            letterSpacing: 1.1,
+                            color:
+                                Color(0xFF5F4E6C),
+                          ),
+                        ),
+
+                        const SizedBox(height: 7),
+
+                        const Text(
+                          '今日も、ルナがここで待ってるよ。',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                Color(0xFF746B78),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // =============================
+                        // ルナ
+                        // =============================
+                        GestureDetector(
+                          onTap: petLuna,
+                          behavior:
+                              HitTestBehavior.opaque,
+                          child: AnimatedBuilder(
+                            animation:
+                                eatingAnimation,
+                            builder:
+                                (context, child) {
+                              return Transform.translate(
+                                offset: Offset(
+                                  0,
+                                  isEating
+                                      ? eatingAnimation
+                                          .value
+                                      : 0,
+                                ),
+                                child:
+                                    Transform.scale(
+                                  scale: isEating
+                                      ? 1.035
+                                      : 1,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Stack(
+                              clipBehavior:
+                                  Clip.none,
+                              alignment:
+                                  Alignment.center,
+                              children: [
+                                // ルナの後ろの淡い光
+                                Container(
+                                  width: 230,
+                                  height: 230,
+                                  decoration:
+                                      BoxDecoration(
+                                    color: Colors.white
+                                        .withOpacity(
+                                            0.38),
+                                    shape:
+                                        BoxShape.circle,
+                                  ),
+                                ),
+
+                                AnimatedScale(
+                                  scale:
+                                      isBeingPetted
+                                          ? 0.94
+                                          : 1,
+                                  duration:
+                                      const Duration(
+                                    milliseconds:
+                                        180,
+                                  ),
+                                  curve:
+                                      Curves.easeOut,
+                                  child:
+                                      Image.asset(
+                                    'assets/images/luna.png',
+                                    height: 205,
+                                    fit:
+                                        BoxFit.contain,
+                                  ),
+                                ),
+
+                                if (showPetHeart)
+                                  const Positioned(
+                                    top: 5,
+                                    right: 23,
+                                    child: Text(
+                                      '💗',
+                                      style:
+                                          TextStyle(
+                                        fontSize: 34,
+                                      ),
+                                    ),
+                                  ),
+
+                                if (isEating)
+                                  const Positioned(
+                                    bottom: 3,
+                                    child: Text(
+                                      '🍚',
+                                      style:
+                                          TextStyle(
+                                        fontSize: 38,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        const Text(
+                          'ルナをタップすると、なでられるよ',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color:
+                                Color(0xFF827887),
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // =============================
+                        // 吹き出し
+                        // =============================
+                        AnimatedSwitcher(
+                          duration:
+                              const Duration(
+                            milliseconds: 250,
+                          ),
+                          child: Container(
+                            key: ValueKey(
+                              lunaHouseMessage(),
+                            ),
+                            constraints:
+                                const BoxConstraints(
+                              maxWidth: 330,
+                            ),
+                            padding:
+                                const EdgeInsets
+                                    .fromLTRB(
+                              20,
+                              14,
+                              20,
+                              14,
+                            ),
+                            decoration:
+                                BoxDecoration(
+                              color: Colors.white
+                                  .withOpacity(0.86),
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(24),
+                              border:
+                                  Border.all(
+                                color:
+                                    const Color(
+                                  0xFFE7DCEB,
+                                ),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black
+                                      .withOpacity(
+                                          0.035),
+                                  blurRadius: 12,
+                                  offset:
+                                      const Offset(
+                                    0,
+                                    4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              lunaHouseMessage(),
+                              textAlign:
+                                  TextAlign.center,
+                              style:
+                                  const TextStyle(
+                                fontSize: 14,
+                                height: 1.5,
+                                fontWeight:
+                                    FontWeight.w600,
+                                color:
+                                    Color(0xFF62556B),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // =============================
+                        // ステータス
+                        // =============================
+                        Container(
+                          width: double.infinity,
+                          padding:
+                              const EdgeInsets
+                                  .fromLTRB(
+                            20,
+                            16,
+                            20,
+                            16,
+                          ),
+                          decoration:
+                              BoxDecoration(
+                            color: Colors.white
+                                .withOpacity(0.76),
+                            borderRadius:
+                                BorderRadius
+                                    .circular(26),
+                            border:
+                                Border.all(
+                              color: const Color(
+                                  0xFFE7DCEB),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              statusItem(
+                                emoji: '🍚',
+                                title: 'まんぷく',
+                                value:
+                                    '$fullness / 10',
+                                progress:
+                                    fullness / 10,
+                              ),
+
+                              Container(
+                                width: 1,
+                                height: 62,
+                                margin:
+                                    const EdgeInsets
+                                        .symmetric(
+                                  horizontal: 18,
+                                ),
+                                color:
+                                    const Color(
+                                  0xFFE8E0EA,
+                                ),
+                              ),
+
+                              statusItem(
+                                emoji: '💗',
+                                title: 'なつき度',
+                                value:
+                                    '$affection / 100',
+                                progress:
+                                    affection / 100,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // =============================
+                        // ごはんボタン
+                        // =============================
+                        SizedBox(
+                          width: 220,
+                          height: 48,
+                          child:
+                              ElevatedButton.icon(
+                            onPressed:
+                                isEating
+                                    ? null
+                                    : feedLuna,
+                            icon: const Text(
+                              '🍚',
+                              style:
+                                  TextStyle(
+                                fontSize: 17,
+                              ),
+                            ),
+                            label: Text(
+                              isEating
+                                  ? 'もぐもぐ中…'
+                                  : 'ごはんをあげる',
+                            ),
+                            style:
+                                ElevatedButton
+                                    .styleFrom(
+                              backgroundColor:
+                                  const Color(
+                                      0xFFF0E5F3),
+                              foregroundColor:
+                                  const Color(
+                                      0xFF6D577B),
+                              disabledBackgroundColor:
+                                  const Color(
+                                      0xFFE8E0EA),
+                              disabledForegroundColor:
+                                  const Color(
+                                      0xFF8B818E),
+                              elevation: 0,
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(24),
+                                side:
+                                    const BorderSide(
+                                  color: Color(
+                                      0xFFE0D4E5),
+                                ),
+                              ),
+                              textStyle:
+                                  const TextStyle(
+                                fontSize: 14,
+                                fontWeight:
+                                    FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // =============================
+                        // 小さなメッセージ
+                        // =============================
+                        Container(
+                          constraints:
+                              const BoxConstraints(
+                            maxWidth: 330,
+                          ),
+                          padding:
+                              const EdgeInsets
+                                  .symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          decoration:
+                              BoxDecoration(
+                            color: const Color(
+                                    0xFFFFF9FC)
+                                .withOpacity(0.72),
+                            borderRadius:
+                                BorderRadius
+                                    .circular(22),
+                          ),
+                          child: const Text(
+                            '何かを話しても、何も話さなくても大丈夫。\n'
+                            '今日は少しだけ、ルナのそばで休もう。',
+                            textAlign:
+                                TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              height: 1.6,
+                              color:
+                                  Color(0xFF716776),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // =============================
+                        // 戻る
+                        // =============================
+                        TextButton.icon(
+                          onPressed:
+                              widget.onBack,
+                          icon: const Icon(
+                            Icons
+                                .arrow_back_rounded,
+                            size: 17,
+                          ),
+                          label:
+                              const Text(
+                            '心の広場へ戻る',
+                          ),
+                          style:
+                              TextButton
+                                  .styleFrom(
+                            foregroundColor:
+                                const Color(
+                                    0xFF65536F),
+                            padding:
+                                const EdgeInsets
+                                    .symmetric(
+                              horizontal: 18,
+                              vertical: 11,
+                            ),
+                            textStyle:
+                                const TextStyle(
+                              fontSize: 13,
+                              fontWeight:
+                                  FontWeight
+                                      .w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-    ),
-  ),
-),
-),
-);
-}
-}
-class SpeechBubbleTailPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.92)
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..close();
-
-    canvas.drawPath(path, paint);
+    );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+  void dispose() {
+    eatingController.dispose();
+    super.dispose();
   }
 }
 

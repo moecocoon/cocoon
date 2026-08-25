@@ -138,6 +138,7 @@ void forgetFact(String fact) {
     // 恋愛：ユーザーから解決を求めた
 // -------------------------
 if (topic == 'love' &&
+    !solutionFlow.isActive &&
     (text.contains('どうしたらいい') ||
         text.contains('どうすればいい') ||
         text.contains('一緒に考えたい') ||
@@ -419,6 +420,145 @@ if (lastQuestionType == 'loveOpeningPlan') {
 
   lastQuestionType = null;
 }
+
+// -------------------------
+// 恋愛：LINEで伝える内容を決める
+// -------------------------
+if (lastQuestionType == 'loveContentPlan') {
+
+  if (text.contains('自分の気持ち') ||
+      text.contains('気持ちを伝える')) {
+
+    rememberFact('love_content_feelings');
+
+    forgetFact('love_content_apology');
+    forgetFact('love_content_question');
+    forgetFact('love_line_action_content');
+  }
+
+  else if (text.contains('謝りたい') ||
+      text.contains('謝る') ||
+      text.contains('ごめん')) {
+
+    rememberFact('love_content_apology');
+
+    forgetFact('love_content_feelings');
+    forgetFact('love_content_question');
+    forgetFact('love_line_action_content');
+  }
+
+  else if (text.contains('聞きたい') ||
+      text.contains('質問したい') ||
+      text.contains('相手に聞きたい')) {
+
+    rememberFact('love_content_question');
+
+    forgetFact('love_content_feelings');
+    forgetFact('love_content_apology');
+    forgetFact('love_line_action_content');
+  }
+
+  solutionFlow.complete();
+
+  lastQuestionType = null;
+}
+
+// -------------------------
+// 恋愛：自分の気持ちを整理する
+// -------------------------
+if (lastQuestionType == 'loveSortFeelingsPlan') {
+
+  // まだ好きな気持ちがある
+  if (text.contains('まだ好き') ||
+      text.contains('好きな気持ち')) {
+
+    rememberFact('love_feeling_still_loves');
+
+    forgetFact('love_feeling_hurt');
+    forgetFact('love_feeling_uncertain');
+  }
+
+  // 傷ついた気持ちが大きい
+  else if (text.contains('傷ついた') ||
+      text.contains('傷ついてる') ||
+      text.contains('つらい') ||
+      text.contains('辛い')) {
+
+    rememberFact('love_feeling_hurt');
+
+    forgetFact('love_feeling_still_loves');
+    forgetFact('love_feeling_uncertain');
+  }
+
+  // 自分でもまだ分からない
+  else if (text.contains('分からない') ||
+      text.contains('わからない') ||
+      text.contains('まだ分からない')) {
+
+    rememberFact('love_feeling_uncertain');
+
+    forgetFact('love_feeling_still_loves');
+    forgetFact('love_feeling_hurt');
+  }
+
+  // 最初の3択を繰り返さないように消す
+  forgetFact('love_solution_sort_feelings');
+
+  solutionFlow.complete();
+
+  lastQuestionType = null;
+}
+
+// -------------------------
+// 恋愛：少し待つ期間を決める
+// -------------------------
+if (lastQuestionType == 'loveWaitPlan') {
+
+  if (text.contains('今日まで') ||
+      text.contains('今日')) {
+
+    rememberFact('love_wait_today');
+    forgetFact('love_wait_tomorrow');
+  }
+
+  else if (text.contains('明日まで') ||
+      text.contains('明日')) {
+
+    rememberFact('love_wait_tomorrow');
+    forgetFact('love_wait_today');
+  }
+
+  forgetFact('love_solution_wait');
+
+  solutionFlow.complete();
+
+  lastQuestionType = null;
+}
+
+// -------------------------
+// 恋愛：LINEを送るタイミングを決める
+// -------------------------
+if (lastQuestionType == 'loveTimingPlan') {
+
+  if (text.contains('今日の夜') ||
+      text.contains('今夜') ||
+      text.contains('今日')) {
+
+    rememberFact('love_timing_tonight');
+    forgetFact('love_timing_tomorrow');
+  }
+
+  else if (text.contains('明日')) {
+
+    rememberFact('love_timing_tomorrow');
+    forgetFact('love_timing_tonight');
+  }
+
+  solutionFlow.complete();
+
+  lastQuestionType = null;
+}
+
 // -------------------------
 // 恋愛：今どうしたいか
 // -------------------------
