@@ -165,6 +165,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
 int selectedIndex = 0;
+String chatBackgroundPath =
+    'assets/images/chat_bg_default.png';
 MoodRecord? latestMood;
 MoodRecord? previousMood;
 List<MoodRecord> moodHistory = [];
@@ -175,10 +177,39 @@ int streakDays = 1;
 DateTime? lastMoodDate;
 bool showFirstHomeWelcome = false;
 
+Future<void> loadChatBackground() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final savedPath = prefs.getString('chatBackgroundPath');
+
+  if (!mounted) return;
+
+  setState(() {
+    chatBackgroundPath =
+        savedPath ?? 'assets/images/chat_bg_default.png';
+  });
+}
+
+Future<void> saveChatBackground(String newPath) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setString(
+    'chatBackgroundPath',
+    newPath,
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    chatBackgroundPath = newPath;
+  });
+}
+
 @override
 void initState() {
   super.initState();
   loadPetImage();
+  loadChatBackground();
   loadChatMessages();
   loadMoodRecord();
   loadMoodHistory();
@@ -632,11 +663,12 @@ void goToLunaHouse() {
 
 
       MoodRecordScreen(onSave: saveMood),
- ChatScreen(
+ChatScreen(
   messages: chatMessages,
   onMessagesChanged: saveChatMessages,
   latestMood: latestMood,
   onMemorySave: addLunaMemoryFromText,
+  chatBackgroundPath: chatBackgroundPath,
 ),
 
 
@@ -657,11 +689,13 @@ KokoroHirobaScreenV5(
 
 
 MyPageScreen(
-  petImagePath: petImagePath,
-  onPetImageChanged: updatePetImage,
   moodHistory: moodHistory,
- lunaBond: lunaBond,
- streakDays: streakDays,
+  lunaBond: lunaBond,
+  streakDays: streakDays,
+  currentChatBackgroundPath: chatBackgroundPath,
+  onChatBackgroundChanged: (newPath) {
+  saveChatBackground(newPath);
+},
 ),
 
 BreathingGuideScreen(onBack: goToKokoroHiroba),
@@ -5402,6 +5436,125 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ChatBackgroundShopScreen extends StatelessWidget {
+  const ChatBackgroundShopScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F3FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF8F3FA),
+        elevation: 0,
+        title: const Text(
+          '背景ショップ',
+          style: TextStyle(
+            color: Color(0xFF655472),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'COCOONを、もっとあなたらしい場所に。',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF746A7D),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset(
+                        'assets/images/chat_bg_default.png',
+                        width: double.infinity,
+                        height: 190,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '夢見るルナのお部屋',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF655472),
+                            ),
+                          ),
+                        ),
+
+                        Text(
+                          '無料',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF8E7BBE),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDE5F5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '使用中',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF725D8D),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

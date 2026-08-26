@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'chat_background_shop_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'emergency_contact_screen.dart';
 import '../models/mood_record.dart';
@@ -13,32 +14,21 @@ import 'package:cocoon/screens/support_contact_screen.dart';
 
 
 class MyPageScreen extends StatelessWidget {
-  final String? petImagePath;
-  final Function(String) onPetImageChanged;
   final List<MoodRecord> moodHistory;
   final int lunaBond;
   final int streakDays;
+  final Function(String) onChatBackgroundChanged;
+  final String currentChatBackgroundPath;
 
   const MyPageScreen({
     super.key,
-    required this.petImagePath,
-    required this.onPetImageChanged,
     required this.moodHistory,
     required this.lunaBond,
     required this.streakDays,
+    required this.onChatBackgroundChanged,
+    required this.currentChatBackgroundPath,
   });
 
-  Future<void> pickPetImage() async {
-    final picker = ImagePicker();
-
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
-
-    if (picked != null) {
-      onPetImageChanged(picked.path);
-    }
-  }
 
   Widget sectionTitle({
     required String title,
@@ -271,15 +261,7 @@ class MyPageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ImageProvider lunaImage;
-
-    if (!kIsWeb && petImagePath != null) {
-      lunaImage = FileImage(File(petImagePath!));
-    } else {
-      lunaImage = const AssetImage(
-        'assets/images/luna.png',
-      );
-    }
+   
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F3FA),
@@ -370,36 +352,15 @@ class MyPageScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: CircleAvatar(
-                            radius: 61,
-                            backgroundColor: const Color(0xFFF8F3FA),
-                            backgroundImage: lunaImage,
-                          ),
+                          child: const CircleAvatar(
+  radius: 61,
+  backgroundColor: Color(0xFFF8F3FA),
+  backgroundImage: AssetImage(
+    'assets/images/luna.png',
+  ),
+),
                         ),
-                        Positioned(
-                          right: -5,
-                          bottom: 2,
-                          child: GestureDetector(
-                            onTap: pickPetImage,
-                            child: Container(
-                              width: 39,
-                              height: 39,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF8E7BBE),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.photo_camera_rounded,
-                                color: Colors.white,
-                                size: 19,
-                              ),
-                            ),
-                          ),
-                        ),
+                        
                       ],
                     ),
 
@@ -535,39 +496,52 @@ class MyPageScreen extends StatelessWidget {
                       },
                     ),
 
+                                        menuTile(
+                      icon: Icons.wallpaper_rounded,
+                      title: '背景ショップ',
+                      subtitle: 'お気に入りの景色に着せ替える',
+                      backgroundColor: const Color(0xFFFFF3E8),
+                      iconColor: const Color(0xFFB88762),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                         MaterialPageRoute(
+  builder: (_) => ChatBackgroundShopScreen(
+    onBackgroundSelected: onChatBackgroundChanged,
+    currentBackgroundPath: currentChatBackgroundPath,
+  ),
+),
+                        );
+                      },
+                    ),
+
                     const SizedBox(height: 20),
+
+               
 
                     sectionTitle(
                       title: 'わたしとルナ',
                       subtitle: 'COCOONを自分らしい場所に',
                     ),
 
-                    Row(
-                      children: [
-                        smallMenuTile(
-                          icon: Icons.person_rounded,
-                          title: 'あなたのこと',
-                          backgroundColor: const Color(0xFFF4EEFA),
-                          iconColor: const Color(0xFF9273AF),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProfileSetupScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 12),
-                        smallMenuTile(
-                          icon: Icons.pets_rounded,
-                          title: 'ルナの写真',
-                          backgroundColor: const Color(0xFFFFF0E8),
-                          iconColor: const Color(0xFFC58B67),
-                          onTap: pickPetImage,
-                        ),
-                      ],
-                    ),
+                   Row(
+  children: [
+    smallMenuTile(
+      icon: Icons.person_rounded,
+      title: 'あなたのこと',
+      backgroundColor: const Color(0xFFF4EEFA),
+      iconColor: const Color(0xFF9273AF),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProfileSetupScreen(),
+          ),
+        );
+      },
+    ),
+  ],
+),
 
                     const SizedBox(height: 32),
 

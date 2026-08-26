@@ -49,6 +49,7 @@ class ChatScreen extends StatefulWidget {
   final VoidCallback onMessagesChanged;
   final MoodRecord? latestMood;
   final Function(String) onMemorySave;
+  final String chatBackgroundPath;
 
 
 const ChatScreen({
@@ -56,6 +57,7 @@ const ChatScreen({
   required this.messages,
   required this.onMessagesChanged,
   required this.onMemorySave,
+  required this.chatBackgroundPath,
   this.latestMood,
 });
 
@@ -88,6 +90,14 @@ String latestInsight = "";
 @override
 void initState() {
   super.initState();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+  if (scrollController.hasClients) {
+    scrollController.jumpTo(
+      scrollController.position.maxScrollExtent,
+    );
+  }
+});
 
   loadCurrentTopic();
   loadCurrentPerson();
@@ -3574,8 +3584,15 @@ if (text.contains('誰にも言えない') ||
    return Scaffold(
   resizeToAvoidBottomInset: true,
   backgroundColor: const Color(0xFFF8F3FA),
-  body: SafeArea(
-        child: Column(
+  body: Container(
+  decoration: BoxDecoration(
+    image: DecorationImage(
+      image: AssetImage(widget.chatBackgroundPath),
+      fit: BoxFit.cover,
+    ),
+  ),
+  child: SafeArea(
+    child: Column(
           children: [
             Container(
   width: double.infinity,
@@ -3900,16 +3917,7 @@ Container(
 
 Expanded(
   child: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFFF8F4FC),
-          Color(0xFFFFFFFF),
-        ],
-      ),
-    ),
+    color: Colors.transparent,
     child: Column(
       children: [
       Expanded(
@@ -4141,6 +4149,7 @@ Container(
 ),
           ],
         ),
+      ),
       ),
     );
   }
