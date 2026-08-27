@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import '../services/purchase_service.dart';
 class ChatBackgroundShopScreen extends StatefulWidget {
@@ -23,22 +25,51 @@ class _ChatBackgroundShopScreenState
       PurchaseService.instance;
 
   bool isLoading = true;
+  bool starNightPurchased = false;
+  late String selectedBackgroundPath;
 
-  @override
-  void initState() {
-    super.initState();
-    initializePurchase();
-  }
+@override
+void initState() {
+  super.initState();
 
-  Future<void> initializePurchase() async {
-    await purchaseService.initialize();
+  selectedBackgroundPath =
+      widget.currentBackgroundPath;
 
-    if (!mounted) return;
+  purchaseService.starNightPurchasedNotifier
+      .addListener(_onPurchaseChanged);
 
-    setState(() {
-      isLoading = false;
-    });
-  }
+  initializePurchase();
+}
+
+void _onPurchaseChanged() {
+  if (!mounted) return;
+
+  setState(() {
+    starNightPurchased =
+        purchaseService.starNightPurchasedNotifier.value;
+  });
+}
+
+@override
+void dispose() {
+  purchaseService.starNightPurchasedNotifier
+      .removeListener(_onPurchaseChanged);
+
+  super.dispose();
+}
+
+ Future<void> initializePurchase() async {
+  await purchaseService.initialize();
+
+  if (!mounted) return;
+
+  setState(() {
+    starNightPurchased =
+        purchaseService.starNightPurchased;
+
+    isLoading = false;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +101,32 @@ class _ChatBackgroundShopScreenState
                   color: Color(0xFF746A7D),
                 ),
               ),
+
+Align(
+  alignment: Alignment.centerRight,
+  child: TextButton.icon(
+    onPressed: () async {
+      await purchaseService.restorePurchases();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '購入履歴を確認しています',
+          ),
+        ),
+      );
+    },
+    icon: const Icon(
+      Icons.restore_rounded,
+      size: 18,
+    ),
+    label: const Text(
+      '購入を復元',
+    ),
+  ),
+),
 
               const SizedBox(height: 24),
 
@@ -132,15 +189,18 @@ class _ChatBackgroundShopScreenState
   width: double.infinity,
   child: ElevatedButton(
     onPressed:
-        widget.currentBackgroundPath ==
+        selectedBackgroundPath==
                 'assets/images/chat_bg_default.png'
             ? null
             : () {
-                widget.onBackgroundSelected(
-                  'assets/images/chat_bg_default.png',
-                );
+widget.onBackgroundSelected(
+  'assets/images/chat_bg_default.png',
+);
 
-                setState(() {});
+setState(() {
+  selectedBackgroundPath =
+      'assets/images/chat_bg_default.png';
+});
               },
     style: ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFFEDE5F5),
@@ -156,7 +216,7 @@ class _ChatBackgroundShopScreenState
       ),
     ),
     child: Text(
-      widget.currentBackgroundPath ==
+      selectedBackgroundPath ==
               'assets/images/chat_bg_default.png'
           ? '使用中'
           : 'この背景にする',
@@ -200,7 +260,7 @@ class _ChatBackgroundShopScreenState
 
                     const SizedBox(height: 14),
 
-                    const Row(
+                    Row(
                       children: [
                         Expanded(
                           child: Text(
@@ -213,7 +273,7 @@ class _ChatBackgroundShopScreenState
                           ),
                         ),
                         Text(
-                          '¥160',
+  purchaseService.starNightProduct?.price ?? '¥160',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -234,28 +294,114 @@ class _ChatBackgroundShopScreenState
                     ),
 
                     const SizedBox(height: 12),
+
+  TextButton(
+  onPressed: () async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setBool(
+      'purchased_star_night',
+      false,
+    );
+
+    if (!mounted) return;
+
+setState(() {
+  starNightPurchased = false;
+  selectedBackgroundPath =
+      'assets/images/chat_bg_default.png';
+});
+
+widget.onBackgroundSelected(
+  'assets/images/chat_bg_default.png',
+);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '開発用：購入状態をリセットしました',
+        ),
+      ),
+    );
+  },
+  child: const Text(
+    '購入状態をリセット（開発用）',
+  ),
+),
+
+const SizedBox(height: 8),
+
 SizedBox(
   width: double.infinity,
   child: ElevatedButton(
- onPressed:
-    widget.currentBackgroundPath ==
+onPressed: isLoading
+    ? null
+    : selectedBackgroundPath ==
             'assets/images/chat_bg_star_night.png'
         ? null
-        : () {
-            widget.onBackgroundSelected(
-              'assets/images/chat_bg_star_night.png',
-            );
+        : starNightPurchased
+            ? () {
+                widget.onBackgroundSelected(
+                  'assets/images/chat_bg_star_night.png',
+                );
 
-            setState(() {});
+                setState(() {
+  selectedBackgroundPath =
+      'assets/images/chat_bg_star_night.png';
+});
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  '星降るルナの夜空に変更しました 🌙',
-                ),
-              ),
-            );
-          },
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      '星降るルナの夜空に変更しました 🌙',
+                    ),
+                  ),
+                );
+              }
+           : () async {
+    // ChromeなどWeb版では開発用の仮購入
+    if (kIsWeb) {
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      await prefs.setBool(
+        'purchased_star_night',
+        true,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        starNightPurchased = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '開発用：購入テストが完了しました',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    // iPhoneなどでは本物のストア購入
+    try {
+      await purchaseService.buyStarNight();
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '購入を開始できませんでした。',
+          ),
+        ),
+      );
+    }
+  },
     style: ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFF8E7BBE),
       foregroundColor: Colors.white,
@@ -267,15 +413,17 @@ SizedBox(
       ),
       elevation: 0,
     ),
-    child: Text(
-  widget.currentBackgroundPath ==
+  child: Text(
+  selectedBackgroundPath==
           'assets/images/chat_bg_star_night.png'
       ? '使用中'
-      : 'この背景にする',
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
-      ),
-    ),
+      : starNightPurchased
+          ? 'この背景にする'
+         : '🔒 ${purchaseService.starNightProduct?.price ?? '¥160'}で購入',
+  style: const TextStyle(
+    fontWeight: FontWeight.bold,
+  ),
+),
   ),
 ),
                   ],

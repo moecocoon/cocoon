@@ -20,6 +20,8 @@ class PurchaseService {
 
   bool storeAvailable = false;
   bool starNightPurchased = false;
+  final ValueNotifier<bool> starNightPurchasedNotifier =
+    ValueNotifier<bool>(false);
 
   Future<void> initialize() async {
     await _loadSavedPurchases();
@@ -109,23 +111,27 @@ class PurchaseService {
     }
   }
 
-  Future<void> _unlockStarNight() async {
-    starNightPurchased = true;
+ Future<void> _unlockStarNight() async {
+  starNightPurchased = true;
+  starNightPurchasedNotifier.value = true;
 
-    final prefs = await SharedPreferences.getInstance();
+  final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setBool(
-      'purchased_star_night',
-      true,
-    );
-  }
+  await prefs.setBool(
+    'purchased_star_night',
+    true,
+  );
+}
 
-  Future<void> _loadSavedPurchases() async {
-    final prefs = await SharedPreferences.getInstance();
+Future<void> _loadSavedPurchases() async {
+  final prefs = await SharedPreferences.getInstance();
 
-    starNightPurchased =
-        prefs.getBool('purchased_star_night') ?? false;
-  }
+  starNightPurchased =
+      prefs.getBool('purchased_star_night') ?? false;
+
+  starNightPurchasedNotifier.value =
+      starNightPurchased;
+}
 
   Future<void> dispose() async {
     await _subscription?.cancel();
