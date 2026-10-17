@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -47,12 +48,7 @@ class _HomeScreenState extends State<HomeScreen>
     _floatingAnimation = Tween<double>(
       begin: -6,
       end: 6,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -61,11 +57,26 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  // 🐶 ルナの成長レベル
+  int get lunaLevel {
+    if (widget.lunaBond >= 100) return 4;
+    if (widget.lunaBond >= 50) return 3;
+    if (widget.lunaBond >= 20) return 2;
+    return 1;
+  }
+
+  // 🌷 レベルごとの名前
   String getBondLevel() {
-    if (widget.lunaBond >= 100) return 'かぞく';
-    if (widget.lunaBond >= 30) return 'しんゆう';
-    if (widget.lunaBond >= 10) return 'なかよし';
-    return 'おともだち';
+    switch (lunaLevel) {
+      case 4:
+        return 'ずっと一緒';
+      case 3:
+        return 'たいせつな友達';
+      case 2:
+        return 'なかよし';
+      default:
+        return 'はじめまして';
+    }
   }
 
   String getLunaMessage() {
@@ -138,9 +149,7 @@ class _HomeScreenState extends State<HomeScreen>
     return 'まだ起きてたんだね🌙\nルナはここにいるよ🐶';
   }
 
-  MapEntry<String, double>? strongestEmotion(
-    MoodRecord? mood,
-  ) {
+  MapEntry<String, double>? strongestEmotion(MoodRecord? mood) {
     if (mood == null || mood.emotionPercents.isEmpty) {
       return null;
     }
@@ -187,82 +196,72 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   String getWeekday(DateTime date) {
-    const weekdays = [
-      '月',
-      '火',
-      '水',
-      '木',
-      '金',
-      '土',
-      '日',
-    ];
+    const weekdays = ['月', '火', '水', '木', '金', '土', '日'];
 
     return weekdays[date.weekday - 1];
   }
 
-  Widget sectionTitle({
-  required String title,
-  required String subtitle,
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(
-      left: 4,
-      bottom: 12,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 21,
-            fontWeight: FontWeight.w700,
+  Widget sectionTitle({required String title, required String subtitle}) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
 
-            // 背景の上でも読みやすい濃い色
-            color: Color(0xFF4F4852),
+              // 背景の上でも読みやすい濃い色
+              color: Color(0xFF4F4852),
+            ),
           ),
-        ),
 
-        const SizedBox(height: 3),
+          const SizedBox(height: 3),
 
-        Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
 
-            // 今までより少し濃く
-            color: Color(0xFF68616B),
+              // 今までより少し濃く
+              color: Color(0xFF68616B),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget homeCard({
     required Widget child,
     EdgeInsetsGeometry padding = const EdgeInsets.all(19),
   }) {
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.90),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.92),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF8E7BBE).withOpacity(0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.90),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.white.withOpacity(0.92)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF8E7BBE).withOpacity(0.10),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: child,
-    );
+          child: child,
+        ), // Container
+      ), // BackdropFilter
+    ); // ClipRRect
   }
 
   Widget statusItem({
@@ -273,10 +272,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Expanded(
       child: Column(
         children: [
-          Text(
-            emoji,
-            style: const TextStyle(fontSize: 22),
-          ),
+          Text(emoji, style: const TextStyle(fontSize: 22)),
           const SizedBox(height: 5),
           Text(
             value,
@@ -290,99 +286,210 @@ class _HomeScreenState extends State<HomeScreen>
           const SizedBox(height: 3),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 10,
-              color: Color(0xFF8A7D92),
-            ),
+            style: const TextStyle(fontSize: 10, color: Color(0xFF8A7D92)),
           ),
         ],
       ),
     );
   }
-  Widget lunaHeroCard() {
-  return Column(
-    children: [
-      // ==============================
-      // ルナ
-      // ==============================
-      SizedBox(
-        height: 215,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // ルナの後ろのやわらかい光
-            Container(
-              width: 205,
-              height: 205,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.28),
-              ),
-            ),
 
-            // ルナ
-            !kIsWeb && widget.petImagePath != null
-                ? Image.file(
-                    File(widget.petImagePath!),
-                    height: 190,
-                    fit: BoxFit.contain,
-                  )
-                : AnimatedBuilder(
-                    animation: _floatingAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(
-                          0,
-                          _floatingAnimation.value,
-                        ),
-                        child: child,
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/images/luna.png',
+  Widget lunaHeroCard() {
+    return Column(
+      children: [
+        // ==============================
+        // ルナ
+        // ==============================
+        SizedBox(
+          height: 215,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // ルナの後ろのやわらかい光
+              Container(
+                width: 205,
+                height: 205,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.28),
+                ),
+              ),
+
+              // ルナ
+              !kIsWeb && widget.petImagePath != null
+                  ? Image.file(
+                      File(widget.petImagePath!),
                       height: 190,
                       fit: BoxFit.contain,
-                      errorBuilder: (
-                        context,
-                        error,
-                        stackTrace,
-                      ) {
-                        return const Icon(
-                          Icons.pets_rounded,
-                          size: 90,
-                          color: Color(0xFF8E7BBE),
+                    )
+                  : AnimatedBuilder(
+                      animation: _floatingAnimation,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(0, _floatingAnimation.value),
+                          child: child,
                         );
                       },
+                      child: Image.asset(
+                        'assets/images/luna.png',
+                        height: 190,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.pets_rounded,
+                            size: 90,
+                            color: Color(0xFF8E7BBE),
+                          );
+                        },
+                      ),
+                    ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        // ==============================
+        // ルナの吹き出し
+        // ==============================
+        Container(
+          constraints: const BoxConstraints(maxWidth: 340),
+          padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.82),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.90)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.035),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 15,
+                    color: Color(0xFF8E7BBE),
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'ルナからのメッセージ',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF817387),
                     ),
                   ),
-          ],
-        ),
-      ),
+                ],
+              ),
 
-      const SizedBox(height: 4),
+              const SizedBox(height: 8),
 
-      // ==============================
-      // ルナの吹き出し
-      // ==============================
-      Container(
-        constraints: const BoxConstraints(
-          maxWidth: 340,
-        ),
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          15,
-          20,
-          15,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.82),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.90),
+              Text(
+                getLunaMessage(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.55,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF574F5C),
+                ),
+              ),
+            ],
           ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // ==============================
+        // 絆・継続日数・関係
+        // ==============================
+        Container(
+          constraints: const BoxConstraints(maxWidth: 340),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.64),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withOpacity(0.76)),
+          ),
+          child: Row(
+            children: [
+              statusItem(
+                emoji: '♡',
+                value: '${widget.lunaBond}',
+                label: 'ルナとの絆',
+              ),
+
+              Container(width: 1, height: 38, color: const Color(0xFFE4DDE7)),
+
+              statusItem(
+                emoji: '🔥',
+                value: '${widget.streakDays}日',
+                label: '継続日数',
+              ),
+
+              Container(width: 1, height: 38, color: const Color(0xFFE4DDE7)),
+
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🐾', style: TextStyle(fontSize: 24)),
+
+                    const SizedBox(height: 8),
+
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        getBondLevel(),
+                        maxLines: 1,
+                        softWrap: false,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF665272),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    const Text(
+                      '今の関係',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF96869E)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget todayMoodCard() {
+    final mood = widget.latestMood;
+
+    // ==========================================
+    // まだ今日の気分を記録していない
+    // ==========================================
+    if (mood == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.76),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: Colors.white.withOpacity(0.85)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.035),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -390,120 +497,64 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         child: Column(
           children: [
-            const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 15,
-                  color: Color(0xFF8E7BBE),
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'ルナからのメッセージ',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF817387),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              getLunaMessage(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                height: 1.55,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF574F5C),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF4EEF7),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.cloud_outlined,
+                size: 24,
+                color: Color(0xFF8E7BBE),
               ),
             ),
-          ],
-        ),
-      ),
 
-      const SizedBox(height: 14),
+            const SizedBox(height: 13),
 
-      // ==============================
-      // 絆・継続日数・関係
-      // ==============================
-      Container(
-        constraints: const BoxConstraints(
-          maxWidth: 340,
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 12,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.64),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.76),
-          ),
-        ),
-        child: Row(
-          children: [
-            statusItem(
-              emoji: '♡',
-              value: '${widget.lunaBond}',
-              label: 'ルナとの絆',
+            const Text(
+              'まだ今日の気分は記録されていません',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF5D5660),
+              ),
             ),
 
-            Container(
-              width: 1,
-              height: 38,
-              color: const Color(0xFFE4DDE7),
-            ),
+            const SizedBox(height: 5),
 
-            statusItem(
-              emoji: '🔥',
-              value: '${widget.streakDays}日',
-              label: '継続日数',
-            ),
-
-            Container(
-              width: 1,
-              height: 38,
-              color: const Color(0xFFE4DDE7),
-            ),
-
-            statusItem(
-              emoji: '🐾',
-              value: getBondLevel(),
-              label: '今の関係',
+            const Text(
+              '今の心を、少しだけ残してみよう。',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: Color(0xFF817A84)),
             ),
           ],
         ),
-      ),
-    ],
-  );
-}
-Widget todayMoodCard() {
-  final mood = widget.latestMood;
+      );
+    }
 
-  // ==========================================
-  // まだ今日の気分を記録していない
-  // ==========================================
-  if (mood == null) {
+    // ==========================================
+    // 一番大きい感情
+    // ==========================================
+    final strongest = strongestEmotion(mood);
+
+    final emotionName = strongest?.key ?? '今の気持ち';
+
+    final emotionValue = strongest?.value ?? 0;
+
+    final emotionColor = strongest == null
+        ? const Color(0xFF8E7BBE)
+        : getEmotionColor(strongest.key);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        22,
-        20,
-        20,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.76),
+        color: Colors.white.withOpacity(0.78),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.85),
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.88)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -513,236 +564,134 @@ Widget todayMoodCard() {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF4EEF7),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.cloud_outlined,
-              size: 24,
-              color: Color(0xFF8E7BBE),
+          // ======================================
+          // 天気 ＋ 今日
+          // ======================================
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F2F8),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Text(mood.weather, style: const TextStyle(fontSize: 25)),
+              ),
+
+              const SizedBox(width: 13),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '今日いちばん近い気持ち',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF817A84),
+                      ),
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      emotionName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF554F59),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Text(
+                '${emotionValue.round()}%',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  color: emotionColor,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ======================================
+          // 感情バー
+          // ======================================
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: (emotionValue / 100).clamp(0.0, 1.0),
+              minHeight: 7,
+              backgroundColor: const Color(0xFFEDE8EF),
+              valueColor: AlwaysStoppedAnimation<Color>(emotionColor),
             ),
           ),
 
-          const SizedBox(height: 13),
+          // ======================================
+          // メモ
+          // ======================================
+          if (mood.memo.trim().isNotEmpty) ...[
+            const SizedBox(height: 16),
 
-          const Text(
-            'まだ今日の気分は記録されていません',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF5D5660),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F5F8).withOpacity(0.86),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                mood.memo,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.5,
+                  color: Color(0xFF6D6670),
+                ),
+              ),
             ),
-          ),
+          ],
 
-          const SizedBox(height: 5),
+          const SizedBox(height: 17),
 
-          const Text(
-            '今の心を、少しだけ残してみよう。',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12.5,
-              color: Color(0xFF817A84),
+          // ======================================
+          // COCOONに話す
+          // ======================================
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: widget.onTalkAboutMood,
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+              label: const Text('この気持ちをCOCOONに話す'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8E7BBE),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(23),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
-
-  // ==========================================
-  // 一番大きい感情
-  // ==========================================
-  final strongest = strongestEmotion(mood);
-
-  final emotionName =
-      strongest?.key ?? '今の気持ち';
-
-  final emotionValue =
-      strongest?.value ?? 0;
-
-  final emotionColor = strongest == null
-      ? const Color(0xFF8E7BBE)
-      : getEmotionColor(strongest.key);
-
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(
-      20,
-      20,
-      20,
-      18,
-    ),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.78),
-      borderRadius: BorderRadius.circular(26),
-      border: Border.all(
-        color: Colors.white.withOpacity(0.88),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.03),
-          blurRadius: 14,
-          offset: const Offset(0, 5),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ======================================
-        // 天気 ＋ 今日
-        // ======================================
-        Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F2F8),
-                borderRadius: BorderRadius.circular(17),
-              ),
-              child: Text(
-                mood.weather,
-                style: const TextStyle(
-                  fontSize: 25,
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 13),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '今日いちばん近い気持ち',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Color(0xFF817A84),
-                    ),
-                  ),
-
-                  const SizedBox(height: 3),
-
-                  Text(
-                    emotionName,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF554F59),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Text(
-              '${emotionValue.round()}%',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                color: emotionColor,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // ======================================
-        // 感情バー
-        // ======================================
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: LinearProgressIndicator(
-            value: (emotionValue / 100)
-                .clamp(0.0, 1.0),
-            minHeight: 7,
-            backgroundColor:
-                const Color(0xFFEDE8EF),
-            valueColor:
-                AlwaysStoppedAnimation<Color>(
-              emotionColor,
-            ),
-          ),
-        ),
-
-        // ======================================
-        // メモ
-        // ======================================
-        if (mood.memo.trim().isNotEmpty) ...[
-          const SizedBox(height: 16),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 15,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F5F8)
-                  .withOpacity(0.86),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Text(
-              mood.memo,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12.5,
-                height: 1.5,
-                color: Color(0xFF6D6670),
-              ),
-            ),
-          ),
-        ],
-
-        const SizedBox(height: 17),
-
-        // ======================================
-        // COCOONに話す
-        // ======================================
-        SizedBox(
-          width: double.infinity,
-          height: 46,
-          child: ElevatedButton.icon(
-            onPressed: widget.onTalkAboutMood,
-            icon: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 17,
-            ),
-            label: const Text(
-              'この気持ちをCOCOONに話す',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  const Color(0xFF8E7BBE),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(23),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
 
   MoodRecord? moodForDay(DateTime targetDay) {
     final records = widget.moodHistory.where((mood) {
@@ -756,9 +705,7 @@ Widget todayMoodCard() {
     return records.last;
   }
 
-  Future<void> showMoodDetails(
-    MoodRecord mood,
-  ) async {
+  Future<void> showMoodDetails(MoodRecord mood) async {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -786,20 +733,18 @@ Widget todayMoodCard() {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...mood.emotionPercents.entries.map(
-                  (entry) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        '${entry.key}：${entry.value.round()}%',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6D6478),
-                        ),
+                ...mood.emotionPercents.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${entry.key}：${entry.value.round()}%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6D6478),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                }),
                 if (mood.memo.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Text(
@@ -833,248 +778,435 @@ Widget todayMoodCard() {
       },
     );
   }
-Widget sevenDayChart() {
-  final today = DateTime.now();
 
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(
-      16,
-      20,
-      16,
-      16,
-    ),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.76),
-      borderRadius: BorderRadius.circular(26),
-      border: Border.all(
-        color: Colors.white.withOpacity(0.86),
+  Widget sevenDayChart() {
+    final today = DateTime.now();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.76),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withOpacity(0.86)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.03),
-          blurRadius: 14,
-          offset: const Offset(0, 5),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        // ==============================
-        // 上の小さな案内
-        // ==============================
-        Row(
-          children: [
-            const Icon(
-              Icons.auto_graph_rounded,
-              size: 17,
-              color: Color(0xFF8E7BBE),
-            ),
-
-            const SizedBox(width: 7),
-
-            const Text(
-              '7日間のこころ',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF716978),
+      child: Column(
+        children: [
+          // ==============================
+          // 上の小さな案内
+          // ==============================
+          Row(
+            children: [
+              const Icon(
+                Icons.auto_graph_rounded,
+                size: 17,
+                color: Color(0xFF8E7BBE),
               ),
-            ),
 
-            const Spacer(),
+              const SizedBox(width: 7),
 
-            Text(
-              '${today.month}月',
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF918994),
+              const Text(
+                '7日間のこころ',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF716978),
+                ),
               ),
-            ),
-          ],
-        ),
 
-        const SizedBox(height: 24),
+              const Spacer(),
 
-        // ==============================
-        // 7日間グラフ
-        // ==============================
-        SizedBox(
-          height: 170,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: List.generate(7, (index) {
-              final targetDay = today.subtract(
-                Duration(days: 6 - index),
-              );
+              Text(
+                '${today.month}月',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: Color(0xFF918994),
+                ),
+              ),
+            ],
+          ),
 
-              final mood = moodForDay(targetDay);
-              final strongest = strongestEmotion(mood);
+          const SizedBox(height: 24),
 
-              final value = strongest?.value ?? 0;
+          // ==============================
+          // 7日間グラフ
+          // ==============================
+          SizedBox(
+            height: 170,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(7, (index) {
+                final targetDay = today.subtract(Duration(days: 6 - index));
 
-              final barColor = strongest == null
-                  ? const Color(0xFFDCD6DF)
-                  : getEmotionColor(strongest.key);
+                final mood = moodForDay(targetDay);
+                final strongest = strongestEmotion(mood);
 
-              final isToday =
-                  targetDay.year == today.year &&
-                  targetDay.month == today.month &&
-                  targetDay.day == today.day;
+                final value = strongest?.value ?? 0;
 
-              // 記録がある日は最低でも少しバーを見せる
-              final barHeight = mood == null
-                  ? 8.0
-                  : 20.0 + (value / 100 * 65);
+                final barColor = strongest == null
+                    ? const Color(0xFFDCD6DF)
+                    : getEmotionColor(strongest.key);
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: mood == null
-                      ? null
-                      : () {
-                          showMoodDetails(mood);
-                        },
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.end,
-                    children: [
-                      // --------------------------
-                      // %
-                      // --------------------------
-                      SizedBox(
-                        height: 20,
-                        child: mood == null
-                            ? const SizedBox.shrink()
-                            : Text(
-                                '${value.round()}%',
-                                style: TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight:
-                                      FontWeight.w600,
-                                  color: barColor,
+                final isToday =
+                    targetDay.year == today.year &&
+                    targetDay.month == today.month &&
+                    targetDay.day == today.day;
+
+                // 記録がある日は最低でも少しバーを見せる
+                final barHeight = mood == null
+                    ? 8.0
+                    : 20.0 + (value / 100 * 65);
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: mood == null
+                        ? null
+                        : () {
+                            showMoodDetails(mood);
+                          },
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // --------------------------
+                        // %
+                        // --------------------------
+                        SizedBox(
+                          height: 20,
+                          child: mood == null
+                              ? const SizedBox.shrink()
+                              : Text(
+                                  '${value.round()}%',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: barColor,
+                                  ),
                                 ),
-                              ),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      // --------------------------
-                      // バー
-                      // --------------------------
-                      AnimatedContainer(
-                        duration: const Duration(
-                          milliseconds: 350,
                         ),
-                        curve: Curves.easeOutCubic,
-                        width: 13,
-                        height: barHeight,
-                        decoration: BoxDecoration(
-                          color: mood == null
-                              ? const Color(0xFFE8E3EA)
-                              : barColor.withOpacity(
-                                  isToday ? 0.95 : 0.72,
-                                ),
-                          borderRadius:
-                              BorderRadius.circular(10),
+
+                        const SizedBox(height: 4),
+
+                        // --------------------------
+                        // バー
+                        // --------------------------
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeOutCubic,
+                          width: 13,
+                          height: barHeight,
+                          decoration: BoxDecoration(
+                            color: mood == null
+                                ? const Color(0xFFE8E3EA)
+                                : barColor.withOpacity(isToday ? 0.95 : 0.72),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 8),
+                        const SizedBox(height: 8),
 
-                      // --------------------------
-                      // 天気
-                      // --------------------------
-                      SizedBox(
-                        height: 20,
-                        child: Text(
-                          mood?.weather ?? '・',
-                          style: TextStyle(
-                            fontSize:
-                                mood == null ? 12 : 15,
-                            color: const Color(
-                              0xFF918994,
+                        // --------------------------
+                        // 天気
+                        // --------------------------
+                        SizedBox(
+                          height: 20,
+                          child: Text(
+                            mood?.weather ?? '・',
+                            style: TextStyle(
+                              fontSize: mood == null ? 12 : 15,
+                              color: const Color(0xFF918994),
                             ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 5),
+                        const SizedBox(height: 5),
 
-                      // --------------------------
-                      // 曜日
-                      // --------------------------
-                      Container(
-                        width: 27,
-                        height: 27,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isToday
-                              ? const Color(0xFF8E7BBE)
-                              : Colors.transparent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          getWeekday(targetDay),
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: isToday
-                                ? FontWeight.w700
-                                : FontWeight.w500,
+                        // --------------------------
+                        // 曜日
+                        // --------------------------
+                        Container(
+                          width: 27,
+                          height: 27,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
                             color: isToday
-                                ? Colors.white
-                                : const Color(
-                                    0xFF756E78,
-                                  ),
+                                ? const Color(0xFF8E7BBE)
+                                : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            getWeekday(targetDay),
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isToday
+                                  ? Colors.white
+                                  : const Color(0xFF756E78),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
-        ),
 
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
 
-        // ==============================
-        // 下の案内
-        // ==============================
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.touch_app_outlined,
-              size: 13,
-              color: Color(0xFF9A929C),
-            ),
-
-            const SizedBox(width: 5),
-
-            Text(
-              widget.moodHistory.isEmpty
-                  ? '気分を記録すると、ここに残っていくよ'
-                  : '曜日をタップすると、その日の記録を見られるよ',
-              style: const TextStyle(
-                fontSize: 10.5,
-                color: Color(0xFF918994),
+          // ==============================
+          // 下の案内
+          // ==============================
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.touch_app_outlined,
+                size: 13,
+                color: Color(0xFF9A929C),
               ),
+
+              const SizedBox(width: 5),
+
+              Text(
+                widget.moodHistory.isEmpty
+                    ? '気分を記録すると、ここに残っていくよ'
+                    : '曜日をタップすると、その日の記録を見られるよ',
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  color: Color(0xFF918994),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🐶 ルナの成長カード（リニューアル版）
+  Widget lunaGrowthCard() {
+    final bond = widget.lunaBond;
+
+    final int levelStart;
+    final int nextLevelPoint;
+    final String nextLevelName;
+
+    if (bond < 20) {
+      levelStart = 0;
+      nextLevelPoint = 20;
+      nextLevelName = 'なかよし';
+    } else if (bond < 50) {
+      levelStart = 20;
+      nextLevelPoint = 50;
+      nextLevelName = 'たいせつな友達';
+    } else if (bond < 100) {
+      levelStart = 50;
+      nextLevelPoint = 100;
+      nextLevelName = 'ずっと一緒';
+    } else {
+      levelStart = 100;
+      nextLevelPoint = 100;
+      nextLevelName = '';
+    }
+
+    final isMaxLevel = lunaLevel == 4;
+
+    final double progress = isMaxLevel
+        ? 1.0
+        : ((bond - levelStart) / (nextLevelPoint - levelStart))
+              .clamp(0.0, 1.0)
+              .toDouble();
+
+    final remainingPoints = isMaxLevel ? 0 : nextLevelPoint - bond;
+
+    const mainColor = Color(0xFF665272);
+    const accentColor = Color(0xFFB79BCB);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xBFFFFFFF), Color(0x99F4EAF8)],
             ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.75),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6F5A80).withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ヘッダー
+              Row(
+                children: [
+                  const Icon(Icons.pets_outlined, size: 19, color: accentColor),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "LUNA'S GROWTH",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                        color: Color(0xFF8B7897),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0E8F5),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'LEVEL ${lunaLevel.toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                        color: mainColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 22),
+
+              // 関係レベル
+              const Text(
+                'ルナとの関係',
+                style: TextStyle(fontSize: 12, color: Color(0xFF96869E)),
+              ),
+
+              const SizedBox(height: 5),
+
+              Text(
+                getBondLevel(),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: mainColor,
+                ),
+              ),
+
+              const SizedBox(height: 7),
+
+              Text(
+                isMaxLevel ? 'これからも、ゆっくり一緒に過ごそう。' : '少しずつ、絆を育てていこう。',
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: Color(0xFF8A7B91),
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              const Divider(color: Color(0xFFE9E0EC), height: 1),
+
+              const SizedBox(height: 20),
+
+              // ポイント表示
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '絆の成長',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: mainColor,
+                    ),
+                  ),
+                  Text(
+                    isMaxLevel ? '$bond pt' : '$bond / $nextLevelPoint pt',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF887493),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // 成長ゲージ
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: progress),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return LinearProgressIndicator(
+                      value: value,
+                      minHeight: 9,
+                      backgroundColor: const Color(0xFFEDE5F1),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        accentColor,
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 13),
+
+              // 次のレベルへの案内
+              Text(
+                isMaxLevel
+                    ? '🌸 ルナとの絆がいっぱいに育ったよ'
+                    : 'あと$remainingPointsポイントで「$nextLevelName」に 🌷',
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.5,
+                  color: Color(0xFF96869E),
+                ),
+              ),
+            ],
+          ), // Column
+        ), // Container
+      ), // BackdropFilter
+    ); // ClipRRect
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final horizontalPadding =
-        screenWidth < 500 ? 20.0 : screenWidth * 0.18;
+    final horizontalPadding = screenWidth < 500 ? 20.0 : screenWidth * 0.18;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F3FA),
@@ -1084,24 +1216,15 @@ Widget sevenDayChart() {
             child: Image.asset(
               'assets/images/home_bg.png',
               fit: BoxFit.cover,
-              errorBuilder: (
-                context,
-                error,
-                stackTrace,
-              ) {
-                return const ColoredBox(
-                  color: Color(0xFFF8F3FA),
-                );
+              errorBuilder: (context, error, stackTrace) {
+                return const ColoredBox(color: Color(0xFFF8F3FA));
               },
             ),
           ),
 
           Positioned.fill(
-  child: Container(
-    color: const Color(0xFFF8F3FA)
-        .withOpacity(0.10),
-  ),
-),
+            child: Container(color: const Color(0xFFF8F3FA).withOpacity(0.10)),
+          ),
 
           SafeArea(
             child: SingleChildScrollView(
@@ -1115,75 +1238,81 @@ Widget sevenDayChart() {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                 Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'COCOON',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 3.2,
-            color: Color(0xFF554F59),
-          ),
-        ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'COCOON',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 3.2,
+                              color: Color(0xFF554F59),
+                            ),
+                          ),
 
-        const SizedBox(height: 5),
+                          const SizedBox(height: 5),
 
-        Text(
-          '${DateTime.now().month}月${DateTime.now().day}日・'
-          '${getWeekday(DateTime.now())}曜日',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF777079),
-          ),
-        ),
-      ],
-    ),
+                          Text(
+                            '${DateTime.now().month}月${DateTime.now().day}日・'
+                            '${getWeekday(DateTime.now())}曜日',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF777079),
+                            ),
+                          ),
+                        ],
+                      ),
 
-    Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 7,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.62),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.72),
-        ),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.spa_outlined,
-            size: 14,
-            color: Color(0xFF8E7BBE),
-          ),
-          SizedBox(width: 5),
-          Text(
-            'ひと休みしよう',
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF655D69),
-            ),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.62),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.72),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.spa_outlined,
+                              size: 14,
+                              color: Color(0xFF8E7BBE),
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'ひと休みしよう',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF655D69),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
 
-const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
+                  // 🐶 ルナのメインカード
                   lunaHeroCard(),
+
+                  const SizedBox(height: 16),
+
+                  // 🌷 ルナの成長カード
+                  lunaGrowthCard(),
 
                   const SizedBox(height: 31),
 
@@ -1198,10 +1327,7 @@ const SizedBox(height: 16),
 
                   const SizedBox(height: 31),
 
-                  sectionTitle(
-                    title: '最近7日間',
-                    subtitle: '毎日の心の変化を見てみよう',
-                  ),
+                  sectionTitle(title: '最近7日間', subtitle: '毎日の心の変化を見てみよう'),
 
                   sevenDayChart(),
 

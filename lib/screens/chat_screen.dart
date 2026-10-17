@@ -1,3 +1,6 @@
+import 'package:url_launcher/url_launcher.dart';
+import '../services/emergency_detection_service.dart';
+import '../models/emergency_contact.dart';
 import '../services/insight_brain.dart';
 import '../services/cocoon_reply_engine.dart';
 import '../services/luna_brain.dart';
@@ -14,7 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/chat_message_model.dart';
-import '../models/mood_record.dart';
+import '../models/mood_record.dart' hide EmergencyContact;
 
 enum LunaEmotion {
   happy,
@@ -68,6 +71,40 @@ const ChatScreen({
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  // 登録済みの緊急連絡先
+List<EmergencyContact> emergencyContacts = [];
+
+// 緊急連絡先を読み込む
+Future<void> loadEmergencyContacts() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('emergencyContacts');
+
+    if (saved == null || saved.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        emergencyContacts = [];
+      });
+      return;
+    }
+
+    final List<dynamic> decoded = jsonDecode(saved);
+
+    final contacts = decoded
+        .map((item) => EmergencyContact.fromJson(
+              Map<String, dynamic>.from(item),
+            ))
+        .toList();
+
+    if (!mounted) return;
+
+    setState(() {
+      emergencyContacts = contacts;
+    });
+  } catch (e) {
+    debugPrint('緊急連絡先の読み込みエラー: $e');
+  }
+}
   final LunaBrain lunaBrain = LunaBrain();
   final CocoonReplyEngine cocoonReplyEngine =
     const CocoonReplyEngine();
@@ -90,6 +127,7 @@ String latestInsight = "";
 @override
 void initState() {
   super.initState();
+  loadEmergencyContacts();
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
   if (scrollController.hasClients) {
@@ -312,7 +350,75 @@ String getLunaInsight(List<ChatMessage> pastMessages) {
   return '🐶ルナの気づき\n\n今日は ${insights.join('・')} が近くにいるみたい。\nその中で、今いちばん大きい気持ちはどれかな？';
 }
 
-Future<String> getLunaApiReply(String message) async {
+String buildTimelineContext(String? savedTimeline) {
+  if (savedTimeline == null || savedTimeline.isEmpty) {
+    return '';
+  }
+
+  try {
+    final decoded = jsonDecode(savedTimeline);
+
+    if (decoded is! List) {
+      return '';
+    }
+
+    final timelineTexts = <String>[];
+
+    for (final item in decoded) {
+      if (item is! Map) continue;
+
+      final yearMonth = item['yearMonth']?.toString() ?? '';
+      final title = item['title']?.toString() ?? '';
+      final pastFeeling = item['pastFeeling']?.toString() ?? '';
+      final currentReflection =
+          item['currentReflection']?.toString() ?? '';
+
+      final tags = item['tags'] is List
+          ? (item['tags'] as List)
+              .whereType<String>()
+              .join('、')
+          : '';
+
+      if (title.trim().isEmpty) continue;
+
+      final parts = <String>[
+        if (yearMonth.trim().isNotEmpty) yearMonth.trim(),
+        title.trim(),
+        if (pastFeeling.trim().isNotEmpty)
+          '当時の気持ち：${pastFeeling.trim()}',
+        if (currentReflection.trim().isNotEmpty)
+          '今の振り返り：${currentReflection.trim()}',
+        if (tags.isNotEmpty) 'タグ：$tags',
+      ];
+
+      timelineTexts.add(parts.join(' / '));
+    }
+
+    // 年表に保存されている順番を維持する
+    return timelineTexts.join('\n');
+  } catch (e) {
+    debugPrint('年表の読み込みに失敗しました: $e');
+    return '';
+  }
+}
+
+
+Future<String> getLunaApiReply(
+  String message,
+  List<Map<String, String>> recentChatHistory,
+) async {
+    // 保存されている「わたし年表」を読み込む
+  final prefs = await SharedPreferences.getInstance();
+  final savedTimeline = prefs.getString('myTimelineEvents');
+
+  // わたし年表をAIに共有する設定
+// 初期設定はOFF（共有しない）
+final shareTimeline = prefs.getBool('shareTimeline') ?? false;
+
+  debugPrint(
+    'わたし年表の保存データ: ${savedTimeline == null ? "なし" : "あり"}',
+  );
+
   final url = Uri.parse(
     'https://asia-northeast1-cocoon-688eb.cloudfunctions.net/lunaChat',
   );
@@ -323,9 +429,20 @@ Future<String> getLunaApiReply(String message) async {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'message': message,
-      }),
+    body: jsonEncode({
+  'message': message,
+
+   // 直近の会話履歴
+  'chatHistory': recentChatHistory,
+
+  // 利用者が年表の共有を許可しているか
+  'shareTimeline': shareTimeline,
+
+  // 共有がONの場合だけ年表を送る
+  'timelineContext': shareTimeline
+      ? buildTimelineContext(savedTimeline)
+      : '',
+}),
     );
 
     if (response.statusCode == 200) {
@@ -354,9 +471,507 @@ void sendQuickTopic(String topic) {
   sendMessage();
 }
 
+// 電話アプリを開く
+Future<void> callEmergencyContact(
+  EmergencyContact contact,
+) async {
+  final phone = contact.phoneNumber.replaceAll(
+    RegExp(r'[\s()-]'),
+    '',
+  );
+
+  if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('電話番号を確認してください'),
+      ),
+    );
+    return;
+  }
+
+  final uri = Uri(
+    scheme: 'tel',
+    path: phone,
+  );
+
+  try {
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!launched) {
+      throw Exception('電話アプリを開けませんでした');
+    }
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '電話アプリを開けませんでした。端末から直接電話してください。',
+        ),
+      ),
+    );
+  }
+}
+// 相談方法を選ぶ画面
+Future<void> showConsultationSupport() async {
+  if (!mounted) return;
+
+// 電話相談
+const phoneSupportUrl =
+    'https://www.mhlw.go.jp/mamorouyokokoro/soudan/tel/';
+
+// SNS・チャット相談
+const snsSupportUrl =
+    'https://www.mhlw.go.jp/mamorouyokokoro/soudan/sns/';
+
+// 相談窓口一覧
+const allSupportUrl =
+    'https://www.mhlw.go.jp/mamorouyokokoro/';
+
+Future<void> openSupportWebsite(String url) async {
+    final uri = Uri.parse(url);
+
+    try {
+      final opened = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!opened) {
+        throw Exception('ページを開けませんでした');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'ページを開けませんでした。'
+            'ブラウザから「まもろうよ こころ」を検索してね。',
+          ),
+        ),
+      );
+    }
+  }
+
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBFF),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '🐶 どんな方法で相談したい？',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF655472),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                '自分が話しやすい方法を選んでね。',
+                style: TextStyle(
+                  color: Color(0xFF756B7A),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // 電話相談
+              ListTile(
+                leading: const Icon(
+                  Icons.phone_outlined,
+                  color: Color(0xFF80649A),
+                ),
+                title: const Text('電話で相談したい'),
+                subtitle: const Text('電話相談の窓口を探す'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await openSupportWebsite(phoneSupportUrl);
+                },
+              ),
+
+              const Divider(),
+
+              // SNS・チャット相談
+              ListTile(
+                leading: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Color(0xFF80649A),
+                ),
+                title: const Text(
+                  'SNS・チャットで相談したい',
+                ),
+                subtitle: const Text(
+                  '文字で相談できる窓口を探す',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await openSupportWebsite(snsSupportUrl);
+                },
+              ),
+
+              const Divider(),
+
+              // 相談窓口一覧
+              ListTile(
+                leading: const Icon(
+                  Icons.language,
+                  color: Color(0xFF80649A),
+                ),
+                title: const Text(
+                  '相談窓口をまとめて見る',
+                ),
+                subtitle: const Text(
+                  '厚生労働省の案内ページ',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await openSupportWebsite(allSupportUrl);
+                },
+              ),
+
+              const SizedBox(height: 12),
+
+              const Text(
+                '※ 相談窓口の受付時間や対応方法は、'
+                '公式ページで確認してね。\n'
+                '今すぐ危険がある場合は、'
+                '救急119・警察110などへ連絡してね。',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF756B7A),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                  },
+                  child: const Text('閉じる'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// 困ったときのサポート
+Future<void> openSupportMenu() async {
+  await loadEmergencyContacts();
+
+  if (!mounted) return;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBFF),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '🐶 困ったときのサポート',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF655472),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                '今必要なサポートを選んでね。',
+                style: TextStyle(
+                  color: Color(0xFF756B7A),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // 登録した人に連絡する
+              ListTile(
+                leading: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF80649A),
+                ),
+                title: const Text('登録した人に連絡する'),
+                subtitle: Text(
+                  emergencyContacts.isEmpty
+                      ? '緊急連絡先がまだ登録されていません'
+                      : '${emergencyContacts.length}件の連絡先があります',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+
+                  if (emergencyContacts.isEmpty) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'マイページから緊急連絡先を登録できます',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  await showEmergencyContactSuggestion();
+                },
+              ),
+
+              const Divider(),
+
+              // 相談先を探す
+ListTile(
+  leading: const Icon(
+    Icons.chat_bubble_outline,
+    color: Color(0xFF80649A),
+  ),
+  title: const Text('相談先を探す'),
+  subtitle: const Text('電話・SNSなどの相談窓口'),
+  trailing: const Icon(Icons.chevron_right),
+  onTap: () {
+    Navigator.pop(sheetContext);
+    showConsultationSupport();
+  },
+),
+
+const Divider(),
+
+              // 緊急時の連絡先
+              ListTile(
+                leading: const Icon(
+                  Icons.local_phone_outlined,
+                  color: Color(0xFF80649A),
+                ),
+                title: const Text('緊急時の連絡先を確認する'),
+                subtitle: const Text('救急119・警察110'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+
+                  showDialog<void>(
+                    context: context,
+                    builder: (dialogContext) {
+                      return AlertDialog(
+                        title: const Text('緊急時の連絡先'),
+                        content: const Text(
+                          '今すぐ危険がある場合は、'
+                          '救急119または警察110に連絡してください。',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                            },
+                            child: const Text('閉じる'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+
+              const Divider(),
+
+              // COCOONで話を続ける
+              ListTile(
+                leading: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Color(0xFF80649A),
+                ),
+                title: const Text('ルナにこのまま話す'),
+                subtitle: const Text('チャットに戻ります'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                },
+              ),
+
+              const SizedBox(height: 8),
+
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                  },
+                  child: const Text('閉じる'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+// 緊急連絡先への電話を提案する
+Future<void> showEmergencyContactSuggestion() async {
+  await loadEmergencyContacts();
+
+  if (!mounted) return;
+
+  if (emergencyContacts.isEmpty) {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('🐶 困ったときのサポート'),
+          content: const Text(
+            '緊急連絡先がまだ登録されていないみたい。\n\n'
+            'マイページから登録できるよ。\n'
+            '今すぐ危険がある場合は、'
+            '救急119・警察110に連絡してね。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('閉じる'),
+            ),
+          ],
+        );
+      },
+    );
+    return;
+  }
+
+  // 誰に連絡するか選んでもらう
+  final selectedContact = await showDialog<EmergencyContact>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFFFFFBFF),
+        title: const Text(
+          '🐶 誰に連絡する？',
+          style: TextStyle(
+            color: Color(0xFF655472),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: emergencyContacts.length,
+            itemBuilder: (context, index) {
+              final contact = emergencyContacts[index];
+
+              return ListTile(
+                leading: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF80649A),
+                ),
+                title: Text(contact.name),
+                subtitle: Text(contact.relationship),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(dialogContext, contact);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('キャンセル'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (!mounted || selectedContact == null) return;
+
+  // 選んだ相手に電話するか確認する
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFFFFFBFF),
+        title: const Text('🐶 ルナからのご提案'),
+        content: Text(
+          '${selectedContact.name}さんに電話してみる？\n\n'
+          '電話するかどうかは、あなたが決めていいよ。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('今はしない'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              callEmergencyContact(selectedContact);
+            },
+            icon: const Icon(Icons.phone),
+            label: const Text('電話する'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 Future<void> sendMessage() async {
   final text = chatController.text.trim();
   if (text.isEmpty) return;
+
+  // 緊急性を確認する（まだ電話はかけない）
+final emergencyLevel =
+    EmergencyDetectionService.detect(text);
+
+// 緊急性が高い場合は、連絡先への電話を提案する
+if (emergencyLevel == EmergencyLevel.urgent) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+    showEmergencyContactSuggestion();
+  });
+}
 
   widget.onMemorySave(text);
 
@@ -396,14 +1011,41 @@ final insightText = insightBrain.createInsight(
   recentMessages: recentUserMessages,
 );
 
+
 String lunaReply;
 
+// 直近の会話を最大10件取得する
+final recentChatHistory = widget.messages
+    .skip(
+      widget.messages.length > 10
+          ? widget.messages.length - 10
+          : 0,
+    )
+    .map((message) => {
+          'role': message.isUser ? 'user' : 'assistant',
+          'content': message.text,
+        })
+    .toList();
+
+// 今回のメッセージは別で送るため、履歴から除く
+if (recentChatHistory.isNotEmpty) {
+  recentChatHistory.removeLast();
+}
+
 try {
-  // まず新しいOpenAI API版ルナを使う
-  lunaReply = await getLunaApiReply(text);
+  // OpenAI API版ルナを使う
+  lunaReply = await getLunaApiReply(
+    text,
+    recentChatHistory,
+  );
+
+
 } catch (e) {
   // APIが失敗したときは、今までのルナに戻す
-  lunaReply = 'API接続テストでエラーが起きたよ。';
+  lunaReply = makeCocoonReply(
+  text,
+  widget.messages,
+);
 }
 
 setState(() {
@@ -3520,6 +4162,28 @@ if (text.contains('泣きたい') ||
   ]);
 }
 
+// 眠れない夜
+if (text.contains('眠れない') ||
+    text.contains('寝れない') ||
+    text.contains('寝付けない') ||
+    text.contains('眠れなくて') ||
+    text.contains('夜が怖い') ||
+    text.contains('夜になると不安') ||
+    text.contains('明日が怖い') ||
+    text.contains('明日が不安') ||
+    text.contains('考えすぎて眠れない')) {
+  return pick([
+    '眠れない夜って、考えなくていいことまで頭に浮かんできやすいよね。\n今いちばん気になっていることは何かな？',
+    '夜になると不安が大きく見えることもあるよね。\n今は答えを出そうとしなくて大丈夫だよ。',
+    '眠ろうと頑張るほど、余計に目が冴えることもあるよね。\nここで少しだけ話してから休もうか。',
+    '明日のことが心配で眠れないのかな。\n一番怖く感じていることを、ルナに聞かせて。',
+    'こんな時間まで考え続けていたんだね。\n今夜だけは、全部解決しなくてもいいよ🌙',
+    '夜は気持ちがいつもより大きく感じやすいよね。\n今の不安をひとつずつ整理してみよう。',
+    '眠れない時に「早く寝なきゃ」って焦ると、ますます苦しくなるよね。\n今は少し力を抜いても大丈夫。',
+    '明日のことは明日の自分に少し預けてもいいよ。\n今はここでゆっくりしよう🐶',
+  ]);
+}
+
 // 朝がつらい
 if (text.contains('朝つらい') ||
     text.contains('朝がつらい') ||
@@ -3935,154 +4599,48 @@ Expanded(
 
       if (isThinking)
         const ThinkingBubble(),
-       if (showInsightButton)
-  Padding(
-    padding: const EdgeInsets.fromLTRB(
-      18,
-      4,
-      18,
-      12,
-    ),
-    child: Center(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return Dialog(
-                  backgroundColor: Colors.transparent,
-                  insetPadding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFFFFFBFF),
-                          Color(0xFFF3EAF8),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: const Color(0xFFE4D6ED),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF72598E)
-                              .withOpacity(0.16),
-                          blurRadius: 24,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Text(
-                              '🌱',
-                              style: TextStyle(fontSize: 22),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              '今日をふりかえる',
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF665272),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          latestInsight,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            height: 1.65,
-                            color: Color(0xFF5F536A),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text(
-                              '閉じる',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF806A98),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4ECFA),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: const Color(0xFFCDB8DC),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF72598E)
-                      .withOpacity(0.10),
-                  blurRadius: 12,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.eco_outlined,
-                  size: 19,
-                  color: Color(0xFF7B6590),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  '今日をふりかえる',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF665272),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  ), 
     ],
   ),
 ),
 ),
+
+// 困ったときのサポートボタン
+Padding(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 16,
+    vertical: 4,
+  ),
+  child: SizedBox(
+    width: double.infinity,
+    child: OutlinedButton.icon(
+      onPressed: openSupportMenu,
+      icon: const Icon(
+        Icons.favorite_border,
+        size: 20,
+      ),
+      label: const Text(
+        '困ったときのサポート',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF80649A),
+        backgroundColor: const Color(0xFFF8F3FA),
+        side: const BorderSide(
+          color: Color(0xFFE8DFEE),
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: 12,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    ),
+  ),
+),
+
 Container(
   margin: const EdgeInsets.fromLTRB(14, 8, 14, 14),
   padding: const EdgeInsets.all(10),

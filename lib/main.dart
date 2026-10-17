@@ -173,10 +173,33 @@ List<MoodRecord> moodHistory = [];
 List<LunaMemory> lunaMemories = [];
 String? petImagePath;
 int lunaBond = 0;
+
+// 🐶 ルナの成長レベル
+int get lunaLevel {
+  if (lunaBond >= 100) return 4;
+  if (lunaBond >= 50) return 3;
+  if (lunaBond >= 20) return 2;
+  return 1;
+}
+
+// 🌷 レベルごとの名前
+String get lunaLevelName {
+  switch (lunaLevel) {
+    case 4:
+      return 'ずっと一緒';
+    case 3:
+      return 'たいせつな友達';
+    case 2:
+      return 'なかよし';
+    default:
+      return 'はじめまして';
+  }
+}
+
 int streakDays = 1;
 DateTime? lastMoodDate;
 bool showFirstHomeWelcome = false;
-
+/*  */
 Future<void> loadChatBackground() async {
   final prefs = await SharedPreferences.getInstance();
 
@@ -562,12 +585,31 @@ if (lastDay == null) {
 }
 
 lastMoodDate = today;
-  setState(() {
-    previousMood = latestMood;
-    latestMood = mood;
-    moodHistory.add(mood);
+
+// 🐶 ポイント追加前のレベルを記録
+final oldLevel = lunaLevel;
+
+setState(() {
+  previousMood = latestMood;
+  latestMood = mood;
+  moodHistory.add(mood);
   lunaBond += 2;
-  });
+});
+
+// 🌷 レベルアップしたか確認
+final newLevel = lunaLevel;
+
+if (newLevel > oldLevel && mounted) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      backgroundColor: const Color(0xFF8E7BBE),
+      duration: const Duration(seconds: 4),
+      content: Text(
+        '🐶 おめでとう！ルナがLv.$newLevel「$lunaLevelName」になったよ🌸',
+      ),
+    ),
+  );
+}
 
   await saveMoodRecord(mood);
   await saveMoodHistory();

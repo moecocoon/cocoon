@@ -1,7 +1,7 @@
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'cocoon_settings_screen.dart';
 import 'chat_background_shop_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'emergency_contact_screen.dart';
@@ -286,19 +286,30 @@ class MyPageScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Container(
-                      width: 43,
-                      height: 43,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.85),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.settings_rounded,
-                        color: Color(0xFF8E7BBE),
-                        size: 23,
-                      ),
-                    ),
+                    InkWell(
+  borderRadius: BorderRadius.circular(50),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CocoonSettingsScreen(),
+      ),
+    );
+  },
+  child: Container(
+    width: 43,
+    height: 43,
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.85),
+      shape: BoxShape.circle,
+    ),
+    child: const Icon(
+      Icons.settings_rounded,
+      color: Color(0xFF8E7BBE),
+      size: 23,
+    ),
+  ),
+),
                   ],
                 ),
               ),

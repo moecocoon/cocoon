@@ -71,6 +71,206 @@ void dispose() {
   });
 }
 
+// ★ コンパクト背景カード ★
+Widget backgroundCard({
+  required String title,
+  required String imagePath,
+  required String priceText,
+  required bool isSelected,
+  required VoidCallback onTap,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Image.asset(
+            imagePath,
+            width: double.infinity,
+            height: 110,
+            fit: BoxFit.cover,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF655472),
+          ),
+        ),
+
+        const SizedBox(height: 3),
+
+        Text(
+          priceText,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: isSelected ? null : onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEDE5F5),
+              disabledBackgroundColor:
+                  const Color(0xFFEDE5F5),
+              foregroundColor: const Color(0xFF725D8D),
+              disabledForegroundColor:
+                  const Color(0xFF725D8D),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                vertical: 8,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              isSelected ? '使用中' : 'この背景にする',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+// ★ 課金背景用コンパクトカード ★
+Widget paidBackgroundCard({
+  required String title,
+  required String imagePath,
+  required String priceText,
+  required bool isSelected,
+  required bool isPurchased,
+  required VoidCallback onUse,
+  required VoidCallback onBuy,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Image.asset(
+            imagePath,
+            width: double.infinity,
+            height: 110,
+            fit: BoxFit.cover,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF655472),
+          ),
+        ),
+
+        const SizedBox(height: 3),
+
+        Text(
+          priceText,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF8E7BBE),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: isSelected
+                ? null
+                : isPurchased
+                    ? onUse
+                    : onBuy,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isPurchased
+                  ? const Color(0xFFEDE5F5)
+                  : const Color(0xFF8E7BBE),
+              disabledBackgroundColor:
+                  const Color(0xFFEDE5F5),
+              foregroundColor: isPurchased
+                  ? const Color(0xFF725D8D)
+                  : Colors.white,
+              disabledForegroundColor:
+                  const Color(0xFF725D8D),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                vertical: 8,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              isSelected
+                  ? '使用中'
+                  : isPurchased
+                      ? 'この背景にする'
+                      : '🔒 $priceTextで購入',
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,305 +330,186 @@ Align(
 
               const SizedBox(height: 24),
 
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Image.asset(
-                        'assets/images/chat_bg_default.png',
-                        width: double.infinity,
-                        height: 190,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+              // ★ 夢見るルナ ＋ 星空：コンパクト2列 ★
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    // 夢見るルナ
+    Expanded(
+      child: backgroundCard(
+        title: '夢見るルナ',
+        imagePath: 'assets/images/chat_bg_default.png',
+        priceText: '無料',
+        isSelected:
+            selectedBackgroundPath ==
+                'assets/images/chat_bg_default.png',
+        onTap: () {
+          widget.onBackgroundSelected(
+            'assets/images/chat_bg_default.png',
+          );
 
-                    const SizedBox(height: 14),
-
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '夢見るルナのお部屋',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF655472),
-                            ),
-                          ),
-                        ),
-
-                        Text(
-                          '無料',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF8E7BBE),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                   SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed:
-        selectedBackgroundPath==
-                'assets/images/chat_bg_default.png'
-            ? null
-            : () {
-widget.onBackgroundSelected(
-  'assets/images/chat_bg_default.png',
-);
-
-setState(() {
-  selectedBackgroundPath =
-      'assets/images/chat_bg_default.png';
-});
-              },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFFEDE5F5),
-      disabledBackgroundColor: const Color(0xFFEDE5F5),
-      foregroundColor: const Color(0xFF725D8D),
-      disabledForegroundColor: const Color(0xFF725D8D),
-      elevation: 0,
-      padding: const EdgeInsets.symmetric(
-        vertical: 12,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+          setState(() {
+            selectedBackgroundPath =
+                'assets/images/chat_bg_default.png';
+          });
+        },
       ),
     ),
-    child: Text(
-      selectedBackgroundPath ==
-              'assets/images/chat_bg_default.png'
-          ? '使用中'
-          : 'この背景にする',
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
-                  ],
+
+    const SizedBox(width: 12),
+
+    // 星空
+    Expanded(
+      child: paidBackgroundCard(
+        title: '星降るルナの夜空',
+        imagePath: 'assets/images/chat_bg_star_night.png',
+        priceText:
+            purchaseService.starNightProduct?.price ?? '¥160',
+        isSelected:
+            selectedBackgroundPath ==
+                'assets/images/chat_bg_star_night.png',
+        isPurchased: starNightPurchased,
+
+        // 購入済み → 背景にする
+        onUse: () {
+          widget.onBackgroundSelected(
+            'assets/images/chat_bg_star_night.png',
+          );
+
+          setState(() {
+            selectedBackgroundPath =
+                'assets/images/chat_bg_star_night.png';
+          });
+        },
+
+        // 未購入 → 購入
+        onBuy: () async {
+          // Chromeでは開発用の仮購入
+          if (kIsWeb) {
+            final prefs =
+                await SharedPreferences.getInstance();
+
+            await prefs.setBool(
+              'purchased_star_night',
+              true,
+            );
+
+            if (!mounted) return;
+
+            setState(() {
+              starNightPurchased = true;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  '開発用：購入テストが完了しました',
                 ),
               ),
+            );
+
+            return;
+          }
+
+          // iPhoneでは本物のストア購入
+          try {
+            await purchaseService.buyStarNight();
+          } catch (e) {
+            if (!mounted) return;
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  '購入を開始できませんでした。',
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    ),
+  ],
+),
+
+const SizedBox(height: 20),
 
               const SizedBox(height: 20),
-                            Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Image.asset(
-                        'assets/images/chat_bg_star_night.png',
-                        width: double.infinity,
-                        height: 190,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+              
+              // ★ 朝焼け ＋ 虹：コンパクト2列 ★
+Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Expanded(
+      child: backgroundCard(
+        title: '朝焼けのルナ',
+        imagePath: 'assets/images/chat_bg_sunrise.png',
+        priceText: '無料',
+        isSelected:
+            selectedBackgroundPath ==
+                'assets/images/chat_bg_sunrise.png',
+        onTap: () {
+          widget.onBackgroundSelected(
+            'assets/images/chat_bg_sunrise.png',
+          );
 
-                    const SizedBox(height: 14),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '星降るルナの夜空',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF655472),
-                            ),
-                          ),
-                        ),
-                        Text(
-  purchaseService.starNightProduct?.price ?? '¥160',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF8E7BBE),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    const Text(
-                      '満天の星に包まれる、静かな夜のお部屋。',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF82778A),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-  TextButton(
-  onPressed: () async {
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setBool(
-      'purchased_star_night',
-      false,
-    );
-
-    if (!mounted) return;
-
-setState(() {
-  starNightPurchased = false;
-  selectedBackgroundPath =
-      'assets/images/chat_bg_default.png';
-});
-
-widget.onBackgroundSelected(
-  'assets/images/chat_bg_default.png',
-);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          '開発用：購入状態をリセットしました',
-        ),
+          setState(() {
+            selectedBackgroundPath =
+                'assets/images/chat_bg_sunrise.png';
+          });
+        },
       ),
-    );
-  },
-  child: const Text(
-    '購入状態をリセット（開発用）',
-  ),
+    ),
+
+    const SizedBox(width: 12),
+
+    Expanded(
+      child: backgroundCard(
+        title: '虹とルナのお部屋',
+        imagePath: 'assets/images/chat_bg_rainbow.png',
+        priceText: '無料',
+        isSelected:
+            selectedBackgroundPath ==
+                'assets/images/chat_bg_rainbow.png',
+        onTap: () {
+          widget.onBackgroundSelected(
+            'assets/images/chat_bg_rainbow.png',
+          );
+
+          setState(() {
+            selectedBackgroundPath =
+                'assets/images/chat_bg_rainbow.png';
+          });
+        },
+      ),
+    ),
+  ],
 ),
 
-const SizedBox(height: 8),
-
+const SizedBox(height: 20),
+// ★ 雨音のルナカフェ：コンパクト ★
 SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-onPressed: isLoading
-    ? null
-    : selectedBackgroundPath ==
-            'assets/images/chat_bg_star_night.png'
-        ? null
-        : starNightPurchased
-            ? () {
-                widget.onBackgroundSelected(
-                  'assets/images/chat_bg_star_night.png',
-                );
-
-                setState(() {
-  selectedBackgroundPath =
-      'assets/images/chat_bg_star_night.png';
-});
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      '星降るルナの夜空に変更しました 🌙',
-                    ),
-                  ),
-                );
-              }
-           : () async {
-    // ChromeなどWeb版では開発用の仮購入
-    if (kIsWeb) {
-      final prefs =
-          await SharedPreferences.getInstance();
-
-      await prefs.setBool(
-        'purchased_star_night',
-        true,
+  width: (MediaQuery.of(context).size.width - 52) / 2,
+  child: backgroundCard(
+    title: '雨音のルナカフェ',
+    imagePath: 'assets/images/chat_bg_rain_cafe.png',
+    priceText: '無料',
+    isSelected:
+        selectedBackgroundPath ==
+            'assets/images/chat_bg_rain_cafe.png',
+    onTap: () {
+      widget.onBackgroundSelected(
+        'assets/images/chat_bg_rain_cafe.png',
       );
-
-      if (!mounted) return;
 
       setState(() {
-        starNightPurchased = true;
+        selectedBackgroundPath =
+            'assets/images/chat_bg_rain_cafe.png';
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            '開発用：購入テストが完了しました',
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    // iPhoneなどでは本物のストア購入
-    try {
-      await purchaseService.buyStarNight();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            '購入を開始できませんでした。',
-          ),
-        ),
-      );
-    }
-  },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF8E7BBE),
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(
-        vertical: 13,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      elevation: 0,
-    ),
-  child: Text(
-  selectedBackgroundPath==
-          'assets/images/chat_bg_star_night.png'
-      ? '使用中'
-      : starNightPurchased
-          ? 'この背景にする'
-         : '🔒 ${purchaseService.starNightProduct?.price ?? '¥160'}で購入',
-  style: const TextStyle(
-    fontWeight: FontWeight.bold,
+    },
   ),
 ),
-  ),
-),
-                  ],
-                ),
-              ),
+
+const SizedBox(height: 20),
             ],
           ),
         ),
