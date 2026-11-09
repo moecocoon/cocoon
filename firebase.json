@@ -26,5 +26,29 @@
         "*.local"
       ]
     }
-  ]
+  ],
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cocoon-688eb",
+          "configurations": {
+            "web": "1:422663990236:web:af2f535c37cd377a35fd19"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+    "functions": {
+      "port": 8080
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
 }

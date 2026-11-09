@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'dart:io';
 
@@ -15,6 +16,10 @@ class HomeScreen extends StatefulWidget {
   final int streakDays;
   final LunaMemory? latestMemory;
   final List<MoodRecord> moodHistory;
+  final VoidCallback? onOpenMood;
+  final VoidCallback? onOpenMyPage;
+  final VoidCallback? onOpenLunaHouse;
+  final VoidCallback? onOpenChat;
 
   const HomeScreen({
     super.key,
@@ -25,6 +30,10 @@ class HomeScreen extends StatefulWidget {
     required this.streakDays,
     required this.onTalkAboutMood,
     required this.moodHistory,
+    this.onOpenMood,
+    this.onOpenMyPage,
+    this.onOpenLunaHouse,
+    this.onOpenChat,
   });
 
   @override
@@ -35,10 +44,22 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _floatingAnimation;
+  Timer? _blinkTimer;
+  Timer? _blinkEndTimer;
+  bool _isBlinking = false;
+  bool _tappedLuna = false;
+  bool _imagesPrecached = false;
 
   @override
   void initState() {
     super.initState();
+    _blinkTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || MediaQuery.of(context).disableAnimations) return;
+      setState(() => _isBlinking = true);
+      _blinkEndTimer = Timer(const Duration(milliseconds: 160), () {
+        if (mounted) setState(() => _isBlinking = false);
+      });
+    });
 
     _controller = AnimationController(
       vsync: this,
@@ -52,7 +73,20 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_imagesPrecached) {
+      _imagesPrecached = true;
+      for (final path in ['assets/images/luna_3d.png', 'assets/images/luna_3d_blink.png']) {
+        precacheImage(AssetImage(path), context, onError: (error, stackTrace) {});
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    _blinkTimer?.cancel();
+    _blinkEndTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -247,12 +281,12 @@ class _HomeScreenState extends State<HomeScreen>
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.90),
+            color: Colors.white.withValues(alpha: 0.90),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.white.withOpacity(0.92)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF8E7BBE).withOpacity(0.10),
+                color: const Color(0xFF8E7BBE).withValues(alpha: 0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -293,186 +327,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget lunaHeroCard() {
-    return Column(
-      children: [
-        // ==============================
-        // ルナ
-        // ==============================
-        SizedBox(
-          height: 215,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // ルナの後ろのやわらかい光
-              Container(
-                width: 205,
-                height: 205,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.28),
-                ),
-              ),
-
-              // ルナ
-              !kIsWeb && widget.petImagePath != null
-                  ? Image.file(
-                      File(widget.petImagePath!),
-                      height: 190,
-                      fit: BoxFit.contain,
-                    )
-                  : AnimatedBuilder(
-                      animation: _floatingAnimation,
-                      builder: (context, child) {
-                        return Transform.translate(
-                          offset: Offset(0, _floatingAnimation.value),
-                          child: child,
-                        );
-                      },
-                      child: Image.asset(
-                        'assets/images/luna.png',
-                        height: 190,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.pets_rounded,
-                            size: 90,
-                            color: Color(0xFF8E7BBE),
-                          );
-                        },
-                      ),
-                    ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 4),
-
-        // ==============================
-        // ルナの吹き出し
-        // ==============================
-        Container(
-          constraints: const BoxConstraints(maxWidth: 340),
-          padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.82),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.90)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.035),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 15,
-                    color: Color(0xFF8E7BBE),
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'ルナからのメッセージ',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF817387),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                getLunaMessage(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.55,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF574F5C),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        // ==============================
-        // 絆・継続日数・関係
-        // ==============================
-        Container(
-          constraints: const BoxConstraints(maxWidth: 340),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.64),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withOpacity(0.76)),
-          ),
-          child: Row(
-            children: [
-              statusItem(
-                emoji: '♡',
-                value: '${widget.lunaBond}',
-                label: 'ルナとの絆',
-              ),
-
-              Container(width: 1, height: 38, color: const Color(0xFFE4DDE7)),
-
-              statusItem(
-                emoji: '🔥',
-                value: '${widget.streakDays}日',
-                label: '継続日数',
-              ),
-
-              Container(width: 1, height: 38, color: const Color(0xFFE4DDE7)),
-
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🐾', style: TextStyle(fontSize: 24)),
-
-                    const SizedBox(height: 8),
-
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        getBondLevel(),
-                        maxLines: 1,
-                        softWrap: false,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF665272),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 5),
-
-                    const Text(
-                      '今の関係',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF96869E)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget todayMoodCard() {
     final mood = widget.latestMood;
 
@@ -484,12 +338,12 @@ class _HomeScreenState extends State<HomeScreen>
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.76),
+          color: Colors.white.withValues(alpha: 0.76),
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: Colors.white.withOpacity(0.85)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.85)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),
@@ -552,12 +406,12 @@ class _HomeScreenState extends State<HomeScreen>
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.78),
+        color: Colors.white.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withOpacity(0.88)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.88)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -646,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen>
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F5F8).withOpacity(0.86),
+                color: const Color(0xFFF8F5F8).withValues(alpha: 0.86),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
@@ -786,12 +640,12 @@ class _HomeScreenState extends State<HomeScreen>
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.76),
+        color: Colors.white.withValues(alpha: 0.76),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withOpacity(0.86)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.86)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -905,7 +759,7 @@ class _HomeScreenState extends State<HomeScreen>
                           decoration: BoxDecoration(
                             color: mood == null
                                 ? const Color(0xFFE8E3EA)
-                                : barColor.withOpacity(isToday ? 0.95 : 0.72),
+                                : barColor.withValues(alpha: isToday ? 0.95 : 0.72),
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
@@ -1202,142 +1056,202 @@ class _HomeScreenState extends State<HomeScreen>
     ); // ClipRRect
   }
 
+  void _showHomeDetails() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFF8F3FA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(sheetContext).size.height * 0.78,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 8, 0),
+                child: Row(children: [
+                  const Expanded(child: Text('こころとルナの記録',
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold,
+                      color: Color(0xFF554F66)))),
+                  IconButton(tooltip: '閉じる', onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded)),
+                ]),
+              ),
+              Expanded(child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                children: [
+                  lunaGrowthCard(),
+                  const SizedBox(height: 24),
+                  sectionTitle(title: '最近の気分', subtitle: '残してくれた気持ちを振り返ろう'),
+                  todayMoodCard(),
+                  const SizedBox(height: 24),
+                  sectionTitle(title: '最近7日間', subtitle: '毎日の心の変化を見てみよう'),
+                  sevenDayChart(),
+                ],
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _roundAction(String label, IconData icon, Color color, VoidCallback? onTap) {
+    return Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.16), blurRadius: 14, offset: const Offset(0, 6)),
+        ]),
+        child: Material(
+          color: color, shape: const CircleBorder(side: BorderSide(color: Colors.white, width: 4)),
+          clipBehavior: Clip.antiAlias,
+          child: IconButton(
+            tooltip: label, onPressed: onTap, padding: const EdgeInsets.all(12),
+            iconSize: 27, color: Colors.white, disabledColor: Colors.white54,
+            icon: Icon(icon),
+          ),
+        ),
+      ),
+      const SizedBox(height: 9),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(14)),
+        child: Text(label, textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF514660))),
+      ),
+    ]));
+  }
+
+  Widget _lunaInRoom(double height) {
+    final image = !kIsWeb && widget.petImagePath != null
+        ? Image.file(File(widget.petImagePath!), fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(Icons.pets_rounded, size: 100, color: Color(0xFF8E7BBE)))
+        : Image.asset(
+            _isBlinking ? 'assets/images/luna_3d_blink.png' : 'assets/images/luna_3d.png',
+            fit: BoxFit.contain, gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => Image.asset('assets/images/luna.png', fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(Icons.pets_rounded, size: 100, color: Color(0xFF8E7BBE))),
+          );
+    return SizedBox(height: height, child: Stack(alignment: Alignment.center, children: [
+      Positioned(bottom: 8, child: Container(width: height * 0.48, height: 24,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(100), boxShadow: [
+          BoxShadow(color: const Color(0xFF625478).withValues(alpha: 0.18), blurRadius: 22, spreadRadius: 4),
+        ]))),
+      Positioned.fill(child: Semantics(
+        label: 'ルナ。タップするとメッセージが変わります', button: true,
+        child: GestureDetector(
+          onTap: () => setState(() { _tappedLuna = !_tappedLuna; }),
+          child: AnimatedBuilder(animation: _floatingAnimation,
+            child: ClipRect(child: Transform.scale(
+              scale: !kIsWeb && widget.petImagePath != null ? 1.0 : 1.25,
+              child: image,
+            )),
+            builder: (context, child) => Transform.translate(
+              offset: Offset(0, MediaQuery.of(context).disableAnimations ? 0 : _floatingAnimation.value * 0.45),
+              child: child,
+            )),
+        ),
+      )),
+    ]));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    final horizontalPadding = screenWidth < 500 ? 20.0 : screenWidth * 0.18;
-
+    final start = lunaLevel == 1 ? 0 : lunaLevel == 2 ? 20 : lunaLevel == 3 ? 50 : 100;
+    final end = lunaLevel == 1 ? 20 : lunaLevel == 2 ? 50 : 100;
+    final progress = lunaLevel == 4 ? 1.0 : ((widget.lunaBond - start) / (end - start)).clamp(0.0, 1.0).toDouble();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3FA),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/home_bg.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const ColoredBox(color: Color(0xFFF8F3FA));
-              },
-            ),
-          ),
-
-          Positioned.fill(
-            child: Container(color: const Color(0xFFF8F3FA).withOpacity(0.10)),
-          ),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                18,
-                horizontalPadding,
-                45,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'COCOON',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 3.2,
-                              color: Color(0xFF554F59),
-                            ),
-                          ),
-
-                          const SizedBox(height: 5),
-
-                          Text(
-                            '${DateTime.now().month}月${DateTime.now().day}日・'
-                            '${getWeekday(DateTime.now())}曜日',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF777079),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.62),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.72),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.spa_outlined,
-                              size: 14,
-                              color: Color(0xFF8E7BBE),
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'ひと休みしよう',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF655D69),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      backgroundColor: const Color(0xFFF1EAF6),
+      body: Stack(children: [
+        Positioned.fill(child: Image.asset('assets/images/home_bg.png', fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const DecoratedBox(decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Color(0xFFE2D8EE), Color(0xFFF8EEE6)]))))),
+        Positioned.fill(child: ColoredBox(color: Colors.white.withValues(alpha: 0.12))),
+        SafeArea(child: Center(child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            child: Column(children: [
+              // The scene takes remaining height; the controls stay visible below it.
+              Expanded(child: LayoutBuilder(builder: (context, sceneConstraints) {
+                Widget scene() => Column(children: [
+                  Row(children: [
+                    Material(color: Colors.white.withValues(alpha: 0.92), shape: const CircleBorder(),
+                      child: IconButton(tooltip: '記録と絆を見る', onPressed: _showHomeDetails,
+                        icon: const Icon(Icons.menu_rounded, color: Color(0xFF75658B)))),
+                    const SizedBox(width: 12),
+                    Expanded(child: Material(
+                      color: Colors.white.withValues(alpha: 0.92), borderRadius: BorderRadius.circular(24),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(onTap: _showHomeDetails, child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('ルナとの絆 · Lv.$lunaLevel',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF554866))),
+                          const SizedBox(height: 7),
+                          ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(
+                            value: progress, minHeight: 6, backgroundColor: const Color(0xFFE9E2EF),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFA88CC6)))),
+                        ]),
+                      )),
+                    )),
+                  ]),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.84),
+                      borderRadius: BorderRadius.circular(28), border: Border.all(color: Colors.white, width: 1.5)),
+                    child: Column(children: [
+                      const Text('LUNA', style: TextStyle(fontSize: 10, letterSpacing: 3,
+                        fontWeight: FontWeight.bold, color: Color(0xFF9783AC))),
+                      const SizedBox(height: 8),
+                      AnimatedSize(duration: const Duration(milliseconds: 200),
+                        child: Text(_tappedLuna ? 'なでてくれてありがとう。\nきみのそばにいるよ。' : getLunaMessage(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16, height: 1.5,
+                            fontWeight: FontWeight.w600, color: Color(0xFF554866)))),
+                    ]),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // 🐶 ルナのメインカード
-                  lunaHeroCard(),
-
-                  const SizedBox(height: 16),
-
-                  // 🌷 ルナの成長カード
-                  lunaGrowthCard(),
-
-                  const SizedBox(height: 31),
-
-                  sectionTitle(
-                    title: '今日の気分',
-                    subtitle: widget.latestMood == null
-                        ? '今の心を記録してみよう'
-                        : '今の心をやさしく振り返ろう',
+                  const SizedBox(height: 4),
+                  Expanded(child: LayoutBuilder(builder: (context, heroConstraints) =>
+                    _lunaInRoom(heroConstraints.maxHeight))),
+                ]);
+                // Short windows and enlarged text can scroll the scene without hiding chat.
+                final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+                final minimumHeight = 380.0 + (textScale > 1 ? (textScale - 1) * 180 : 0);
+                if (sceneConstraints.maxHeight < minimumHeight) {
+                  return SingleChildScrollView(child: SizedBox(height: minimumHeight, child: scene()));
+                }
+                return scene();
+              })),
+              const SizedBox(height: 8),
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _roundAction('ルナのおうち', Icons.pets_rounded, const Color(0xFF8F7AAE), widget.onOpenLunaHouse),
+                    _roundAction('気分記録', Icons.favorite_rounded, const Color(0xFFD7A0AC), widget.onOpenMood),
+                    _roundAction('マイページ', Icons.person_rounded, const Color(0xFF829B9B), widget.onOpenMyPage),
+                  ]),
+              const SizedBox(height: 12),
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.96), borderRadius: BorderRadius.circular(30),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(onTap: widget.onOpenChat ?? widget.onTalkAboutMood,
+                      child: const Padding(padding: EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+                        child: Row(children: [
+                          Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF8E7BBE)),
+                          SizedBox(width: 12),
+                          Expanded(child: Text('ルナに話しかける', style: TextStyle(fontSize: 14, color: Color(0xFF80718F)))),
+                          Icon(Icons.arrow_forward_rounded, color: Color(0xFF8E7BBE)),
+                        ])),
+                    ),
                   ),
-
-                  todayMoodCard(),
-
-                  const SizedBox(height: 31),
-
-                  sectionTitle(title: '最近7日間', subtitle: '毎日の心の変化を見てみよう'),
-
-                  sevenDayChart(),
-
-                  const SizedBox(height: 30),
-                ],
-              ),
-            ),
+            ]),
           ),
-        ],
-      ),
+        ))),
+      ]),
     );
   }
 }

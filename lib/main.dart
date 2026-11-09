@@ -24,13 +24,21 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 const String openWeatherApiKey = String.fromEnvironment(
   'OPENWEATHER_API_KEY',
 );
 
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const CocoonApp());
 }
 
@@ -683,6 +691,18 @@ void goToLunaHouse() {
   lunaBond: lunaBond,
   streakDays: streakDays,
  moodHistory: moodHistory, 
+
+onOpenMood: () {
+  setState(() => selectedIndex = 1);
+},
+onOpenMyPage: () {
+  setState(() => selectedIndex = 4);
+},
+onOpenLunaHouse: goToLunaHouse,
+onOpenChat: () {
+  setState(() => selectedIndex = 2);
+},
+
   onTalkAboutMood: () {
     setState(() {
       selectedIndex = 2;
@@ -3606,949 +3626,309 @@ class _NightShelterScreenState
     );
   }
 }
+
 class LunaHouseScreen extends StatefulWidget {
   final VoidCallback onBack;
-
-  const LunaHouseScreen({
-    super.key,
-    required this.onBack,
-  });
+  const LunaHouseScreen({super.key, required this.onBack});
 
   @override
-  State<LunaHouseScreen> createState() =>
-      _LunaHouseScreenState();
+  State<LunaHouseScreen> createState() => _LunaHouseScreenState();
 }
 
 class _LunaHouseScreenState extends State<LunaHouseScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int fullness = 0;
   int affection = 0;
-
-  bool isEating = false;
-  bool isBeingPetted = false;
-  bool showPetHeart = false;
-
-  String eatingMessage = '';
-
-  DateTime? lastVisitTime;
-  bool isLongTimeNoSee = false;
-
   int todayPetCount = 0;
   DateTime? lastPetDate;
+  bool _loading = true;
+  bool _loadFailed = false;
+  bool _preloaded = false;
+  String _activity = 'idle';
+  String _message = '';
+  SharedPreferences? _prefs;
+  late final AnimationController _idle;
+  late final AnimationController _action;
 
-  late final AnimationController eatingController;
-  late final Animation<double> eatingAnimation;
-
-  // ==================================================
-  // ルナのひとこと
-  // ==================================================
-
-  String lunaHouseMessage() {
-    if (eatingMessage.isNotEmpty) {
-      return eatingMessage;
-    }
-
-    if (isLongTimeNoSee) {
-      return '会いたかった〜！\nまた来てくれてうれしいよ🐶💜';
-    }
-
-    if (fullness <= 2) {
-      return 'ちょっとおなかすいたな…🐶🍚';
-    }
-
-    if (fullness <= 5) {
-      return 'まだ少し食べられそうだよ🐾';
-    }
-
-    if (fullness >= 9) {
-      return 'おなかいっぱい〜！\nしあわせ🐶✨';
-    }
-
-    if (affection >= 50) {
-      return '会いに来てくれると、\nルナすごくうれしいよ🐶💜';
-    }
-
-    if (affection >= 20) {
-      return 'また会えたね！\n待ってたよ🐶';
-    }
-
-    if (affection >= 10) {
-      return '少しずつ仲良くなれて\nうれしいな🐾';
-    }
-
-    return 'ルナはここで待っているよ。';
-  }
-
-  // ==================================================
-  // 初期化
-  // ==================================================
+  bool get _busy => _loading || _loadFailed || _activity != 'idle';
 
   @override
   void initState() {
     super.initState();
-
-    eatingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 350),
-    );
-
-    eatingAnimation = Tween<double>(
-      begin: 0,
-      end: 7,
-    ).animate(
-      CurvedAnimation(
-        parent: eatingController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    loadFullness();
-    loadLastVisit();
-    loadPetCount();
+    _idle = AnimationController(vsync: this, duration: const Duration(seconds: 3))
+      ..repeat(reverse: true);
+    _action = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _loadHouse();
   }
 
-  // ==================================================
-  // なでた回数
-  // ==================================================
-
-  Future<void> loadPetCount() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final savedCount =
-        prefs.getInt('lunaTodayPetCount') ?? 0;
-
-    final savedDateText =
-        prefs.getString('lunaLastPetDate');
-
-    final now = DateTime.now();
-
-    int count = savedCount;
-    DateTime? savedDate;
-
-    if (savedDateText != null) {
-      savedDate = DateTime.tryParse(savedDateText);
-    }
-
-    if (savedDate == null ||
-        savedDate.year != now.year ||
-        savedDate.month != now.month ||
-        savedDate.day != now.day) {
-      count = 0;
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      todayPetCount = count;
-      lastPetDate = savedDate;
-    });
-  }
-
-  // ==================================================
-  // 最終訪問
-  // ==================================================
-
-  Future<void> loadLastVisit() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final saved =
-        prefs.getString('lunaHouseLastVisit');
-
-    final now = DateTime.now();
-
-    bool longTimeNoSee = false;
-
-    if (saved != null) {
-      final previousVisit =
-          DateTime.tryParse(saved);
-
-      if (previousVisit != null) {
-        final passedHours =
-            now.difference(previousVisit).inHours;
-
-        longTimeNoSee = passedHours >= 24;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_preloaded) {
+      _preloaded = true;
+      for (final path in ['assets/images/luna_3d.png', 'assets/images/luna_3d_blink.png']) {
+        precacheImage(AssetImage(path), context, onError: (error, stackTrace) {});
       }
     }
-
-    await prefs.setString(
-      'lunaHouseLastVisit',
-      now.toIso8601String(),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      lastVisitTime = now;
-      isLongTimeNoSee = longTimeNoSee;
-    });
   }
 
-  // ==================================================
-  // まんぷく度・なつき度
-  // ==================================================
+  bool _sameDay(DateTime? a, DateTime b) => a != null &&
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
-  Future<void> loadFullness() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    int savedFullness =
-        prefs.getInt('lunaFullness') ?? 0;
-
-    final savedAffection =
-        prefs.getInt('lunaAffection') ?? 0;
-
-    final lastUpdatedText =
-        prefs.getString('lunaFullnessLastUpdated');
-
-    if (lastUpdatedText != null) {
-      final lastUpdated =
-          DateTime.tryParse(lastUpdatedText);
-
-      if (lastUpdated != null) {
-        final now = DateTime.now();
-
-        final passedHours =
-            now.difference(lastUpdated).inHours;
-
-        final decreaseAmount =
-            passedHours ~/ 6;
-
-        if (decreaseAmount > 0) {
-          savedFullness =
-              (savedFullness - decreaseAmount)
-                  .clamp(0, 10)
-                  .toInt();
-
-          await prefs.setInt(
-            'lunaFullness',
-            savedFullness,
-          );
-
-          await prefs.setString(
-            'lunaFullnessLastUpdated',
-            now.toIso8601String(),
-          );
+  Future<void> _loadHouse() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      var savedFullness = (prefs.getInt('lunaFullness') ?? 0).clamp(0, 10).toInt();
+      final savedAffection = (prefs.getInt('lunaAffection') ?? 0).clamp(0, 100).toInt();
+      final updated = DateTime.tryParse(prefs.getString('lunaFullnessLastUpdated') ?? '');
+      final previousVisit = DateTime.tryParse(prefs.getString('lunaHouseLastVisit') ?? '');
+      final petDate = DateTime.tryParse(prefs.getString('lunaLastPetDate') ?? '');
+      var savedPetCount = _sameDay(petDate, now) ? (prefs.getInt('lunaTodayPetCount') ?? 0) : 0;
+      if (savedPetCount < 0) savedPetCount = 0;
+      // Preserve the unused part of each six-hour interval when visiting.
+      if (updated == null || updated.isAfter(now)) {
+        await prefs.setString('lunaFullnessLastUpdated', now.toIso8601String());
+      } else {
+        final intervals = now.difference(updated).inHours ~/ 6;
+        if (intervals > 0) {
+          savedFullness = (savedFullness - intervals).clamp(0, 10).toInt();
+          await prefs.setInt('lunaFullness', savedFullness);
+          await prefs.setString('lunaFullnessLastUpdated',
+            updated.add(Duration(hours: intervals * 6)).toIso8601String());
         }
       }
-    } else {
-      await prefs.setString(
-        'lunaFullnessLastUpdated',
-        DateTime.now().toIso8601String(),
-      );
+      await prefs.setString('lunaHouseLastVisit', now.toIso8601String());
+      if (!mounted) return;
+      setState(() {
+        _prefs = prefs;
+        fullness = savedFullness;
+        affection = savedAffection;
+        todayPetCount = savedPetCount;
+        lastPetDate = petDate;
+        _loading = false;
+        _loadFailed = false;
+        _message = previousVisit != null && now.difference(previousVisit).inHours >= 24
+          ? 'また会えてうれしいな。\n今日は一緒にのんびりしよう。' : '';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() { _loading = false; _loadFailed = true; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('お世話の記録を読み込めませんでした。もう一度試してね。')));
     }
+  }
 
-    if (!mounted) return;
+  String get _houseMessage {
+    if (_loading) return 'おへやを準備しているよ。';
+    if (_loadFailed) return '記録を読み込めなかったよ。\n右上のボタンでもう一度試してね。';
+    if (_message.isNotEmpty) return _message;
+    if (fullness >= 9) return 'おなかいっぱい。\nきみのそばで、ひと休み。';
+    if (fullness <= 2) return 'よかったら、ごはんにしよう。\nなでてくれるのもうれしいな。';
+    if (affection >= 50) return 'きみと過ごすこの時間が、\nルナのたからものだよ。';
+    return 'ここでは、きみのペースで。\n一緒にゆっくりしよう。';
+  }
 
+  Future<void> _care(String kind) async {
+    if (_busy || _prefs == null) return;
+    if (kind == 'feed' && fullness >= 10) {
+      setState(() => _message = 'いまはおなかいっぱい。\n一緒に遊ぼう！');
+      return;
+    }
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
     setState(() {
-      fullness = savedFullness;
-      affection = savedAffection;
+      _activity = kind;
+      _message = kind == 'feed' ? 'ごはんだ！\nもぐもぐ、おいしいな。'
+        : kind == 'pet' ? 'えへへ、気持ちいいな。\nなでてくれてありがとう。'
+        : 'きみと遊ぶの、だいすき！';
     });
-  }
-
-  Future<void> saveFullness() async {
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setInt(
-      'lunaFullness',
-      fullness,
-    );
-
-    await prefs.setInt(
-      'lunaAffection',
-      affection,
-    );
-
-    await prefs.setString(
-      'lunaFullnessLastUpdated',
-      DateTime.now().toIso8601String(),
-    );
-  }
-
-  // ==================================================
-  // ルナをなでる
-  // ==================================================
-
-  Future<void> petLuna() async {
-    if (isEating || isBeingPetted) return;
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
+    if (!reduceMotion) _action.repeat(reverse: true);
+    await Future<void>.delayed(Duration(milliseconds: kind == 'feed' ? 2100 : kind == 'play' ? 1400 : 750));
+    if (!mounted) return;
+    _action.stop();
+    _action.reset();
     final now = DateTime.now();
-    final nextCount = todayPetCount + 1;
-
-    String message;
-
-    if (nextCount == 1) {
-      message = 'えへへ、うれしい🐶💜';
-    } else if (nextCount <= 3) {
-      message = 'もっとなでて〜🐾';
-    } else {
-      message =
-          '今日はいっぱいなでてもらった〜！🐶💜';
+    setState(() {
+      if (kind == 'feed') fullness = (fullness + 1).clamp(0, 10).toInt();
+      affection = (affection + 1).clamp(0, 100).toInt();
+      if (kind == 'pet') {
+        todayPetCount = (_sameDay(lastPetDate, now) ? todayPetCount : 0) + 1;
+        lastPetDate = now;
+      }
+      _message = kind == 'feed' ? 'ごちそうさま。\nごはんをくれてありがとう！'
+        : kind == 'pet' ? 'なでなで、うれしかった。\nもう少しそばにいてね。'
+        : '楽しかったね！\n今度は一緒にひと休みしよう。';
+    });
+    try {
+      final prefs = _prefs!;
+      var saved = await prefs.setInt('lunaFullness', fullness);
+      saved = await prefs.setInt('lunaAffection', affection) && saved;
+      // Petting and playing do not restart the hunger countdown.
+      if (kind == 'feed') {
+        saved = await prefs.setString('lunaFullnessLastUpdated', now.toIso8601String()) && saved;
+      }
+      if (kind == 'pet') {
+        saved = await prefs.setInt('lunaTodayPetCount', todayPetCount) && saved;
+        saved = await prefs.setString('lunaLastPetDate', now.toIso8601String()) && saved;
+      }
+      if (!saved) throw StateError('Could not save care data');
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('今回のお世話を保存できませんでした。')));
+      }
+    } finally {
+      if (mounted) setState(() => _activity = 'idle');
     }
+  }
 
-    setState(() {
-      isBeingPetted = true;
-      showPetHeart = true;
+  Widget _status(String label, String value, double progress, IconData icon, Color color) {
+    return Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Icon(icon, size: 16, color: color), const SizedBox(width: 5),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6E607C)))),
+        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF584568))),
+      ]),
+      const SizedBox(height: 8),
+      ClipRRect(borderRadius: BorderRadius.circular(10), child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: progress), duration: const Duration(milliseconds: 350),
+        builder: (_, value, child) => LinearProgressIndicator(value: value, minHeight: 7,
+          backgroundColor: const Color(0xFFECE5F0), valueColor: AlwaysStoppedAnimation<Color>(color)),
+      )),
+    ]));
+  }
 
-      todayPetCount = nextCount;
-      lastPetDate = now;
+  Widget _careButton(String label, IconData icon, Color color, String kind) {
+    return Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Material(color: color, shape: const CircleBorder(side: BorderSide(color: Colors.white, width: 3)),
+        clipBehavior: Clip.antiAlias,
+        child: IconButton(tooltip: label, onPressed: _busy ? null : () => _care(kind),
+          icon: Icon(icon), iconSize: 28, padding: const EdgeInsets.all(16),
+          color: Colors.white, disabledColor: Colors.white60)),
+      const SizedBox(height: 7),
+      Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.95), borderRadius: BorderRadius.circular(16)),
+        child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF5E4A6E)))),
+    ]));
+  }
 
-      if (affection < 100) {
-        affection++;
-      }
-
-      eatingMessage = message;
-    });
-
-    await prefs.setInt(
-      'lunaTodayPetCount',
-      todayPetCount,
-    );
-
-    await prefs.setString(
-      'lunaLastPetDate',
-      now.toIso8601String(),
-    );
-
-    await saveFullness();
-
-    await Future.delayed(
-      const Duration(milliseconds: 180),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      isBeingPetted = false;
-    });
-
-    await Future.delayed(
-      const Duration(milliseconds: 500),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      showPetHeart = false;
+  Widget _lunaStage() {
+    return LayoutBuilder(builder: (context, bounds) {
+      return Semantics(label: 'ルナ。タップしてなでる', button: true,
+        child: GestureDetector(onTap: _busy ? null : () => _care('pet'),
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedBuilder(animation: Listenable.merge([_idle, _action]), builder: (context, child) {
+            final reduceMotion = MediaQuery.of(context).disableAnimations;
+            final blinking = !reduceMotion && _idle.value > 0.95;
+            final closed = _activity == 'pet' || blinking;
+            final bounce = reduceMotion ? 0.0 : _activity == 'play' ? -_action.value * 14
+              : _activity == 'feed' ? _action.value * 4 : (_idle.value - 0.5) * 3;
+            return Stack(alignment: Alignment.center, children: [
+              Positioned(bottom: bounds.maxHeight * 0.06, child: Container(
+                width: bounds.maxWidth * 0.42, height: 16,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(100),
+                  boxShadow: [BoxShadow(color: const Color(0xFF796286).withValues(alpha: 0.18), blurRadius: 22, spreadRadius: 5)]))),
+              Positioned.fill(child: Transform.translate(offset: Offset(0, bounce),
+                child: ClipRect(child: Transform.scale(scale: 1.25,
+                  child: Image.asset(closed ? 'assets/images/luna_3d_blink.png' : 'assets/images/luna_3d.png',
+                    fit: BoxFit.contain, gaplessPlayback: true,
+                    errorBuilder: (_, error, stack) => Image.asset('assets/images/luna.png', fit: BoxFit.contain,
+                      errorBuilder: (_, error, stack) => const Icon(Icons.pets_rounded, size: 100, color: Color(0xFF9C87B6))),
+                  ),
+                )),
+              )),
+              if (_activity == 'pet') Positioned(top: bounds.maxHeight * 0.12, right: bounds.maxWidth * 0.14,
+                child: const Icon(Icons.favorite_rounded, color: Color(0xFFE5A0B5), size: 38)),
+              if (_activity == 'play') Positioned(top: bounds.maxHeight * 0.25, right: bounds.maxWidth * 0.15,
+                child: Transform.translate(offset: Offset(0, reduceMotion ? 0 : -_action.value * 12),
+                  child: const Text('🎾', style: TextStyle(fontSize: 35)))),
+              if (_activity == 'feed') Positioned(bottom: 3,
+                child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.94), borderRadius: BorderRadius.circular(30)),
+                  child: const Text('🍚', style: TextStyle(fontSize: 32)))),
+            ]);
+          }),
+        ),
+      );
     });
   }
 
-  // ==================================================
-  // ごはん
-  // ==================================================
-
-  Future<void> feedLuna() async {
-    if (isEating) return;
-
-    setState(() {
-      isEating = true;
-      eatingMessage = 'ごはんだ！🐶🍚';
-    });
-
-    eatingController.repeat(
-      reverse: true,
-    );
-
-    await Future.delayed(
-      const Duration(milliseconds: 700),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      eatingMessage = 'もぐもぐ…🍚';
-    });
-
-    await Future.delayed(
-      const Duration(milliseconds: 1400),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      if (fullness < 10) {
-        fullness++;
-      }
-
-      if (affection < 100) {
-        affection++;
-      }
-
-      eatingMessage = fullness >= 10
-          ? 'おなかいっぱい〜！しあわせ🐶✨'
-          : 'おいしかった！ありがとう🐾';
-
-      isEating = false;
-    });
-
-    eatingController.stop();
-    eatingController.reset();
-
-    await saveFullness();
-  }
-
-  // ==================================================
-  // ステータス
-  // ==================================================
-
-  Widget statusItem({
-    required String emoji,
-    required String title,
-    required String value,
-    required double progress,
-  }) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            emoji,
-            style: const TextStyle(
-              fontSize: 20,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF746B78),
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF5F536A),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          ClipRRect(
-            borderRadius:
-                BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor:
-                  const Color(0xFFEDE7EF),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(
-                Color(0xFF9C87B6),
-              ),
-            ),
-          ),
-        ],
+  Widget _roomScene() {
+    return Column(children: [
+      Row(children: [
+        Material(color: Colors.white.withValues(alpha: 0.94), shape: const CircleBorder(),
+          child: IconButton(tooltip: '心の広場へ戻る', onPressed: widget.onBack,
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF77608A)))),
+        const SizedBox(width: 12),
+        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('ルナのおうち', style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Color(0xFF5E4A6E))),
+          Text('きみと、のんびり過ごす場所', style: TextStyle(fontSize: 11, color: Color(0xFF766780))),
+        ])),
+        if (_loadFailed) IconButton(tooltip: '記録を読み直す', onPressed: () {
+          setState(() { _loading = true; _loadFailed = false; }); _loadHouse();
+        }, icon: const Icon(Icons.refresh_rounded)),
+      ]),
+      const SizedBox(height: 14),
+      Container(padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.92), borderRadius: BorderRadius.circular(24)),
+        child: _loading ? const SizedBox(height: 40, child: Center(child: CircularProgressIndicator()))
+          : Row(children: [
+            _status('まんぷく', '$fullness / 10', fullness / 10, Icons.restaurant_rounded, const Color(0xFFD5A273)),
+            const SizedBox(width: 24),
+            _status('なつき度', '$affection / 100', affection / 100, Icons.favorite_rounded, const Color(0xFFBC94BB)),
+          ]),
       ),
-    );
+      const SizedBox(height: 14),
+      Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.88), borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Colors.white, width: 1.5)),
+        child: Text(_houseMessage, textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16, height: 1.5, fontWeight: FontWeight.w600, color: Color(0xFF5E4A6E)))),
+      const SizedBox(height: 6),
+      Expanded(child: _lunaStage()),
+    ]);
   }
-
-  // ==================================================
-  // BUILD
-  // ==================================================
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          const Color(0xFFF8F3FA),
-      body: Stack(
-        children: [
-          // -------------------------
-          // 背景
-          // -------------------------
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/luna_home_bg.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // 柔らかいフィルター
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white.withOpacity(0.20),
-                    const Color(0xFFF8F0FA)
-                        .withOpacity(0.16),
-                    const Color(0xFFF0E5F3)
-                        .withOpacity(0.28),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics:
-                      const BouncingScrollPhysics(),
-                  padding:
-                      const EdgeInsets.fromLTRB(
-                    22,
-                    20,
-                    22,
-                    34,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight:
-                          constraints.maxHeight - 54,
-                    ),
-                    child: Column(
-                      children: [
-                        // =============================
-                        // タイトル
-                        // =============================
-                        const Icon(
-                          Icons.home_rounded,
-                          size: 21,
-                          color: Color(0xFF846C96),
-                        ),
-
-                        const SizedBox(height: 5),
-
-                        const Text(
-                          'ルナのおうち',
-                          style: TextStyle(
-                            fontSize: 27,
-                            fontWeight:
-                                FontWeight.w700,
-                            letterSpacing: 1.1,
-                            color:
-                                Color(0xFF5F4E6C),
-                          ),
-                        ),
-
-                        const SizedBox(height: 7),
-
-                        const Text(
-                          '今日も、ルナがここで待ってるよ。',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color:
-                                Color(0xFF746B78),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // =============================
-                        // ルナ
-                        // =============================
-                        GestureDetector(
-                          onTap: petLuna,
-                          behavior:
-                              HitTestBehavior.opaque,
-                          child: AnimatedBuilder(
-                            animation:
-                                eatingAnimation,
-                            builder:
-                                (context, child) {
-                              return Transform.translate(
-                                offset: Offset(
-                                  0,
-                                  isEating
-                                      ? eatingAnimation
-                                          .value
-                                      : 0,
-                                ),
-                                child:
-                                    Transform.scale(
-                                  scale: isEating
-                                      ? 1.035
-                                      : 1,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: Stack(
-                              clipBehavior:
-                                  Clip.none,
-                              alignment:
-                                  Alignment.center,
-                              children: [
-                                // ルナの後ろの淡い光
-                                Container(
-                                  width: 230,
-                                  height: 230,
-                                  decoration:
-                                      BoxDecoration(
-                                    color: Colors.white
-                                        .withOpacity(
-                                            0.38),
-                                    shape:
-                                        BoxShape.circle,
-                                  ),
-                                ),
-
-                                AnimatedScale(
-                                  scale:
-                                      isBeingPetted
-                                          ? 0.94
-                                          : 1,
-                                  duration:
-                                      const Duration(
-                                    milliseconds:
-                                        180,
-                                  ),
-                                  curve:
-                                      Curves.easeOut,
-                                  child:
-                                      Image.asset(
-                                    'assets/images/luna.png',
-                                    height: 205,
-                                    fit:
-                                        BoxFit.contain,
-                                  ),
-                                ),
-
-                                if (showPetHeart)
-                                  const Positioned(
-                                    top: 5,
-                                    right: 23,
-                                    child: Text(
-                                      '💗',
-                                      style:
-                                          TextStyle(
-                                        fontSize: 34,
-                                      ),
-                                    ),
-                                  ),
-
-                                if (isEating)
-                                  const Positioned(
-                                    bottom: 3,
-                                    child: Text(
-                                      '🍚',
-                                      style:
-                                          TextStyle(
-                                        fontSize: 38,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 5),
-
-                        const Text(
-                          'ルナをタップすると、なでられるよ',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color:
-                                Color(0xFF827887),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // =============================
-                        // 吹き出し
-                        // =============================
-                        AnimatedSwitcher(
-                          duration:
-                              const Duration(
-                            milliseconds: 250,
-                          ),
-                          child: Container(
-                            key: ValueKey(
-                              lunaHouseMessage(),
-                            ),
-                            constraints:
-                                const BoxConstraints(
-                              maxWidth: 330,
-                            ),
-                            padding:
-                                const EdgeInsets
-                                    .fromLTRB(
-                              20,
-                              14,
-                              20,
-                              14,
-                            ),
-                            decoration:
-                                BoxDecoration(
-                              color: Colors.white
-                                  .withOpacity(0.86),
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(24),
-                              border:
-                                  Border.all(
-                                color:
-                                    const Color(
-                                  0xFFE7DCEB,
-                                ),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black
-                                      .withOpacity(
-                                          0.035),
-                                  blurRadius: 12,
-                                  offset:
-                                      const Offset(
-                                    0,
-                                    4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              lunaHouseMessage(),
-                              textAlign:
-                                  TextAlign.center,
-                              style:
-                                  const TextStyle(
-                                fontSize: 14,
-                                height: 1.5,
-                                fontWeight:
-                                    FontWeight.w600,
-                                color:
-                                    Color(0xFF62556B),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // =============================
-                        // ステータス
-                        // =============================
-                        Container(
-                          width: double.infinity,
-                          padding:
-                              const EdgeInsets
-                                  .fromLTRB(
-                            20,
-                            16,
-                            20,
-                            16,
-                          ),
-                          decoration:
-                              BoxDecoration(
-                            color: Colors.white
-                                .withOpacity(0.76),
-                            borderRadius:
-                                BorderRadius
-                                    .circular(26),
-                            border:
-                                Border.all(
-                              color: const Color(
-                                  0xFFE7DCEB),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              statusItem(
-                                emoji: '🍚',
-                                title: 'まんぷく',
-                                value:
-                                    '$fullness / 10',
-                                progress:
-                                    fullness / 10,
-                              ),
-
-                              Container(
-                                width: 1,
-                                height: 62,
-                                margin:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal: 18,
-                                ),
-                                color:
-                                    const Color(
-                                  0xFFE8E0EA,
-                                ),
-                              ),
-
-                              statusItem(
-                                emoji: '💗',
-                                title: 'なつき度',
-                                value:
-                                    '$affection / 100',
-                                progress:
-                                    affection / 100,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // =============================
-                        // ごはんボタン
-                        // =============================
-                        SizedBox(
-                          width: 220,
-                          height: 48,
-                          child:
-                              ElevatedButton.icon(
-                            onPressed:
-                                isEating
-                                    ? null
-                                    : feedLuna,
-                            icon: const Text(
-                              '🍚',
-                              style:
-                                  TextStyle(
-                                fontSize: 17,
-                              ),
-                            ),
-                            label: Text(
-                              isEating
-                                  ? 'もぐもぐ中…'
-                                  : 'ごはんをあげる',
-                            ),
-                            style:
-                                ElevatedButton
-                                    .styleFrom(
-                              backgroundColor:
-                                  const Color(
-                                      0xFFF0E5F3),
-                              foregroundColor:
-                                  const Color(
-                                      0xFF6D577B),
-                              disabledBackgroundColor:
-                                  const Color(
-                                      0xFFE8E0EA),
-                              disabledForegroundColor:
-                                  const Color(
-                                      0xFF8B818E),
-                              elevation: 0,
-                              shape:
-                                  RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius
-                                        .circular(24),
-                                side:
-                                    const BorderSide(
-                                  color: Color(
-                                      0xFFE0D4E5),
-                                ),
-                              ),
-                              textStyle:
-                                  const TextStyle(
-                                fontSize: 14,
-                                fontWeight:
-                                    FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // =============================
-                        // 小さなメッセージ
-                        // =============================
-                        Container(
-                          constraints:
-                              const BoxConstraints(
-                            maxWidth: 330,
-                          ),
-                          padding:
-                              const EdgeInsets
-                                  .symmetric(
-                            horizontal: 20,
-                            vertical: 14,
-                          ),
-                          decoration:
-                              BoxDecoration(
-                            color: const Color(
-                                    0xFFFFF9FC)
-                                .withOpacity(0.72),
-                            borderRadius:
-                                BorderRadius
-                                    .circular(22),
-                          ),
-                          child: const Text(
-                            '何かを話しても、何も話さなくても大丈夫。\n'
-                            '今日は少しだけ、ルナのそばで休もう。',
-                            textAlign:
-                                TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              height: 1.6,
-                              color:
-                                  Color(0xFF716776),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // =============================
-                        // 戻る
-                        // =============================
-                        TextButton.icon(
-                          onPressed:
-                              widget.onBack,
-                          icon: const Icon(
-                            Icons
-                                .arrow_back_rounded,
-                            size: 17,
-                          ),
-                          label:
-                              const Text(
-                            '心の広場へ戻る',
-                          ),
-                          style:
-                              TextButton
-                                  .styleFrom(
-                            foregroundColor:
-                                const Color(
-                                    0xFF65536F),
-                            padding:
-                                const EdgeInsets
-                                    .symmetric(
-                              horizontal: 18,
-                              vertical: 11,
-                            ),
-                            textStyle:
-                                const TextStyle(
-                              fontSize: 13,
-                              fontWeight:
-                                  FontWeight
-                                      .w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+    return Scaffold(backgroundColor: const Color(0xFFF5EDF4), body: Stack(children: [
+      Positioned.fill(child: Image.asset('assets/images/luna_home_bg.png', fit: BoxFit.cover,
+        errorBuilder: (_, error, stack) => const DecoratedBox(decoration: BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Color(0xFFF1E5F2), Color(0xFFF4E5D9)]))))),
+      Positioned.fill(child: ColoredBox(color: Colors.white.withValues(alpha: 0.12))),
+      SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+          child: Column(children: [
+            Expanded(child: LayoutBuilder(builder: (context, constraints) {
+              final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+              final minimum = 450.0 + (scale > 1 ? (scale - 1) * 200 : 0);
+              if (constraints.maxHeight < minimum) {
+                return SingleChildScrollView(child: SizedBox(height: minimum, child: _roomScene()));
+              }
+              return _roomScene();
+            })),
+            const SizedBox(height: 10),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _careButton('ごはん', Icons.restaurant_rounded, const Color(0xFFD5A273), 'feed'),
+              _careButton('なでる', Icons.favorite_rounded, const Color(0xFFBC94BB), 'pet'),
+              _careButton('遊ぶ', Icons.sports_tennis_rounded, const Color(0xFF8DA69F), 'play'),
+            ]),
+            const SizedBox(height: 12),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.90), borderRadius: BorderRadius.circular(18)),
+              child: Text(_loading ? '少しだけ待ってね' : 'ルナをタップしても、なでられるよ',
+                textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Color(0xFF766780)))),
+          ]),
+        ),
+      ))),
+    ]));
   }
 
   @override
   void dispose() {
-    eatingController.dispose();
+    _idle.dispose();
+    _action.dispose();
     super.dispose();
   }
 }

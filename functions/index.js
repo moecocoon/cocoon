@@ -195,3 +195,34 @@ input: [
       }
     },
 );
+
+exports.organizationAnalysis =
+  require("./organization_analysis").organizationAnalysis;
+
+  exports.getAnalysisRemaining =
+  require("./organization_analysis").getAnalysisRemaining;
+
+  exports.getMyOrganization =
+  require("./organization_analysis").getMyOrganization;
+
+  exports.getOrganizationAnalysisHistory =
+  require("./organization_analysis").getOrganizationAnalysisHistory;
+
+  // 従業員の会社所属申請API
+exports.requestOrganizationMembership =
+  require("./employee_organization").requestOrganizationMembership;
+
+  // 管理者向け：従業員の所属申請一覧を取得
+exports.getEmployeeMembershipRequests =
+  require("./employee_approval").getEmployeeMembershipRequests;
+
+  // 管理者向け：従業員の所属申請を承認
+exports.approveEmployeeMembership =
+  require("./employee_approval").approveEmployeeMembership;
+
+  // 従業員本人の所属状況を取得
+exports.getEmployeeMembershipStatus =
+  require("./employee_membership_status").getEmployeeMembershipStatus;
+
+  exports.saveEmployeeMood =
+  require("./employee_mood").saveEmployeeMood;

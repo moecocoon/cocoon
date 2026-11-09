@@ -1,9 +1,12 @@
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/mood_record.dart';
 
 class MoodRecordScreen extends StatefulWidget {
-  final Function(MoodRecord) onSave;
+  final Future<void> Function(MoodRecord) onSave;
 
   const MoodRecordScreen({
     super.key,
@@ -17,6 +20,9 @@ class MoodRecordScreen extends StatefulWidget {
 
 class _MoodRecordScreenState extends State<MoodRecordScreen> {
   String? selectedWeather;
+
+  bool shareForOrganization = false;
+  bool isSaving = false;
 
   final Map<String, double> emotionPercents = {};
 
@@ -73,47 +79,104 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
     });
   }
 
-  void saveRecord() {
-    if (selectedWeather == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('今日の心の天気を選んでね'),
-        ),
-      );
-      return;
-    }
+  Future<void> saveRecord() async {
+  if (isSaving) return;
 
-    if (emotionPercents.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('近い感情を1つ以上選んでね'),
-        ),
-      );
-      return;
-    }
-
-    widget.onSave(
-      MoodRecord(
-        weather: selectedWeather!,
-        emotionPercents:
-            Map<String, double>.from(emotionPercents),
-        memo: memoController.text.trim(),
-        createdAt: DateTime.now(),
+  if (selectedWeather == null || emotionPercents.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('心の天気と、近い感情を1つ以上選んでね'),
       ),
     );
+    return;
+  }
+
+  final mood = MoodRecord(
+    weather: selectedWeather!,
+    emotionPercents: Map<String, double>.from(emotionPercents),
+    memo: memoController.text.trim(),
+    createdAt: DateTime.now(),
+  );
+
+  final shouldShare = shareForOrganization;
+
+  setState(() {
+    isSaving = true;
+  });
+
+  try {
+    await widget.onSave(mood);
+  } catch (_) {
+    if (!mounted) return;
+
+    setState(() {
+      isSaving = false;
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('今日の気分を記録できたよ🌿'),
+        content: Text('保存を完了できませんでした。記録を確認してください。'),
       ),
     );
-
-    setState(() {
-      selectedWeather = null;
-      emotionPercents.clear();
-      memoController.clear();
-    });
+    return;
   }
+
+  if (!mounted) return;
+
+  setState(() {
+    selectedWeather = null;
+    emotionPercents.clear();
+    memoController.clear();
+    shareForOrganization = false;
+  });
+
+  var message = '今日の気分を記録できたよ🌿';
+
+  if (shouldShare) {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        throw Exception('ログインが必要です。');
+      }
+
+      final token = await user.getIdToken();
+
+      final response = await http.post(
+        Uri.parse(
+          'https://asia-northeast1-cocoon-688eb.cloudfunctions.net/saveEmployeeMood',
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'consent': true,
+          'emotionPercents': mood.emotionPercents,
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode != 200) {
+        throw Exception('送信に失敗しました。');
+      }
+
+      message = '気分を記録して、集計用の数値を送信しました🌿';
+    } catch (_) {
+      message =
+          '気分は端末に保存しました。集計用の送信は完了を確認できませんでした。';
+    }
+  }
+
+  if (!mounted) return;
+
+  setState(() {
+    isSaving = false;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
+}
 
   Widget sectionTitle({
     required String title,
@@ -156,16 +219,16 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
     return Container(
       width: double.infinity,
       padding: padding,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.88),
+          decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
         ),
         boxShadow: [
           BoxShadow(
             color:
-                const Color(0xFF8E7BBE).withOpacity(0.09),
+                const Color(0xFF8E7BBE).withValues(alpha: 0.09),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -265,7 +328,7 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
               height: 43,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha:0.8),
                 shape: BoxShape.circle,
               ),
               child: Text(
@@ -340,7 +403,7 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.72),
+                  color: Colors.white.withValues(alpha: 0.72),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Text(
@@ -428,7 +491,7 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF8E7BBE)
-                          .withOpacity(0.12),
+                          .withValues(alpha:0.12),
                       blurRadius: 22,
                       offset: const Offset(0, 9),
                     ),
@@ -569,6 +632,28 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
                 ),
               ),
 
+                            CheckboxListTile(
+                value: shareForOrganization,
+                onChanged: isSaving
+                    ? null
+                    : (value) {
+                        setState(() {
+                          shareForOrganization = value ?? false;
+                        });
+                      },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  '今回の気分の数値を、会社全体の集計に提供する（任意）',
+                ),
+                subtitle: const Text(
+                  'メモ本文は送信しません。数値はアカウントに紐づいて'
+                  'サーバーに保存されます。会社には個人別の記録を表示せず、'
+                  '人数条件を満たした集計のみを提供します。'
+                  '同意しなくても気分記録は使えます。',
+                ),
+              ),
+
               const SizedBox(height: 28),
 
               SizedBox(
@@ -587,7 +672,7 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
                     ),
                     elevation: 0,
                   ),
-                  onPressed: saveRecord,
+                  onPressed: isSaving ? null : saveRecord,
                   icon: const Icon(
                     Icons.auto_awesome_rounded,
                   ),
