@@ -1,3 +1,6 @@
+import 'firebase_web_registration_stub.dart'
+    if (dart.library.js_interop)
+        'firebase_web_registration_web.dart';
 import 'screens/kokoro_hiroba_screen_v5.dart';
 import 'services/weather_service.dart';
 import 'screens/chat_screen.dart';
@@ -34,6 +37,7 @@ const String openWeatherApiKey = String.fromEnvironment(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerFirebaseWebPlugins();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -127,6 +131,32 @@ class EmotionInfo {
 }
 
 const List<EmotionInfo> emotionInfos = [
+
+    EmotionInfo(
+    id: 'happy',
+    key: '😊 うれしい',
+    name: 'うれしいさん',
+    imagePath: 'assets/images/emotion_happy.png',
+    guideText:
+        'うれしいさんが来ているね。うれしい気持ちを、一緒に味わおう。',
+  ),
+  EmotionInfo(
+    id: 'effort',
+    key: '🥹 がんばった',
+    name: 'がんばったさん',
+    imagePath: 'assets/images/emotion_effort.png',
+    guideText:
+        'がんばったさんが来ているね。今日の頑張りを聞かせてね。',
+  ),
+
+    EmotionInfo(
+    id: 'sad',
+    key: '😢 悲しい',
+    name: '悲しいさん',
+    imagePath: 'assets/images/emotion_sad.png',
+    guideText:
+        '悲しいさんが来ているね。話したくなったら、ゆっくり聞かせてね。',
+  ),
   EmotionInfo(
     id: 'anxiety',
     key: '😰 不安',
@@ -735,6 +765,7 @@ ChatScreen(
 
 
 KokoroHirobaScreenV5(
+  latestMood: latestMood,
   onListenEmotion: (emotionId) {
     final emotion = emotionInfos.firstWhere(
       (item) => item.id == emotionId,

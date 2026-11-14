@@ -1,3 +1,4 @@
+import '../models/mood_record.dart';
 import 'package:flutter/material.dart';
 
 import '../services/weather_service.dart';
@@ -10,14 +11,16 @@ const String openWeatherApiKey = String.fromEnvironment(
 );
 
 class KokoroHirobaScreenV5 extends StatefulWidget {
+  final MoodRecord? latestMood;
   final ValueChanged<String> onListenEmotion;
   final VoidCallback onBreathing;
   final VoidCallback onCafe;
   final VoidCallback onNightShelter;
   final VoidCallback onLunaHouse;
 
-  const KokoroHirobaScreenV5({
+   const KokoroHirobaScreenV5({
     super.key,
+    this.latestMood,
     required this.onListenEmotion,
     required this.onBreathing,
     required this.onCafe,
@@ -300,13 +303,30 @@ Widget destinationImageCard({
 
               const SizedBox(height: 18),
 
-     GardenArea(
+    GardenArea(
+  emotionPercents:
+      widget.latestMood?.emotionPercents ?? const {},
   onEmotionTap: (emotionId) {
     setState(() {
         selectedEmotion = emotionId;
       showTalkButton = true;
 
       switch (emotionId) {
+
+        case "happy":
+  lunaMessage =
+      "うれしいさんが来ているね。どんなうれしいことがあったのか、聞かせてね。";
+  break;
+
+case "effort":
+  lunaMessage =
+      "がんばったさんが来ているね。今日のあなたの頑張り、ゆっくり聞かせてね。";
+  break;
+
+        case "sad":
+  lunaMessage =
+      "悲しいさんが来ているね。言葉にしたくなったら、ゆっくり聞かせてね。";
+  break;
         case "anxiety":
           lunaMessage =
               "今日は不安さんが遊びに来ているね。何か心配なことがあったのかな？";

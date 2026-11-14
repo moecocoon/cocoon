@@ -12,6 +12,7 @@ class CocoonSettingsScreen extends StatefulWidget {
 class _CocoonSettingsScreenState
     extends State<CocoonSettingsScreen> {
   bool shareTimeline = false;
+  bool shareProfile = false;
   bool isLoading = true;
 
   @override
@@ -28,6 +29,8 @@ class _CocoonSettingsScreenState
     setState(() {
       shareTimeline =
           prefs.getBool('shareTimeline') ?? false;
+      shareProfile =
+          prefs.getBool('shareProfile') ?? false;
       isLoading = false;
     });
   }
@@ -42,6 +45,45 @@ class _CocoonSettingsScreenState
     setState(() {
       shareTimeline = value;
     });
+  }
+
+  Future<void> updateShareProfile(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setBool('shareProfile', value);
+
+    if (!mounted) return;
+
+    setState(() {
+      shareProfile = value;
+    });
+  }
+
+  Widget sharingSetting({
+    required String title,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(description),
+        value: value,
+        activeTrackColor: const Color(0xFFD9C5ED),
+        onChanged: onChanged,
+      ),
+    );
   }
 
   @override
@@ -68,41 +110,38 @@ class _CocoonSettingsScreenState
                     color: Color(0xFF655472),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: SwitchListTile(
-                    title: const Text(
-                      'わたし年表をルナと共有する',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: const Text(
+                sharingSetting(
+                  title: 'わたし年表をルナと共有する',
+                  description:
                       'ONにすると、年表に登録した出来事を'
                       'AIチャットの返答に活用できます。\n'
-                      '共有をOFFにすると、以後のチャットでは'
-                      '年表を送信しません。',
-                    ),
-                    value: shareTimeline,
-                    activeTrackColor:
-                        const Color(0xFFD9C5ED),
-                    onChanged: updateShareTimeline,
-                  ),
+                      'OFFにすると、年表データの新たな送信を停止します。',
+                  value: shareTimeline,
+                  onChanged: updateShareTimeline,
                 ),
-
                 const SizedBox(height: 16),
-
+                sharingSetting(
+                  title: 'あなたのことをルナと共有する',
+                  description:
+                      'ONにすると、ニックネーム・兄弟姉妹・'
+                      '生活の状況・好きなこと・苦手なこと・'
+                      '希望するサポートを、返答の参考として'
+                      'AIサービスに送信します。\n'
+                      '生年月日は、この設定では送信しません。\n'
+                      'OFFにすると、プロフィールデータの'
+                      '新たな送信を停止します。',
+                  value: shareProfile,
+                  onChanged: updateShareProfile,
+                ),
+                const SizedBox(height: 16),
                 const Text(
-                  '初期設定はOFFです。\n'
-                  '年表には個人的な情報が含まれるため、'
-                  '共有するかどうかはいつでも変更できます。',
+                  'どちらも初期設定はOFFです。\n'
+                  '共有するかどうかはいつでも変更できます。\n\n'
+                  'OFFにしても、すでに会話に含まれた情報や'
+                  '過去に送信した情報は削除されません。'
+                  '会話履歴に含まれた情報は、以後の返答でも'
+                  '参照される場合があります。',
                   style: TextStyle(
                     fontSize: 13,
                     color: Color(0xFF756B7A),

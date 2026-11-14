@@ -118,6 +118,7 @@ String familyStyle = '';
 String currentStatus = '';
   List<JapanEvent> japanEvents = [];
   bool isThinking = false;
+  bool isClearingChat = false;
   bool showInsightButton = false;
 String latestInsight = "";
   List<TimelineEvent> timelineEvents = [];
@@ -402,6 +403,33 @@ String buildTimelineContext(String? savedTimeline) {
   }
 }
 
+String buildProfileContext(SharedPreferences prefs) {
+  const fields = {
+    'profileNickname': 'ニックネーム',
+    'profileSibling': '兄弟姉妹',
+    'profileLifestyle': '生活の状況',
+    'profileLikes': '好きなこと',
+    'profileDislikes': '苦手なこと',
+    'profileSupport': '希望するサポート',
+  };
+
+  final lines = <String>[];
+
+  for (final field in fields.entries) {
+    final value = prefs.getString(field.key)?.trim() ?? '';
+
+    if (value.isNotEmpty) {
+      final limitedValue = value.length > 500
+          ? value.substring(0, 500)
+          : value;
+
+      lines.add('${field.value}：$limitedValue');
+    }
+  }
+
+  return lines.join('\n');
+}
+
 
 Future<String> getLunaApiReply(
   String message,
@@ -414,6 +442,8 @@ Future<String> getLunaApiReply(
   // わたし年表をAIに共有する設定
 // 初期設定はOFF（共有しない）
 final shareTimeline = prefs.getBool('shareTimeline') ?? false;
+
+final shareProfile = prefs.getBool('shareProfile') ?? false;
 
   debugPrint(
     'わたし年表の保存データ: ${savedTimeline == null ? "なし" : "あり"}',
@@ -428,19 +458,20 @@ final shareTimeline = prefs.getBool('shareTimeline') ?? false;
       url,
       headers: {
         'Content-Type': 'application/json',
-      },
-    body: jsonEncode({
+      },body: jsonEncode({
   'message': message,
-
-   // 直近の会話履歴
   'chatHistory': recentChatHistory,
 
-  // 利用者が年表の共有を許可しているか
+  // 年表は共有がONの場合だけ送る
   'shareTimeline': shareTimeline,
-
-  // 共有がONの場合だけ年表を送る
   'timelineContext': shareTimeline
       ? buildTimelineContext(savedTimeline)
+      : '',
+
+  // プロフィールは共有がONの場合だけ送る
+  'shareProfile': shareProfile,
+  'profileContext': shareProfile
+      ? buildProfileContext(prefs)
       : '',
 }),
     );
@@ -958,6 +989,7 @@ Future<void> showEmergencyContactSuggestion() async {
 }
 
 Future<void> sendMessage() async {
+  if (isThinking || isClearingChat) return;
   final text = chatController.text.trim();
   if (text.isEmpty) return;
 
@@ -4243,6 +4275,106 @@ if (text.contains('誰にも言えない') ||
   // 相談タイプボタン：恋愛
 
 
+Future<void> clearChatHistory() async {
+  if (isThinking || isClearingChat) return;
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('チャット履歴を削除しますか？'),
+      content: const Text(
+        'このブラウザ・端末に保存された会話と、'
+        '会話の話題情報を削除します。元には戻せません。\n\n'
+        '年表・プロフィール・回復アルバムは残ります。'
+        '共有設定がONの場合は、次の会話でも'
+        '年表やプロフィールを参考にします。\n\n'
+        'すでにAIサービスへ送信した情報の'
+        '削除とは別です。',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, false),
+          child: const Text('キャンセル'),
+        ),
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, true),
+          child: const Text(
+            '削除する',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (!mounted ||
+      confirmed != true ||
+      isThinking ||
+      isClearingChat) {
+    return;
+  }
+
+  setState(() {
+    isClearingChat = true;
+  });
+
+  try {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.remove('currentTopic');
+    await prefs.remove('currentPerson');
+    await prefs.remove('currentQuestion');
+
+    final saved = await prefs.setString(
+      'chatMessages',
+      '[]',
+    );
+
+    if (!saved) {
+      throw Exception('履歴の保存に失敗しました');
+    }
+
+    widget.messages.clear();
+
+    if (!mounted) return;
+
+    setState(() {
+      currentTopic = null;
+      currentPerson = null;
+      currentQuestion = null;
+      latestInsight = '';
+      showInsightButton = false;
+      chatController.clear();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('チャット履歴を削除しました'),
+      ),
+    );
+  } catch (e) {
+    debugPrint('チャット履歴の削除エラー: $e');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          '削除を完了できませんでした。もう一度お試しください。',
+        ),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        isClearingChat = false;
+      });
+    }
+  }
+}
+
   @override
   Widget build(BuildContext context) {
    return Scaffold(
@@ -4321,7 +4453,17 @@ if (text.contains('誰にも言えない') ||
                 color: Color(0xFF746A7D),
               ),
             ),
-          ],
+                   ],
+        ),
+      ),
+      IconButton(
+        tooltip: 'チャット履歴を削除',
+        onPressed: isThinking || isClearingChat
+            ? null
+            : clearChatHistory,
+        icon: const Icon(
+          Icons.delete_outline,
+          color: Color(0xFF6F5B8E),
         ),
       ),
     ],
