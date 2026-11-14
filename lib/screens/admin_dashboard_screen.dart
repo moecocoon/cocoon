@@ -1,3 +1,4 @@
+import 'admin_demo_screen.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -443,7 +444,23 @@ appBar: AppBar(
   backgroundColor: const Color(0xFFEDE2F6),
   foregroundColor: const Color(0xFF49365D),
   actions: [
-    IconButton(
+  TextButton(
+    onPressed: () {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const AdminDemoScreen(),
+        ),
+      );
+    },
+    child: const Text(
+      'デモ',
+      style: TextStyle(
+        color: Color(0xFF49365D),
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+  IconButton(
       icon: const Icon(Icons.logout),
       tooltip: 'ログアウト',
       onPressed: () async {

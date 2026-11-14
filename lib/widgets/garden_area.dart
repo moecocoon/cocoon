@@ -78,7 +78,7 @@ class GardenArea extends StatelessWidget {
             // うれしいさん
 Positioned(
   right: 25,
-  top: 195,
+  top: 280,
   child: emotionImage(
     id: 'happy',
     label: 'うれしいさん',
@@ -92,7 +92,7 @@ Positioned(
 Positioned(
   left: 0,
   right: 0,
-  top: 115,
+  top: 210,
   child: Center(
     child: emotionImage(
       id: 'effort',
@@ -105,7 +105,7 @@ Positioned(
 ),
             Positioned(
               left: 25,
-              top: 70,
+              top: 170,
               child: emotionImage(
                 id: 'anxiety',
                 label: '不安さん',
@@ -116,7 +116,7 @@ Positioned(
             ),
             Positioned(
               right: 25,
-              top: 95,
+              top: 170,
               child: emotionImage(
                 id: 'peace',
                 label: '安心さん',
@@ -130,7 +130,7 @@ Positioned(
             Positioned(
               left: 0,
               right: 0,
-              top: 20,
+              top: 110,
               child: Center(
                 child: Tooltip(
                   message: '悲しいさん',
@@ -153,7 +153,7 @@ Positioned(
             ),
             Positioned(
               left: 35,
-              bottom: 65,
+              bottom: 25,
               child: emotionImage(
                 id: 'lonely',
                 label: 'さみしいさん',
@@ -164,7 +164,7 @@ Positioned(
             ),
             Positioned(
               right: 30,
-              bottom: 60,
+              bottom: 25,
               child: emotionImage(
                 id: 'tired',
                 label: 'おつかれさん',
@@ -175,7 +175,7 @@ Positioned(
             ),
             Positioned(
   left: 25,
-  top: 195,
+  top: 280,
               child: emotionImage(
                 id: 'angry',
                 label: 'イライラさん',

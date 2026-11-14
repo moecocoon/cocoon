@@ -273,7 +273,7 @@ try {
 
 
       try {
-        // 現段階ではサーバー内の架空データだけを使用
+        // 人数条件を満たした所属会社の集計データを使用
        const analysis = await generateOrganizationAnalysis(
     aggregateData,
 );

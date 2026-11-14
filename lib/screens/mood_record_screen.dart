@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,11 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
 
   bool shareForOrganization = false;
   bool isSaving = false;
+
+  bool isOrganizationLinked = false;
+String? organizationUserId;
+StreamSubscription<User?>? organizationAuthSubscription;
+int membershipCheckVersion = 0;
 
   final Map<String, double> emotionPercents = {};
 
@@ -67,6 +73,76 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
     '🌙': '夜',
   };
 
+  @override
+void initState() {
+  super.initState();
+
+  organizationAuthSubscription =
+      FirebaseAuth.instance.authStateChanges().listen((user) {
+    checkOrganizationMembership(user);
+  });
+}
+
+Future<void> checkOrganizationMembership(User? user) async {
+  final version = ++membershipCheckVersion;
+
+  if (!mounted) return;
+
+  // 未確認の間は非表示・共有OFF
+  setState(() {
+    isOrganizationLinked = false;
+    organizationUserId = null;
+    shareForOrganization = false;
+  });
+
+  if (user == null) return;
+
+  try {
+    final token = await user.getIdToken();
+
+    final response = await http.get(
+      Uri.parse(
+        'https://asia-northeast1-cocoon-688eb.cloudfunctions.net/getEmployeeMembershipStatus',
+      ),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    ).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode != 200) return;
+
+    final data = jsonDecode(
+      utf8.decode(response.bodyBytes),
+    );
+
+    if (data is! Map<String, dynamic>) return;
+
+    final organizationId = data['organizationId'];
+
+    final linked =
+        data['status'] == 'active' &&
+        organizationId is String &&
+        RegExp(r'^[a-zA-Z0-9_-]{1,80}$')
+            .hasMatch(organizationId);
+
+    // 確認中にアカウントが変わった場合は使わない
+    if (!mounted ||
+        version != membershipCheckVersion ||
+        FirebaseAuth.instance.currentUser?.uid != user.uid) {
+      return;
+    }
+
+    setState(() {
+      isOrganizationLinked = linked;
+      organizationUserId = linked ? user.uid : null;
+    });
+  } catch (_) {
+    // 通信失敗時も、個人の気分記録は利用可能
+    // 共有チェックは非表示のまま
+  }
+}
+
+
   void toggleEmotion(String emoji) {
     setState(() {
       final key = '$emoji ${emotionNames[emoji]}';
@@ -98,7 +174,13 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
     createdAt: DateTime.now(),
   );
 
-  final shouldShare = shareForOrganization;
+  final sharingUserId = organizationUserId;
+
+final shouldShare =
+    shareForOrganization &&
+    isOrganizationLinked &&
+    sharingUserId != null &&
+    FirebaseAuth.instance.currentUser?.uid == sharingUserId;
 
   setState(() {
     isSaving = true;
@@ -136,9 +218,9 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
 
-      if (user == null) {
-        throw Exception('ログインが必要です。');
-      }
+      if (user == null || user.uid != sharingUserId) {
+  throw Exception('アカウントが変更されました。');
+}
 
       final token = await user.getIdToken();
 
@@ -435,12 +517,14 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
       ),
     );
   }
+ 
 
-  @override
-  void dispose() {
-    memoController.dispose();
-    super.dispose();
-  }
+ @override
+void dispose() {
+  organizationAuthSubscription?.cancel();
+  memoController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -631,6 +715,10 @@ class _MoodRecordScreenState extends State<MoodRecordScreen> {
                   ),
                 ),
               ),
+
+              if (isOrganizationLinked &&
+    organizationUserId ==
+        FirebaseAuth.instance.currentUser?.uid)
 
                             CheckboxListTile(
                 value: shareForOrganization,
